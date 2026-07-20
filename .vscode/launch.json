@@ -2,12 +2,28 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "dev server",
+            "name": "BBS-GO: Debug (dev)",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}",
+            "buildFlags": ["-tags=dev"],
+            "env": {
+                "BBSGO_ENV": "dev"
+            }
+        },
+        {
+            "name": "BBS-GO: Run (dev)",
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "${workspaceFolder}/main.go",
-            "buildFlags": ["-tags=dev"]
+            "program": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}",
+            "buildFlags": ["-tags=dev"],
+            "env": {
+                "BBSGO_ENV": "dev"
+            }
         }
     ]
 }
