@@ -1,11 +1,11 @@
 import Link from "@/components/common/link"
-import { ChevronRight, Medal } from "lucide-react"
+import { ChevronRight } from "lucide-react"
 
 import { EmptyState } from "@/components/common/empty-state"
 import { WidgetCard } from "@/components/common/widget-card"
 import { UserCenterOperations } from "@/components/user/user-center-operations"
 import { UserFollowList } from "@/components/user/user-follow-list"
-import type { Badge, UserSummary } from "@/lib/api/types"
+import type { UserSummary } from "@/lib/api/types"
 import type { TFunction } from "@/lib/i18n"
 
 export function UserCountsCard({
@@ -19,18 +19,6 @@ export function UserCountsCard({
     <WidgetCard title={t("component.myCounts.title")}>
       <ul className="extra-info">
         <li>
-          <span>{t("component.myCounts.level")}</span>
-          <br />
-          <b>{`Lv.${user.level ?? 0}`}</b>
-        </li>
-        <li>
-          <span>{t("component.myCounts.score")}</span>
-          <br />
-          <Link href="/user/scores">
-            <b>{user.score ?? 0}</b>
-          </Link>
-        </li>
-        <li>
           <span>{t("component.myCounts.topicCount")}</span>
           <br />
           <b>{user.topicCount ?? 0}</b>
@@ -40,70 +28,6 @@ export function UserCountsCard({
           <br />
           <b>{user.commentCount ?? 0}</b>
         </li>
-      </ul>
-    </WidgetCard>
-  )
-}
-
-export function UserBadgesWidget({
-  user,
-  badges,
-  t,
-}: {
-  user: UserSummary
-  badges: Badge[]
-  t: TFunction
-}) {
-  const owned = badges.filter((badge) => badge.owned !== false)
-  const display = owned.slice(0, 6)
-  const badgesLink = `/user/${user.id}/badges`
-
-  return (
-    <WidgetCard
-      title={
-        <>
-          <span>{t("component.userBadges.title")}</span>
-          <span>&nbsp;</span>
-          <span>{owned.length}</span>
-        </>
-      }
-      actions={
-        <Link href={badgesLink} className="inline-flex items-center gap-1">
-          {t("component.userBadges.viewAll")}
-          <ChevronRight className="h-4 w-4" />
-        </Link>
-      }
-    >
-      {!owned.length ? (
-        <div className="text-sm text-slate-500 dark:text-slate-400">
-          {t("component.userBadges.noBadges")}
-        </div>
-      ) : (
-        <div className="space-y-3">
-          <div className="flex flex-wrap gap-2">
-            {display.map((badge) => (
-              <Link
-                key={badge.id}
-                href={badgesLink}
-                className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-amber-200/80 bg-amber-50/50 dark:border-amber-800/60 dark:bg-amber-900/20"
-                title={badge.title}
-              >
-                {badge.icon ? (
-                  <img
-                    src={badge.icon}
-                    alt={badge.title || ""}
-                    className="h-8 w-8 object-contain"
-                  />
-                ) : (
-                  <Medal className="h-6 w-6" />
-                )}
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-    </WidgetCard>
-  )
 }
 
 export function MyProfileCard({
@@ -193,14 +117,12 @@ export function FollowWidget({
 export function UserCenterSidebar({
   user,
   currentUser,
-  badges,
   fans,
   followed,
   t,
 }: {
   user: UserSummary
   currentUser?: UserSummary | null
-  badges: Badge[]
   fans: UserSummary[]
   followed: UserSummary[]
   t: TFunction
@@ -208,7 +130,6 @@ export function UserCenterSidebar({
   return (
     <div className="left-container space-y-4">
       <UserCountsCard user={user} t={t} />
-      <UserBadgesWidget user={user} badges={badges} t={t} />
       <MyProfileCard user={user} currentUser={currentUser} t={t} />
       <FollowWidget
         title={t("component.fansWidget.title")}

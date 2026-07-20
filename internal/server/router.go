@@ -154,8 +154,6 @@ func registerAPIRoutes(group *gin.RouterGroup) {
 	userGroup.GET("/favorites", apiHandlers.UserFavorites)
 	userGroup.GET("/msg_recent", apiHandlers.UserMsgRecent)
 	userGroup.GET("/messages", apiHandlers.UserMessages)
-	userGroup.GET("/score_logs", apiHandlers.UserScoreLogs)
-	userGroup.GET("/score/rank", apiHandlers.UserScoreRank)
 	userGroup.POST("/forbidden", apiHandlers.UserForbidden)
 	userGroup.POST("/send_verify_email", apiHandlers.UserSendVerifyEmail)
 	userGroup.POST("/verify_email", apiHandlers.UserVerifyEmail)
@@ -185,11 +183,6 @@ func registerAPIRoutes(group *gin.RouterGroup) {
 	likeGroup.GET("/liked_ids", apiHandlers.LikeLikedIds)
 	likeGroup.GET("/liked", apiHandlers.LikeLiked)
 
-	checkinGroup := group.Group("/checkin")
-	checkinGroup.POST("/checkin", apiHandlers.CheckinSubmit)
-	checkinGroup.GET("/checkin", apiHandlers.CheckinStatus)
-	checkinGroup.GET("/rank", apiHandlers.CheckinRank)
-
 	configGroup := group.Group("/config")
 	configGroup.GET("/configs", apiHandlers.ConfigConfigs)
 	configGroup.GET("/about", apiHandlers.ConfigAbout)
@@ -200,7 +193,6 @@ func registerAPIRoutes(group *gin.RouterGroup) {
 	attachmentGroup := group.Group("/attachment")
 	attachmentGroup.POST("/upload", apiHandlers.AttachmentUpload)
 	attachmentGroup.GET("/download/:id", apiHandlers.AttachmentDownload)
-	attachmentGroup.POST("/update_download_score", apiHandlers.AttachmentUpdateDownloadScore)
 
 	linkGroup := group.Group("/link")
 	linkGroup.GET("/list", apiHandlers.LinkList)
@@ -227,13 +219,6 @@ func registerAPIRoutes(group *gin.RouterGroup) {
 
 	userReportGroup := group.Group("/user-report")
 	userReportGroup.POST("/submit", apiHandlers.UserReportSubmit)
-
-	taskGroup := group.Group("/task")
-	taskGroup.GET("/tasks", apiHandlers.TaskTasks)
-	taskGroup.GET("/groups", apiHandlers.TaskGroups)
-
-	badgeGroup := group.Group("/badge")
-	badgeGroup.GET("/badges", apiHandlers.BadgeBadges)
 
 	voteGroup := group.Group("/vote")
 	voteGroup.POST("/cast", apiHandlers.VoteCast)
@@ -275,7 +260,6 @@ func registerAdminRoutes(group *gin.RouterGroup) {
 
 	commonGroup := group.Group("/common")
 	commonGroup.GET("/overview", adminHandlers.CommonOverview)
-	commonGroup.GET("/task_event_types", adminHandlers.CommonTaskEventTypes)
 
 	userGroup := group.Group("/user")
 	userGroup.GET("/synccount", adminHandlers.UserSynccount)
@@ -360,44 +344,6 @@ func registerAdminRoutes(group *gin.RouterGroup) {
 	linkGroup.POST("/update_sort", adminHandlers.LinkUpdateSort)
 	linkGroup.GET("/:id", adminHandlers.LinkDetail)
 
-	userScoreLogGroup := group.Group("/user-score-log")
-	userScoreLogGroup.POST("/list", adminHandlers.UserScoreLogList)
-	userScoreLogGroup.GET("/:id", adminHandlers.UserScoreLogDetail)
-
-	taskConfigGroup := group.Group("/task-config")
-	taskConfigGroup.GET("/groups", adminHandlers.TaskConfigGroups)
-	taskConfigGroup.POST("/list", adminHandlers.TaskConfigList)
-	taskConfigGroup.POST("/create", adminHandlers.TaskConfigCreate)
-	taskConfigGroup.POST("/update", adminHandlers.TaskConfigUpdate)
-	taskConfigGroup.POST("/delete", adminHandlers.TaskConfigRemove)
-	taskConfigGroup.POST("/update_sort", adminHandlers.TaskConfigUpdateSort)
-	taskConfigGroup.GET("/:id", adminHandlers.TaskConfigDetail)
-
-	badgeGroup := group.Group("/badge")
-	badgeGroup.GET("/list", adminHandlers.BadgeList)
-	badgeGroup.POST("/list", adminHandlers.BadgeList)
-	badgeGroup.POST("/create", adminHandlers.BadgeCreate)
-	badgeGroup.POST("/update", adminHandlers.BadgeUpdate)
-	badgeGroup.POST("/delete", adminHandlers.BadgeRemove)
-	badgeGroup.POST("/update_sort", adminHandlers.BadgeUpdateSort)
-	badgeGroup.GET("/:id", adminHandlers.BadgeDetail)
-
-	levelConfigGroup := group.Group("/level-config")
-	levelConfigGroup.POST("/list", adminHandlers.LevelConfigList)
-	levelConfigGroup.POST("/save_all", adminHandlers.LevelConfigSaveAll)
-	levelConfigGroup.GET("/:id", adminHandlers.LevelConfigDetail)
-
-	userTaskLogGroup := group.Group("/user-task-log")
-	userTaskLogGroup.POST("/list", adminHandlers.UserTaskLogList)
-	userTaskLogGroup.GET("/:id", adminHandlers.UserTaskLogDetail)
-
-	userExpLogGroup := group.Group("/user-exp-log")
-	userExpLogGroup.POST("/list", adminHandlers.UserExpLogList)
-	userExpLogGroup.GET("/:id", adminHandlers.UserExpLogDetail)
-
-	userBadgeGroup := group.Group("/user-badge")
-	userBadgeGroup.POST("/list", adminHandlers.UserBadgeList)
-	userBadgeGroup.GET("/:id", adminHandlers.UserBadgeDetail)
 
 	operateLogGroup := group.Group("/operate-log")
 	operateLogGroup.POST("/list", adminHandlers.OperateLogList)

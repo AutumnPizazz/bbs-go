@@ -130,9 +130,6 @@ func NewUserDoc(user *models.User) *UserDocument {
 		CommentCount: user.CommentCount,
 		FansCount:    user.FansCount,
 		FollowCount:  user.FollowCount,
-		Score:        user.Score,
-		Exp:          user.Exp,
-		Level:        user.Level,
 		CreateTime:   user.CreateTime,
 	}
 }

@@ -65,10 +65,6 @@ const (
 	SysConfigAttachmentConfig           = "attachmentConfig"           // 附件配置（帖子附件）
 	SysConfigScriptInjections           = "scriptInjections"           // head脚本注入配置
 	SysConfigTopicListStyle             = "topicListStyle"             // 帖子列表样式
-	SysConfigEnableQaBounty             = "enableQaBounty"             // 是否开启问答悬赏
-	SysConfigQaBountyMin                = "qaBountyMin"                // 问答悬赏积分下限
-	SysConfigQaBountyMax                = "qaBountyMax"                // 问答悬赏积分上限
-	SysConfigQaBountyRequired           = "qaBountyRequired"           // 问答帖是否必填悬赏
 	SysConfigNotificationTypes          = "notificationTypes"          // 通知类型配置（站内信+邮件开关）
 )
 
@@ -83,49 +79,7 @@ const (
 	EntityTopic      = "topic"
 	EntityComment    = "comment"
 	EntityUser       = "user"
-	EntityCheckIn    = "checkIn"
-	EntityTask       = "task"
 	EntityAttachment = "attachment"
-)
-
-const (
-	SourceTypeQaBounty           = "qa_bounty"           // SourceTypeQaBounty 积分来源：问答悬赏（UserScoreLog.SourceType）
-	SourceTypeQaBountyRefund     = "qa_bounty_refund"    // SourceTypeQaBountyRefund 积分来源：问答悬赏退回（帖子删除且未采纳答案时退给题主）
-	SourceTypeAttachmentDownload = "attachment_download" // 附件下载扣积分
-	SourceTypeAttachmentIncome   = "attachment_income"   // 附件下载帖主收入（可选）
-)
-
-// TaskEventType 任务事件类型（TaskConfig.EventType）
-const (
-	TaskEventTypeUserLogin      = "user.login"
-	TaskEventTypeCheckIn        = "checkin"
-	TaskEventTypeTopicCreate    = "topic.create"
-	TaskEventTypeQaQuestion     = "qa.question.publish"
-	TaskEventTypeQaAnswerAccept = "qa.answer.accept"
-	TaskEventTypeCommentCreate  = "comment.create"
-	TaskEventTypeFollowCreate   = "follow.create"
-	TaskEventTypeFavoriteCreate = "favorite.create"
-	TaskEventTypeLikeCreate     = "like.create"
-	TaskEventTypeLevel10        = "level.10"
-)
-
-// TaskGroup 任务分组
-type TaskGroup string
-
-const (
-	TaskGroupNewbie      TaskGroup = "newbie"      // 新手任务
-	TaskGroupDaily       TaskGroup = "daily"       // 每日任务
-	TaskGroupAchievement TaskGroup = "achievement" // 成就任务
-)
-
-type TaskPeriod int
-
-const (
-	TaskPeriodLifetime TaskPeriod = 0 // 一次性/终身
-	TaskPeriodDaily    TaskPeriod = 1 // 每日
-	TaskPeriodWeekly   TaskPeriod = 2 // 每周
-	TaskPeriodMonthly  TaskPeriod = 3 // 每月
-	TaskPeriodYearly   TaskPeriod = 4 // 每年
 )
 
 // 用户角色
@@ -162,12 +116,6 @@ const (
 	ContentTypeHtml     ContentType = "html"
 	ContentTypeMarkdown ContentType = "markdown"
 	ContentTypeText     ContentType = "text"
-)
-
-// 积分操作类型
-const (
-	ScoreTypeIncr = 0 // 积分+
-	ScoreTypeDecr = 1 // 积分-
 )
 
 type TopicType int
@@ -259,16 +207,3 @@ const (
 	ForbiddenWordTypeRegex = "regex"
 )
 
-// BadgeName 勋章名称常量
-type BadgeName string
-
-const (
-	BadgeNameNewcomer     BadgeName = "badge_newcomer"      // 新人报到
-	BadgeNameFirstPost    BadgeName = "badge_first_post"    // 初来乍到/First Post
-	BadgeNameFirstComment BadgeName = "badge_first_comment" // 初次发言/First Comment
-	BadgeNameAuthor       BadgeName = "badge_author"        // 内容创作者/Author
-	BadgeNameHelper       BadgeName = "badge_helper"        // 热心助人/Helper
-	BadgeNameStreak7      BadgeName = "badge_streak_7"      // 坚持一周/7-day Streak
-	BadgeNameStreak30     BadgeName = "badge_streak_30"     // 月度打卡王/30-day Streak
-	BadgeNameVeteran      BadgeName = "badge_veteran"       // 资深玩家/Veteran
-)

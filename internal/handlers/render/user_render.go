@@ -1,8 +1,6 @@
 package render
 
 import (
-	"math"
-
 	"bbs-go/internal/cache"
 	"bbs-go/internal/models"
 	"bbs-go/internal/models/constants"
@@ -10,7 +8,6 @@ import (
 	"bbs-go/internal/pkg/bbsurls"
 	"bbs-go/internal/pkg/idcodec"
 	"bbs-go/internal/pkg/locales"
-	"bbs-go/internal/services"
 	"strconv"
 	"strings"
 
@@ -45,9 +42,6 @@ func BuildUserInfo(user *models.User) *resp.UserInfo {
 		CommentCount: user.CommentCount,
 		FansCount:    user.FansCount,
 		FollowCount:  user.FollowCount,
-		Score:        user.Score,
-		Exp:          user.Exp,
-		Level:        user.Level,
 		Description:  user.Description,
 		CreateTime:   user.CreateTime,
 		Forbidden:    user.IsForbidden(),
@@ -61,25 +55,15 @@ func BuildUserInfo(user *models.User) *resp.UserInfo {
 		// ret.SmallAvatar = avatar
 	}
 
-	if levelConfig := cache.LevelConfigCache.GetByLevel(user.Level); levelConfig != nil {
-		ret.LevelTitle = levelConfig.Title
-	}
-
 	if len(ret.Description) == 0 {
 		ret.Description = locales.Get("user.default_description")
 	}
 	if user.Status == constants.StatusDeleted {
 		ret.Nickname = locales.Get("user.blacklist")
 		ret.Description = ""
-		ret.Score = 0
-		ret.Exp = 0
-		ret.Level = 0
 		ret.Forbidden = true
-	} else {
-		ret.ExpProgress = buildExpProgress(user)
-		if ret.Forbidden {
-			redactForbiddenUserInfo(ret)
-		}
+	} else if ret.Forbidden {
+		redactForbiddenUserInfo(ret)
 	}
 	return ret
 }
@@ -89,56 +73,6 @@ func redactForbiddenUserInfo(userInfo *resp.UserInfo) {
 	userInfo.Avatar = ""
 	userInfo.SmallAvatar = ""
 	userInfo.Description = ""
-}
-
-// buildExpProgress 根据用户当前经验与等级配置，计算当前等级内经验进度（用于进度条与文案展示）
-func buildExpProgress(user *models.User) *resp.ExpProgressResponse {
-	if user == nil {
-		return nil
-	}
-	current := cache.LevelConfigCache.GetByLevel(user.Level)
-	if current == nil {
-		return nil
-	}
-	needCurrent := current.NeedExp
-	expInCurrent := user.Exp - needCurrent
-	if expInCurrent < 0 {
-		expInCurrent = 0
-	}
-
-	next := cache.LevelConfigCache.GetByLevel(user.Level + 1)
-	var expNeedForNext int
-	var isMaxLevel bool
-	if next == nil {
-		expNeedForNext = 0
-		isMaxLevel = true
-	} else {
-		expNeedForNext = next.NeedExp - current.NeedExp
-		isMaxLevel = false
-	}
-
-	var percent int
-	if isMaxLevel || expNeedForNext <= 0 {
-		percent = 100
-	} else {
-		if expInCurrent > expNeedForNext {
-			expInCurrent = expNeedForNext
-		}
-		percent = int(math.Round(float64(expInCurrent) * 100 / float64(expNeedForNext)))
-		if percent > 100 {
-			percent = 100
-		}
-	}
-
-	return &resp.ExpProgressResponse{
-		CurrentExp:          user.Exp,
-		Level:               user.Level,
-		LevelTitle:          current.Title,
-		ExpInCurrentLevel:   expInCurrent,
-		ExpNeedForNextLevel: expNeedForNext,
-		ExpProgressPercent:  percent,
-		IsMaxLevel:          isMaxLevel,
-	}
 }
 
 func BuildUserDetail(user *models.User) *resp.UserDetail {

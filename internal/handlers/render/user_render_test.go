@@ -39,10 +39,6 @@ func TestMain(m *testing.M) {
 	sqlDB.SetMaxOpenConns(1)
 	sqlDB.SetMaxIdleConns(1)
 	sqls.SetDB(db)
-	if err := db.AutoMigrate(&models.LevelConfig{}); err != nil {
-		panic(err)
-	}
-
 	code := m.Run()
 	_ = sqlDB.Close()
 	os.Exit(code)

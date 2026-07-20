@@ -1,10 +1,10 @@
 import Link from "@/components/common/link"
-import { ChevronRight, MessageSquareQuote, Trophy } from "lucide-react"
+import { ChevronRight, MessageSquareQuote } from "lucide-react"
 
 import { UserAvatar } from "@/components/common/avatar"
 import { EmptyState } from "@/components/common/empty-state"
-import type { Favorite, ScoreLog, UserMessage } from "@/lib/api/types"
-import { formatDateTime, prettyDate } from "@/lib/format"
+import type { Favorite, UserMessage } from "@/lib/api/types"
+import { prettyDate } from "@/lib/format"
 import type { TFunction } from "@/lib/i18n"
 
 export function FavoriteList({
@@ -140,78 +140,6 @@ export function MessageList({
           </div>
         </li>
       ))}
-    </ul>
-  )
-}
-
-export function ScoreLogList({
-  scoreLogs,
-  t,
-}: {
-  scoreLogs: ScoreLog[]
-  t: TFunction
-}) {
-  if (!scoreLogs.length) {
-    return (
-      <div className="rounded-xl bg-muted/25 px-4 py-14 text-center">
-        <Trophy
-          className="mx-auto mb-3 h-10 w-10 text-muted-foreground/40"
-          strokeWidth="1.5"
-        />
-        <p className="text-sm text-muted-foreground/80">{t("common.noData")}</p>
-      </div>
-    )
-  }
-
-  return (
-    <ul className="flex w-full list-none flex-col gap-2">
-      {scoreLogs.map((scoreLog) => {
-        const gain = scoreLog.type === 0
-        return (
-          <li
-            key={scoreLog.id}
-            className="flex min-w-0 flex-col gap-1.5 rounded-xl bg-muted p-4 transition-colors hover:bg-muted/50 sm:flex-row sm:items-center sm:gap-4"
-          >
-            <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap sm:gap-3">
-              <span
-                className={
-                  gain
-                    ? "inline-flex items-center rounded-full bg-emerald-400/20 px-2.5 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
-                    : "inline-flex items-center rounded-full bg-rose-400/20 px-2.5 py-0.5 text-xs font-medium text-rose-700 dark:bg-rose-500/15 dark:text-rose-300"
-                }
-              >
-                {gain
-                  ? t("user.scores.gainPoints")
-                  : t("user.scores.losePoints")}
-              </span>
-              <span
-                className={
-                  gain
-                    ? "inline-flex items-center gap-1 font-semibold text-emerald-700 tabular-nums dark:text-emerald-300"
-                    : "inline-flex items-center gap-1 font-semibold text-rose-700 tabular-nums dark:text-rose-300"
-                }
-              >
-                <Trophy className="h-3.5 w-3.5 shrink-0 opacity-70" />
-                {gain ? "+" : ""}
-                {scoreLog.score}
-              </span>
-            </div>
-            {scoreLog.description ? (
-              <p
-                className="min-w-0 flex-1 truncate text-sm text-muted-foreground/90 sm:truncate"
-                title={scoreLog.description}
-              >
-                {scoreLog.description}
-              </p>
-            ) : null}
-            {scoreLog.createTime ? (
-              <time className="shrink-0 text-xs text-muted-foreground/80">
-                {formatDateTime(scoreLog.createTime)}
-              </time>
-            ) : null}
-          </li>
-        )
-      })}
     </ul>
   )
 }

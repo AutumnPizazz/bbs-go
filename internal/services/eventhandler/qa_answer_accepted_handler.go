@@ -30,16 +30,11 @@ func sendQaAnswerAcceptedMsg(topicId, acceptedUserId int64) {
 	var (
 		from         = topic.UserId
 		to           = acceptedUserId
-		bountyScore  = topic.BountyScore
 		quoteContent = "《" + topic.GetTitle() + "》"
 	)
-	title := locales.Get("message.qa_answer_accepted_msg_title")
-	if bountyScore > 0 {
-		title = locales.Getf("message.qa_answer_accepted_msg_title_with_bounty", bountyScore)
-	}
-	services.MessageService.SendMsg(from, to, msg.TypeQaAnswerAccepted, title, "", quoteContent,
+	services.MessageService.SendMsg(from, to, msg.TypeQaAnswerAccepted,
+		locales.Get("message.qa_answer_accepted_msg_title"), "", quoteContent,
 		&msg.QaAnswerAcceptedExtraData{
-			TopicId:     topicId,
-			BountyScore: bountyScore,
+			TopicId: topicId,
 		})
 }

@@ -102,11 +102,11 @@ func runMigration(version int64) error {
 
 func init() {
 	register(1, "init migration", migrate_init)
-	register(2, "init task data", migrate_init_task_data)
+	register(2, "legacy task data removed", func() error { return nil })
 	register(3, "add email_code biz_type", migrate_add_email_code_biz_type)
 	register(5, "migrate smtp config to sys config", migrate_smtp_config_to_sys_config)
 	register(6, "init topic qa fields", migrate_topic_qa_init)
-	register(7, "qa bounty config defaults", migrate_qa_bounty_config)
+	register(7, "legacy qa bounty config removed", func() error { return nil })
 	register(8, "notification types defaults", migrate_notification_types_defaults)
 	register(9, "attachment config defaults", migrate_attachment_config)
 	register(10, "category parent_id for hierarchy", migrate_category_parent_id)
@@ -114,4 +114,5 @@ func init() {
 	register(12, "drop legacy api permission tables", migrate_drop_legacy_api_tables)
 	register(13, "drop legacy menu tables", migrate_drop_legacy_menu_tables)
 	register(15, "remove comment admin permissions", migrate_remove_comment_admin_permissions)
+	register(16, "remove task growth and points systems", migrate_remove_task_growth_and_points)
 }

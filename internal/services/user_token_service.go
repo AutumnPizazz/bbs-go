@@ -8,7 +8,6 @@ import (
 	"bbs-go/internal/models"
 	"bbs-go/internal/models/constants"
 	"bbs-go/internal/pkg/errs"
-	"bbs-go/internal/pkg/event"
 	"bbs-go/internal/repositories"
 
 	"bbs-go/internal/pkg/ginx"
@@ -53,33 +52,7 @@ func (s *userTokenService) GetCurrent(ctx *gin.Context) *models.User {
 		return nil
 	}
 
-	// 登录态访问：用于每日登录任务（带 token 打开网站即算今日登录，每用户每天仅发一次）
-	trySendUserLoginEvent(ctx, user.Id)
-
 	return user
-}
-
-// trySendUserLoginEvent 在登录态访问时发送 user.login 事件，供每日登录任务使用。每用户每天仅发一次（由布隆过滤器 TryMarkAndReturnIfNew 原子保证）。
-func trySendUserLoginEvent(ctx *gin.Context, userId int64) {
-	if ctx == nil || userId <= 0 {
-		return
-	}
-	// 确保本次请求只调用一次
-	ctxKeyDailyVisitSent := "daily_visit_sent"
-	if _, exists := ctx.Get(ctxKeyDailyVisitSent); exists {
-		return
-	}
-	ctx.Set(ctxKeyDailyVisitSent, true)
-
-	// 如果今日已发送过，则不发送
-	if !cache.DailyVisitCache.TryMarkAndReturnIfNew(userId) {
-		return
-	}
-	event.Send(event.UserLoginEvent{
-		UserId:     userId,
-		LoginTime:  dates.NowTimestamp(),
-		IsNewLogin: false,
-	})
 }
 
 func (s *userTokenService) CheckLogin(ctx *gin.Context) (*models.User, error) {

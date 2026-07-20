@@ -35,7 +35,6 @@ func userBuildUserItem(user *models.User, buildRoleIds bool) map[string]interfac
 		Put("roles", user.GetRoles()).
 		Put("username", user.Username.String).
 		Put("email", user.Email.String).
-		Put("score", user.Score).
 		Put("forbidden", user.IsForbidden())
 	if buildRoleIds {
 		b.Put("roleIds", services.UserRoleService.GetUserRoleIds(user.Id))

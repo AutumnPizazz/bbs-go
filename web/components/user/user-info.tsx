@@ -5,7 +5,6 @@ import type { UserSummary } from "@/lib/api/types"
 import type { TFunction } from "@/lib/i18n"
 
 type UserInfoSummary = UserSummary & {
-  level?: number
   topicCount?: number
   commentCount?: number
 }
@@ -32,20 +31,6 @@ export function UserInfo({ user, t }: { user: UserInfoSummary; t: TFunction }) {
       </div>
       <div className="border-t bg-foreground/[0.01] py-1.5">
         <ul className="flex text-center">
-          <li className="w-full">
-            <span className="text-[13px] font-normal text-muted-foreground">
-              {t("component.userInfo.level")}
-            </span>
-            <br />
-            <b>{user.level ?? 0}</b>
-          </li>
-          <li className="w-full">
-            <span className="text-[13px] font-normal text-muted-foreground">
-              {t("component.userInfo.score")}
-            </span>
-            <br />
-            <b>{user.score ?? 0}</b>
-          </li>
           <li className="w-full">
             <span className="text-[13px] font-normal text-muted-foreground">
               {t("component.userInfo.topicCount")}

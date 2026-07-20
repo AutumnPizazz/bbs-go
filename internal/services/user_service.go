@@ -5,7 +5,6 @@ import (
 	"bbs-go/internal/models/dto"
 	"bbs-go/internal/pkg/bbsurls"
 	"bbs-go/internal/pkg/errs"
-	"bbs-go/internal/pkg/event"
 	"bbs-go/internal/pkg/locales"
 	"bbs-go/internal/pkg/search"
 	"bbs-go/internal/pkg/str"
@@ -13,7 +12,6 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -147,8 +145,6 @@ func (s *userService) Forbidden(operatorId, userId int64, days int, reason strin
 
 		// 永久禁言
 		if days == -1 {
-			user := cache.UserCache.Get(userId)
-			_ = s.DecrScore(userId, user.Score, constants.EntityUser, strconv.FormatInt(operatorId, 10), "永久禁言")
 			go func() {
 				// 删除话题
 				TopicService.ScanByUser(userId, func(topics []models.Topic) {
@@ -686,167 +682,3 @@ func (s *userService) CheckPostStatus(user *models.User) error {
 	return nil
 }
 
-// IncrScore 增加分数
-func (s *userService) IncrScore(userId int64, score int, sourceType, sourceId, description string) error {
-	if score <= 0 {
-		return errors.New(locales.Get("points.must_be_positive"))
-	}
-	return sqls.WithTransaction(func(ctx *sqls.TxContext) error {
-		return s.addScore(ctx, userId, score, sourceType, sourceId, description)
-	})
-}
-
-// DecrScore 减少分数
-func (s *userService) DecrScore(userId int64, score int, sourceType, sourceId, description string) error {
-	if score <= 0 {
-		return errors.New(locales.Get("points.must_be_positive"))
-	}
-	return sqls.WithTransaction(func(ctx *sqls.TxContext) error {
-		return s.addScore(ctx, userId, -score, sourceType, sourceId, description)
-	})
-}
-
-// AddScoreTx 在已有事务内增加分数（供发帖/采纳等场景复用同一事务）
-func (s *userService) AddScoreTx(ctx *sqls.TxContext, userId int64, score int, sourceType, sourceId, description string) error {
-	if score <= 0 {
-		return errors.New(locales.Get("points.must_be_positive"))
-	}
-	return s.addScore(ctx, userId, score, sourceType, sourceId, description)
-}
-
-// DecrScoreTx 在已有事务内减少分数（供发帖等场景复用同一事务）
-func (s *userService) DecrScoreTx(ctx *sqls.TxContext, userId int64, score int, sourceType, sourceId, description string) error {
-	if score <= 0 {
-		return errors.New(locales.Get("points.must_be_positive"))
-	}
-	return s.addScore(ctx, userId, -score, sourceType, sourceId, description)
-}
-
-// addScore 加分数，也可以加负数
-func (s *userService) addScore(ctx *sqls.TxContext, userId int64, score int, sourceType, sourceId, description string) error {
-	if score == 0 {
-		return errors.New(locales.Get("points.cannot_be_zero"))
-	}
-	user := repositories.UserRepository.Get(ctx.Tx, userId)
-	if user == nil {
-		return errors.New(locales.Get("user.not_found"))
-	}
-
-	if err := repositories.UserRepository.Updates(ctx.Tx, userId, map[string]interface{}{
-		"score":       gorm.Expr("score + ?", score),
-		"update_time": dates.NowTimestamp(),
-	}); err != nil {
-		return err
-	}
-
-	scoreType := constants.ScoreTypeIncr
-	if score < 0 {
-		scoreType = constants.ScoreTypeDecr
-	}
-	if err := repositories.UserScoreLogRepository.Create(ctx.Tx, &models.UserScoreLog{
-		UserId:      userId,
-		SourceType:  sourceType,
-		SourceId:    sourceId,
-		Description: description,
-		Type:        scoreType,
-		Score:       score,
-		CreateTime:  dates.NowTimestamp(),
-	}); err != nil {
-		return err
-	}
-
-	ctx.RegisterCallback(func() {
-		cache.UserCache.Invalidate(userId)
-	})
-	return nil
-}
-
-// addExpTx 增加经验，也可以减去经验
-func (s *userService) addExpTx(ctx *sqls.TxContext, userId int64, exp int, sourceType, sourceId, description string) error {
-	if exp == 0 {
-		return errors.New(locales.Get("xp.cannot_be_zero"))
-	}
-	user := repositories.UserRepository.Get(ctx.Tx, userId)
-	if user == nil {
-		return errors.New(locales.Get("user.not_found"))
-	}
-
-	if repositories.UserExpLogRepository.Take(ctx.Tx, "source_type = ? AND source_id = ?", sourceType, sourceId) != nil {
-		return nil
-	}
-
-	if err := repositories.UserRepository.Updates(ctx.Tx, userId, map[string]interface{}{
-		"exp":         gorm.Expr("exp + ?", exp),
-		"update_time": dates.NowTimestamp(),
-	}); err != nil {
-		return err
-	}
-
-	expType := constants.ScoreTypeIncr
-	if exp < 0 {
-		expType = constants.ScoreTypeDecr
-	}
-	if err := repositories.UserExpLogRepository.Create(ctx.Tx, &models.UserExpLog{
-		UserId:      userId,
-		SourceType:  sourceType,
-		SourceId:    sourceId,
-		Description: description,
-		Type:        expType,
-		Exp:         exp,
-		CreateTime:  dates.NowTimestamp(),
-	}); err != nil {
-		return err
-	}
-
-	var expVal int
-	if err := ctx.Tx.Model(&models.User{}).Select("exp").Where("id = ?", userId).Scan(&expVal).Error; err != nil {
-		return err
-	}
-	level, err := s.calcLevelByExp(ctx.Tx, expVal)
-	if err != nil {
-		return err
-	}
-	if level > 0 && level != user.Level {
-		if err := repositories.UserRepository.UpdateColumn(ctx.Tx, userId, "level", level); err != nil {
-			return err
-		}
-		if level > user.Level {
-			oldLevel := user.Level
-			newLevel := level
-			updateTime := dates.NowTimestamp()
-			ctx.RegisterCallback(func() {
-				event.Send(event.LevelUpEvent{
-					UserId:     userId,
-					OldLevel:   oldLevel,
-					NewLevel:   newLevel,
-					UpdateTime: updateTime,
-				})
-			})
-		}
-	}
-
-	cache.UserCache.Invalidate(userId)
-	return nil
-}
-
-func (s *userService) calcLevelByExp(tx *gorm.DB, exp int) (int, error) {
-	if exp < 0 {
-		return 0, errors.New("exp must be non-negative")
-	}
-	cfg := &models.LevelConfig{}
-	err := tx.Model(&models.LevelConfig{}).
-		Where("status = ? AND need_exp <= ?", constants.StatusOk, exp).
-		Order("level DESC").
-		Limit(1).
-		Take(cfg).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return 1, nil
-		}
-		return 0, err
-	}
-	if cfg.Level <= 0 {
-		return 1, nil
-	}
-	return cfg.Level, nil
-}

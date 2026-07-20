@@ -19,55 +19,12 @@ type UserInfo struct {
 	CommentCount int              `json:"commentCount"` // 跟帖数量
 	FansCount    int              `json:"fansCount"`    // 粉丝数量
 	FollowCount  int              `json:"followCount"`  // 关注数量
-	Score        int              `json:"score"`        // 积分
-	Exp          int              `json:"exp"`          // 经验值
-	Level        int              `json:"level"`        // 等级
-	LevelTitle   string           `json:"levelTitle"`   // 等级称号
 	Description  string           `json:"description"`
 	CreateTime   int64            `json:"createTime"`
 
 	Forbidden bool `json:"forbidden"` // 是否禁言
 	Followed  bool `json:"followed"`  // 是否关注
 
-	// ExpProgress 经验值进度（当前等级内进度条数据），由 BuildUserInfo 根据 LevelConfig 计算填充；未登录或异常时为 nil
-	ExpProgress *ExpProgressResponse `json:"expProgress,omitempty"`
-}
-
-// ExpProgressResponse 用户经验值进度（用于当前等级内的进度条展示）
-// 计算依据：LevelConfig 中 NeedExp 表示达到该等级所需的累计经验，严格递增。
-// 当前等级区间为 [当前级 NeedExp, 下一级 NeedExp)，进度 = 在此区间内已获得的经验占比。
-type ExpProgressResponse struct {
-	// CurrentExp 用户当前累计经验值（与 UserInfo.Exp 一致，便于组件只读进度）
-	// 计算方式：直接取 user.Exp。
-	CurrentExp int `json:"currentExp"`
-
-	// Level 当前等级（与 UserInfo.Level 一致）
-	// 计算方式：直接取 user.Level。
-	Level int `json:"level"`
-
-	// LevelTitle 当前等级称号（与 UserInfo.LevelTitle 一致）
-	// 计算方式：由 LevelConfig(level).Title 得到。
-	LevelTitle string `json:"levelTitle"`
-
-	// ExpInCurrentLevel 当前等级内已获得的经验数（用于文案展示，如「120 / 350」中的 120）
-	// 计算方式：当前累计经验 - 当前等级起始所需累计经验 = user.Exp - LevelConfig(level).NeedExp。
-	// 若 user.Exp < 当前级 NeedExp，取 0；若已超过下一级 NeedExp，取 expNeedForNextLevel（封顶）。
-	ExpInCurrentLevel int `json:"expInCurrentLevel"`
-
-	// ExpNeedForNextLevel 从当前等级升到下一级，在本等级段内需要的经验数（即区间长度，用于文案中的「/ 350」）
-	// 计算方式：下一级所需累计经验 - 当前级所需累计经验 = LevelConfig(level+1).NeedExp - LevelConfig(level).NeedExp。
-	// 若已是最高等级（无下一级配置），则为 0，前端可配合 isMaxLevel 显示「已满级」或 100%。
-	ExpNeedForNextLevel int `json:"expNeedForNextLevel"`
-
-	// ExpProgressPercent 当前等级内经验进度百分比，取值 0～100，供进度条直接使用
-	// 计算方式：round(ExpInCurrentLevel / ExpNeedForNextLevel * 100)。
-	// 当 ExpNeedForNextLevel 为 0（满级）时取 100；若分母为 0 且未满级则取 0。
-	ExpProgressPercent int `json:"expProgressPercent"`
-
-	// IsMaxLevel 是否已为最高等级（无下一级可升）
-	// 计算方式：不存在 LevelConfig(level+1) 或为配置中的最高级时为 true。
-	// 为 true 时前端可显示 100% 或「已满级」。
-	IsMaxLevel bool `json:"isMaxLevel"`
 }
 
 // UserDetail 用户详细信息
@@ -182,7 +139,6 @@ type TopicResponse struct {
 	QaStatus          constants.QaStatus   `json:"qaStatus"`
 	AcceptedCommentId int64                `json:"acceptedCommentId"`
 	SolvedAt          int64                `json:"solvedAt"`
-	BountyScore       int                  `json:"bountyScore"`
 	User              *UserInfo            `json:"user"`
 	Category          *CategoryResponse    `json:"category"`
 	Tags              *[]TagResponse       `json:"tags"`
@@ -213,9 +169,7 @@ type AttachmentResponse struct {
 	Id            string `json:"id"`            // ID
 	FileName      string `json:"fileName"`      // 原始文件名
 	FileSize      int64  `json:"fileSize"`      // 文件大小（字节）
-	DownloadScore int    `json:"downloadScore"` // 下载所需积分
 	DownloadCount int    `json:"downloadCount"` // 下载次数
-	Downloaded    bool   `json:"downloaded"`    // 当前用户是否已购买（可免费下载）
 }
 
 type VoteResponse struct {
@@ -341,51 +295,3 @@ type DictListResponse struct {
 	Children []DictListResponse `json:"children"`
 }
 
-// TaskGroupInfo 任务分组信息（含多语言名称）
-type TaskGroupInfo struct {
-	Key  constants.TaskGroup `json:"key"`
-	Name string              `json:"name"`
-}
-
-type TaskResponse struct {
-	Id             int64                 `json:"id"`
-	GroupName      constants.TaskGroup   `json:"groupName"`
-	Title          string                `json:"title"`
-	Description    string                `json:"description"`
-	EventType      string                `json:"eventType"`
-	Period         constants.TaskPeriod  `json:"period"`
-	EventCount     int                   `json:"eventCount"`
-	MaxFinishCount int                   `json:"maxFinishCount"`
-	Score          int                   `json:"score"`
-	Exp            int                   `json:"exp"`
-	BadgeId        int64                 `json:"badgeId"`
-	BtnName        string                `json:"btnName"`
-	ActionUrl      string                `json:"actionUrl"`
-	SortNo         int                   `json:"sortNo"`
-	StartTime      int64                 `json:"startTime"`
-	EndTime        int64                 `json:"endTime"`
-	Status         int                   `json:"status"`
-	UserProgress   *TaskProgressResponse `json:"userProgress,omitempty"`
-}
-
-// TaskProgressResponse 用户在某任务上的当前进度
-type TaskProgressResponse struct {
-	PeriodKey      int `json:"periodKey"`      // 当前周期 key（一次性为 0）
-	EventProgress  int `json:"eventProgress"`  // 本周期已累计的事件次数
-	EventTarget    int `json:"eventTarget"`    // 完成一次任务需要的事件次数
-	FinishedCount  int `json:"finishedCount"`  // 本周期已完成次数
-	MaxFinishCount int `json:"maxFinishCount"` // 本周期最多可完成次数
-}
-
-type BadgeResponse struct {
-	Id          int64  `json:"id"`
-	Name        string `json:"name"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	Icon        string `json:"icon"`
-	SortNo      int    `json:"sortNo"`
-	Status      int    `json:"status"`
-	Owned       bool   `json:"owned"`      // 当前登录用户是否已获得
-	Worn        bool   `json:"worn"`       // 是否已佩戴
-	ObtainTime  int64  `json:"obtainTime"` // 获得时间（未获得为0）
-}

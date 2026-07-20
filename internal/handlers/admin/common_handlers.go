@@ -3,7 +3,6 @@ package admin
 import (
 	"bbs-go/internal/models"
 	"bbs-go/internal/models/constants"
-	"bbs-go/internal/pkg/config"
 	"bbs-go/internal/repositories"
 	"time"
 
@@ -47,12 +46,6 @@ func buildRecentUserItems(users []models.User) []dashboardRecentItem {
 	return items
 }
 
-type TaskEventTypeItem struct {
-	Value string `json:"value"`
-	Title string `json:"title"`
-}
-
-// GetTask_event_types 获取任务事件类型枚举（用于后台下拉选择）
 func CommonOverview(ctx *gin.Context) {
 
 	now := time.Now()
@@ -85,63 +78,5 @@ func CommonOverview(ctx *gin.Context) {
 			"users":  buildRecentUserItems(recentUsers),
 		}).
 		JsonResult())
-
-}
-
-func CommonTaskEventTypes(ctx *gin.Context) {
-
-	lang := config.Instance.Language
-	if !lang.IsValid() {
-		lang = config.DefaultLanguage
-	}
-
-	items := []TaskEventTypeItem{
-		{Value: constants.TaskEventTypeUserLogin},
-		{Value: constants.TaskEventTypeCheckIn},
-		{Value: constants.TaskEventTypeTopicCreate},
-		{Value: constants.TaskEventTypeQaQuestion},
-		{Value: constants.TaskEventTypeQaAnswerAccept},
-		{Value: constants.TaskEventTypeCommentCreate},
-		{Value: constants.TaskEventTypeFollowCreate},
-		{Value: constants.TaskEventTypeFavoriteCreate},
-		{Value: constants.TaskEventTypeLikeCreate},
-		{Value: constants.TaskEventTypeLevel10},
-	}
-
-	if lang == config.LanguageEnUS {
-		titleMap := map[string]string{
-			constants.TaskEventTypeUserLogin:      "Daily login",
-			constants.TaskEventTypeCheckIn:        "Check-in",
-			constants.TaskEventTypeTopicCreate:    "Create topic",
-			constants.TaskEventTypeQaQuestion:     "Publish question",
-			constants.TaskEventTypeQaAnswerAccept: "Answer accepted",
-			constants.TaskEventTypeCommentCreate:  "Create comment",
-			constants.TaskEventTypeFollowCreate:   "Follow user",
-			constants.TaskEventTypeFavoriteCreate: "Favorite",
-			constants.TaskEventTypeLikeCreate:     "Like",
-			constants.TaskEventTypeLevel10:        "Reach level 10",
-		}
-		for i := range items {
-			items[i].Title = titleMap[items[i].Value]
-		}
-	} else {
-		titleMap := map[string]string{
-			constants.TaskEventTypeUserLogin:      "每日登录",
-			constants.TaskEventTypeCheckIn:        "签到",
-			constants.TaskEventTypeTopicCreate:    "发帖",
-			constants.TaskEventTypeQaQuestion:     "发布问题",
-			constants.TaskEventTypeQaAnswerAccept: "回答被采纳",
-			constants.TaskEventTypeCommentCreate:  "评论",
-			constants.TaskEventTypeFollowCreate:   "关注用户",
-			constants.TaskEventTypeFavoriteCreate: "收藏",
-			constants.TaskEventTypeLikeCreate:     "点赞",
-			constants.TaskEventTypeLevel10:        "达到等级 10",
-		}
-		for i := range items {
-			items[i].Title = titleMap[items[i].Value]
-		}
-	}
-
-	ginx.WriteJSON(ctx, items)
 
 }

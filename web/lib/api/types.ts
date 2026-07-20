@@ -24,10 +24,6 @@ export interface UserSummary {
   smallBackgroundImage?: string
   homePage?: string
   createTime?: number
-  score?: number
-  exp?: number
-  level?: number
-  levelTitle?: string
   topicCount?: number
   commentCount?: number
   fansCount?: number
@@ -39,15 +35,6 @@ export interface UserSummary {
   passwordSet?: boolean
   email?: string
   emailVerified?: boolean
-  expProgress?: {
-    currentExp?: number
-    level?: number
-    levelTitle?: string
-    expInCurrentLevel?: number
-    expNeedForNextLevel?: number
-    expProgressPercent?: number
-    isMaxLevel?: boolean
-  }
 }
 
 export interface ImageInfo {
@@ -77,9 +64,7 @@ export interface Attachment {
   id: EntityId
   fileName?: string
   fileSize?: number
-  downloadScore?: number
   downloadCount?: number
-  downloaded?: boolean
 }
 
 export interface TopicAttachment extends Attachment {
@@ -134,7 +119,6 @@ export interface Topic {
   viewCount?: number
   imageList?: ImageInfo[]
   qaStatus?: "solved" | "unsolved" | string
-  bountyScore?: number
   attachments?: Attachment[]
   toc?: TopicTocItem[]
   favorited?: boolean
@@ -191,7 +175,6 @@ export interface SiteConfig {
   topicCaptcha?: boolean
   createTopicEmailVerified?: boolean
   enableHideContent?: boolean
-  enableQaBounty?: boolean
   attachmentConfig?: {
     enabled?: boolean
     allowedTypes?: string[]
@@ -239,50 +222,6 @@ export interface ArticleEditForm {
   content: string
   tags?: string[]
   cover?: ImageInfo | null
-}
-
-export interface TaskGroupInfo {
-  key: string
-  name: string
-}
-
-export interface TaskProgress {
-  periodKey?: number
-  eventProgress?: number
-  eventTarget?: number
-  finishedCount?: number
-  maxFinishCount?: number
-}
-
-export interface TaskInfo {
-  id: number
-  groupName: string
-  title: string
-  description?: string
-  eventType?: string
-  period?: number
-  eventCount?: number
-  maxFinishCount?: number
-  score?: number
-  exp?: number
-  badgeId?: number
-  btnName?: string
-  actionUrl?: string
-  sortNo?: number
-  startTime?: number
-  endTime?: number
-  status?: number
-  userProgress?: TaskProgress | null
-}
-
-export interface CheckInInfo {
-  id?: number
-  userId?: number
-  latestDayName?: string
-  consecutiveDays?: number
-  checkIn?: boolean
-  updateTime?: number
-  user?: UserSummary
 }
 
 export interface LoginResult {
@@ -356,30 +295,6 @@ export interface UserMessage {
   extraData?: string
   status?: number
   createTime?: number
-}
-
-export interface ScoreLog {
-  id: number
-  userId?: number
-  sourceType?: string
-  sourceId?: string
-  description?: string
-  type: number
-  score: number
-  createTime?: number
-}
-
-export interface Badge {
-  id: number
-  name?: string
-  title?: string
-  description?: string
-  icon?: string
-  sortNo?: number
-  status?: number
-  owned?: boolean
-  worn?: boolean
-  obtainTime?: number
 }
 
 export interface BindInfo {

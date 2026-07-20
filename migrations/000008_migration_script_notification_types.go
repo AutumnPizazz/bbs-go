@@ -27,8 +27,6 @@ func migrate_notification_types_defaults() error {
 			"topicRecommend":   {Site: true, Email: true},
 			"topicDelete":      {Site: true, Email: false},
 			"articleComment":   {Site: true, Email: true},
-			"userLevelUp":      {Site: true, Email: true},
-			"userBadgeGrant":   {Site: true, Email: true},
 			"qaAnswerAccepted": {Site: true, Email: true},
 		}
 		value := jsons.ToJsonStr(defaults)

@@ -175,22 +175,6 @@ func (s *sysConfigService) IsEnableHideContent() bool {
 	return cache.SysConfigCache.GetBool(constants.SysConfigEnableHideContent)
 }
 
-func (s *sysConfigService) IsEnableQaBounty() bool {
-	return cache.SysConfigCache.GetBool(constants.SysConfigEnableQaBounty)
-}
-
-func (s *sysConfigService) GetQaBountyMin() int {
-	return cache.SysConfigCache.GetInt(constants.SysConfigQaBountyMin)
-}
-
-func (s *sysConfigService) GetQaBountyMax() int {
-	return cache.SysConfigCache.GetInt(constants.SysConfigQaBountyMax)
-}
-
-func (s *sysConfigService) IsQaBountyRequired() bool {
-	return cache.SysConfigCache.GetBool(constants.SysConfigQaBountyRequired)
-}
-
 func (s *sysConfigService) IsArticlePending() bool {
 	return cache.SysConfigCache.GetBool(constants.SysConfigArticlePending)
 }
@@ -313,7 +297,7 @@ func (s *sysConfigService) GetNotificationTypes() map[string]dto.NoticeTypeConfi
 		_ = jsons.Parse(str, &out)
 	}
 	// 默认补全缺失类型：topicDelete 默认不发邮件（保持历史行为），其余全部开启
-	allKeys := []string{"topicComment", "commentReply", "topicLike", "topicFavorite", "topicRecommend", "topicDelete", "articleComment", "userLevelUp", "userBadgeGrant", "qaAnswerAccepted"}
+	allKeys := []string{"topicComment", "commentReply", "topicLike", "topicFavorite", "topicRecommend", "topicDelete", "articleComment", "qaAnswerAccepted"}
 	for _, k := range allKeys {
 		if _, ok := out[k]; !ok {
 			if k == "topicDelete" {
@@ -343,10 +327,6 @@ func msgTypeToKey(t msg.Type) string {
 		return "topicDelete"
 	case msg.TypeArticleComment:
 		return "articleComment"
-	case msg.TypeUserLevelUp:
-		return "userLevelUp"
-	case msg.TypeUserBadgeGrant:
-		return "userBadgeGrant"
 	case msg.TypeQaAnswerAccepted:
 		return "qaAnswerAccepted"
 	default:

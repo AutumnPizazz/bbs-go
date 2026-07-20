@@ -22,7 +22,6 @@ type CreateTopicReq struct {
 	Tags          []string              `json:"tags" form:"tags"`
 	ImageList     []ImageDTO            `json:"imageList" form:"imageList"`
 	Vote          *VoteDTO              `json:"vote" form:"vote"`
-	BountyScore   int                   `json:"bountyScore" form:"bountyScore"`     // 悬赏积分（仅问答帖有效，0 表示无悬赏）
 	AttachmentIds []string              `json:"attachmentIds" form:"attachmentIds"` // 附件 ID 列表（UUID），发帖时绑定到帖子
 	UserAgent     string                `json:"userAgent" form:"userAgent"`
 	Ip            string                `json:"ip" form:"ip"`
@@ -275,11 +274,6 @@ type UserReportReq struct {
 
 func (r UserReportReq) DecodedDataId() int64 {
 	return idcodec.Decode(r.DataId)
-}
-
-type PatchDownloadScoreReq struct {
-	Id            string `json:"id" form:"id"`
-	DownloadScore int    `json:"downloadScore" form:"downloadScore"`
 }
 
 func SplitCommaStrings(value string) []string {

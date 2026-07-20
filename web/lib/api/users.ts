@@ -3,11 +3,9 @@ import { serverApiFetch as apiFetch } from "./server"
 import { toFormData } from "./client"
 import type {
   Article,
-  Badge,
   BindInfo,
   Favorite,
   PageData,
-  ScoreLog,
   SearchUser,
   Topic,
   UserMessage,
@@ -27,10 +25,6 @@ export function searchUsers(params: SearchUserParams) {
   return apiFetch<PageData<SearchUser>>("/api/search/user", {
     params,
   })
-}
-
-export function getScoreRank() {
-  return apiFetch<UserSummary[]>("/api/user/score/rank")
 }
 
 export function getUser(userId: string) {
@@ -67,12 +61,6 @@ export function getRecentUserMessages() {
   )
 }
 
-export function getUserScoreLogs(cursor?: string) {
-  return apiFetch<PageData<ScoreLog>>("/api/user/score_logs", {
-    params: { cursor },
-  })
-}
-
 export function getUserFans(userId: string, cursor?: string) {
   return apiFetch<PageData<UserSummary>>("/api/fans/fans", {
     params: { userId, cursor },
@@ -93,12 +81,6 @@ export function getRecentFans(userId: string) {
 
 export function getRecentFollowed(userId: string) {
   return apiFetch<PageData<UserSummary>>("/api/fans/recent/follow", {
-    params: { userId },
-  })
-}
-
-export function getBadges(userId: string) {
-  return apiFetch<Badge[]>("/api/badge/badges", {
     params: { userId },
   })
 }

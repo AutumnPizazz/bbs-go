@@ -54,9 +54,6 @@ type UserDocument struct {
 	CommentCount int    `json:"commentCount"`
 	FansCount    int    `json:"fansCount"`
 	FollowCount  int    `json:"followCount"`
-	Score        int    `json:"score"`
-	Exp          int    `json:"exp"`
-	Level        int    `json:"level"`
 	CreateTime   int64  `json:"createTime"`
 }
 
@@ -98,9 +95,6 @@ func newIndex(indexPath string) bleve.Index {
 	mapping.DefaultMapping.AddFieldMappingsAt("commentCount", newNumField())
 	mapping.DefaultMapping.AddFieldMappingsAt("fansCount", newNumField())
 	mapping.DefaultMapping.AddFieldMappingsAt("followCount", newNumField())
-	mapping.DefaultMapping.AddFieldMappingsAt("score", newNumField())
-	mapping.DefaultMapping.AddFieldMappingsAt("exp", newNumField())
-	mapping.DefaultMapping.AddFieldMappingsAt("level", newNumField())
 	mapping.DefaultMapping.AddFieldMappingsAt("createTime", newNumField())
 
 	index, err := bleve.New(indexPath, mapping)

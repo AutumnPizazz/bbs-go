@@ -9,11 +9,9 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"bbs-go/internal/pkg/ginx"
-	"bbs-go/internal/pkg/params"
 
 	"github.com/mlogclub/simple/common/strs"
 
-	"bbs-go/internal/models/req"
 	"bbs-go/internal/models/resp"
 	"bbs-go/internal/pkg/common"
 	"bbs-go/internal/pkg/locales"
@@ -74,8 +72,6 @@ func AttachmentUpload(ctx *gin.Context) {
 		contentType = "application/octet-stream"
 	}
 
-	downloadScore, _ := params.GetInt(ctx, "downloadScore")
-
 	var (
 		body io.Reader = file
 		size int64     = header.Size
@@ -91,7 +87,7 @@ func AttachmentUpload(ctx *gin.Context) {
 		size = int64(len(fileBytes))
 	}
 
-	att, err := services.AttachmentService.Upload(user.Id, header.Filename, body, size, contentType, downloadScore)
+	att, err := services.AttachmentService.Upload(user.Id, header.Filename, body, size, contentType)
 	if err != nil {
 		ginx.WriteJSON(ctx, err)
 		return
@@ -101,8 +97,6 @@ func AttachmentUpload(ctx *gin.Context) {
 		Id:            att.Id,
 		FileName:      att.FileName,
 		FileSize:      att.FileSize,
-		DownloadScore: att.DownloadScore,
-		Downloaded:    false,
 	})
 
 }
@@ -147,29 +141,3 @@ func AttachmentDownload(ctx *gin.Context) {
 	ctx.Redirect(302, redirectURL)
 }
 
-// PostUpdateDownloadScore 更新附件下载积分
-func AttachmentUpdateDownloadScore(ctx *gin.Context) {
-	user, err := common.CheckLogin(ctx)
-	if err != nil {
-		ginx.WriteJSON(ctx, err)
-		return
-	}
-
-	var body req.PatchDownloadScoreReq
-	if err := ginx.BindJSON(ctx, &body); err != nil {
-		ginx.WriteJSON(ctx, ginx.ErrorMessage("invalid body"))
-		return
-	}
-	att, err := services.AttachmentService.UpdateDownloadScore(body.Id, user.Id, body.DownloadScore)
-	if err != nil {
-		ginx.WriteJSON(ctx, err)
-		return
-	}
-	ginx.WriteJSON(ctx, resp.AttachmentResponse{
-		Id:            att.Id,
-		FileName:      att.FileName,
-		FileSize:      att.FileSize,
-		DownloadScore: att.DownloadScore,
-	})
-
-}

@@ -192,15 +192,7 @@ func (s *messageService) buildEmailNoticeFallbackTitle(t *models.Message) string
 		return locales.Get("email.topic_delete")
 	case msg.TypeArticleComment:
 		return locales.Get("email.article_comment")
-	case msg.TypeUserLevelUp:
-		return locales.Get("email.user_level_up")
-	case msg.TypeUserBadgeGrant:
-		return locales.Get("email.user_badge_grant")
 	case msg.TypeQaAnswerAccepted:
-		bountyScore := gjson.Get(t.ExtraData, "bountyScore").Int()
-		if bountyScore > 0 {
-			return locales.Getf("email.qa_answer_accepted_with_bounty", int(bountyScore))
-		}
 		return locales.Get("email.qa_answer_accepted")
 	}
 	return locales.Get("email.new_message")
@@ -250,10 +242,6 @@ func (s *messageService) buildEmailNoticeDetailURL(t *models.Message) string {
 		if topicId.Exists() && topicId.Int() > 0 {
 			return bbsurls.TopicUrl(topicId.Int())
 		}
-	case msg.TypeUserLevelUp:
-		return bbsurls.AbsUrl("/tasks")
-	case msg.TypeUserBadgeGrant:
-		return bbsurls.UserUrl(t.UserId) + "/badges"
 	}
 	return bbsurls.AbsUrl("/user/messages")
 }

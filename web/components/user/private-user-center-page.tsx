@@ -1,42 +1,34 @@
 "use client"
 
 import * as React from "react"
-import { Bell, Heart, Trophy } from "lucide-react"
+import { Bell, Heart } from "lucide-react"
 
 import { useRequiredUser } from "@/components/auth/require-user"
 import { useSetUnreadMessageCount } from "@/components/app/app-provider"
 import { LoadMore } from "@/components/common/load-more"
 import { WidgetCard } from "@/components/common/widget-card"
 import { UserCenterShell } from "@/components/user/user-center-shell"
-import {
-  FavoriteList,
-  MessageList,
-  ScoreLogList,
-} from "@/components/user/user-lists"
+import { FavoriteList, MessageList } from "@/components/user/user-lists"
 import { apiFetch } from "@/lib/api/client"
 import type {
-  Badge,
   Favorite,
   PageData,
-  ScoreLog,
   UserMessage,
   UserSummary,
 } from "@/lib/api/types"
 import { useI18n } from "@/lib/i18n/provider"
 
-export type PrivateUserCenterKind = "favorites" | "messages" | "scores"
-type PrivateUserCenterItem = Favorite | UserMessage | ScoreLog
+export type PrivateUserCenterKind = "favorites" | "messages"
+type PrivateUserCenterItem = Favorite | UserMessage
 
 function listPath(kind: PrivateUserCenterKind) {
   if (kind === "favorites") return "/api/user/favorites"
-  if (kind === "messages") return "/api/user/messages"
-  return "/api/user/score_logs"
+  return "/api/user/messages"
 }
 
 function titleKey(kind: PrivateUserCenterKind) {
   if (kind === "favorites") return "user.favorites.title"
-  if (kind === "messages") return "user.messages.title"
-  return "user.scores.title"
+  return "user.messages.title"
 }
 
 function TitleIcon({ kind }: { kind: PrivateUserCenterKind }) {
@@ -46,7 +38,7 @@ function TitleIcon({ kind }: { kind: PrivateUserCenterKind }) {
   if (kind === "messages") {
     return <Bell size={18} />
   }
-  return <Trophy className="h-4 w-4 shrink-0 text-emerald-500/90" />
+  return <Bell size={18} />
 }
 
 function renderList(
@@ -60,20 +52,18 @@ function renderList(
   if (kind === "messages") {
     return <MessageList messages={items as UserMessage[]} t={t} />
   }
-  return <ScoreLogList scoreLogs={items as ScoreLog[]} t={t} />
+  return <MessageList messages={items as UserMessage[]} t={t} />
 }
 
 export function PrivateUserCenterPage({
   kind,
   initialData,
-  initialBadges = [],
   initialFans = [],
   initialFollowed = [],
   serverLoaded = false,
 }: {
   kind: PrivateUserCenterKind
   initialData: PageData<PrivateUserCenterItem>
-  initialBadges?: Badge[]
   initialFans?: UserSummary[]
   initialFollowed?: UserSummary[]
   serverLoaded?: boolean
@@ -82,7 +72,6 @@ export function PrivateUserCenterPage({
   const user = useRequiredUser()
   const setUnreadMessageCount = useSetUnreadMessageCount()
   const [data, setData] = React.useState(initialData)
-  const [badges, setBadges] = React.useState(initialBadges)
   const [fans, setFans] = React.useState(initialFans)
   const [followed, setFollowed] = React.useState(initialFollowed)
   const labels = {
@@ -96,23 +85,19 @@ export function PrivateUserCenterPage({
     let mounted = true
     void Promise.all([
       apiFetch<PageData<PrivateUserCenterItem>>(listPath(kind)),
-      apiFetch<Badge[]>("/api/badge/badges", {
-        params: { userId: user.id },
-      }).catch(() => []),
       apiFetch<PageData<UserSummary>>("/api/fans/recent/fans", {
         params: { userId: user.id },
       }).catch(() => ({ results: [], cursor: "", hasMore: false })),
       apiFetch<PageData<UserSummary>>("/api/fans/recent/follow", {
         params: { userId: user.id },
       }).catch(() => ({ results: [], cursor: "", hasMore: false })),
-    ]).then(([nextData, nextBadges, nextFans, nextFollowed]) => {
+    ]).then(([nextData, nextFans, nextFollowed]) => {
       if (!mounted) return
 
       setData(nextData)
       if (kind === "messages") {
         setUnreadMessageCount(0)
       }
-      setBadges(nextBadges)
       setFans(nextFans.results || [])
       setFollowed(nextFollowed.results || [])
     })
@@ -126,7 +111,6 @@ export function PrivateUserCenterPage({
     <UserCenterShell
       user={user}
       currentUser={user}
-      badges={badges}
       fans={fans}
       followed={followed}
       t={t}

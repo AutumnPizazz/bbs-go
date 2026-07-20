@@ -3,7 +3,6 @@ package api
 import (
 	"bbs-go/internal/models/constants"
 	"bbs-go/internal/models/req"
-	"bbs-go/internal/models/resp"
 	"bbs-go/internal/pkg/common"
 	"bbs-go/internal/pkg/config"
 	"bbs-go/internal/pkg/errs"
@@ -297,46 +296,6 @@ func UserMessages(ctx *gin.Context) {
 	services.MessageService.MarkRead(user.Id)
 
 	ginx.WriteJSON(ctx, ginx.CursorData(render.BuildMessages(list), cast.ToString(nextCursor), hasMore))
-
-}
-
-func UserScoreLogs(ctx *gin.Context) {
-	user, err := common.CheckLogin(ctx)
-	if err != nil {
-		ginx.WriteJSON(ctx, err)
-		return
-	}
-	var (
-		limit     = 20
-		cursor, _ = params.GetInt64(ctx, "cursor")
-	)
-	cnd := sqls.NewCnd().Eq("user_id", user.Id).Limit(limit).Desc("id")
-	if cursor > 0 {
-		cnd.Lt("id", cursor)
-	}
-	list := services.UserScoreLogService.Find(cnd)
-
-	var (
-		nextCursor = cursor
-		hasMore    = false
-	)
-	if len(list) > 0 {
-		nextCursor = list[len(list)-1].Id
-		hasMore = len(list) == limit
-	}
-
-	ginx.WriteJSON(ctx, ginx.CursorData(list, cast.ToString(nextCursor), hasMore))
-
-}
-
-func UserScoreRank(ctx *gin.Context) {
-
-	users := cache.UserCache.GetScoreRank()
-	var results []*resp.UserInfo
-	for _, user := range users {
-		results = append(results, render.BuildUserInfo(&user))
-	}
-	ginx.WriteJSON(ctx, results)
 
 }
 

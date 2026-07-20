@@ -166,7 +166,6 @@ func TestGinRouterRegistersCompatibleAPIPaths(t *testing.T) {
 
 	for _, want := range []string{
 		http.MethodGet + " /api/topic/category_navs",
-		http.MethodGet + " /api/user/score/rank",
 		http.MethodGet + " /api/login/wx_login_config",
 		http.MethodPost + " /api/topic/accept_answer/:id",
 		http.MethodGet + " /api/admin/search/reindex/status",
@@ -176,10 +175,6 @@ func TestGinRouterRegistersCompatibleAPIPaths(t *testing.T) {
 		http.MethodPost + " /api/admin/role/list",
 		http.MethodPost + " /api/admin/link/delete",
 		http.MethodPost + " /api/admin/link/update_sort",
-		http.MethodPost + " /api/admin/badge/update_sort",
-		http.MethodPost + " /api/admin/task-config/update_sort",
-		http.MethodGet + " /api/admin/badge/list",
-		http.MethodPost + " /api/admin/badge/list",
 		http.MethodPost + " /api/admin/role/update_sort",
 		http.MethodDelete + " /api/admin/topic/recommend",
 	} {

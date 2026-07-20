@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "@/components/common/link"
-import { FileText, Medal, MessageSquare, UserPlus, Users } from "lucide-react"
+import { FileText, MessageSquare, UserPlus, Users } from "lucide-react"
 
 import { ArticleList } from "@/components/article/article-list"
 import { useCurrentUser } from "@/components/app/app-provider"
@@ -16,19 +16,16 @@ import { WidgetCard } from "@/components/common/widget-card"
 import { apiFetch } from "@/lib/api/client"
 import type {
   Article,
-  Badge,
   PageData,
   Topic,
   UserSummary,
 } from "@/lib/api/types"
-import { formatDate } from "@/lib/format"
 import { useI18n } from "@/lib/i18n/provider"
 import { useRouteData, useRouteSegment } from "@/lib/spa-route"
 import { useDocumentTitle } from "@/lib/use-document-title"
 
 type UserShellData = {
   user: UserSummary
-  badges: Badge[]
   fans: UserSummary[]
   followed: UserSummary[]
 }
@@ -58,11 +55,8 @@ const emptyUserPage: PageData<UserSummary> = {
 }
 
 async function loadUserShellData(userId: string): Promise<UserShellData> {
-  const [user, badges, fans, followed] = await Promise.all([
+  const [user, fans, followed] = await Promise.all([
     apiFetch<UserSummary>(`/api/user/${userId}`),
-    apiFetch<Badge[]>("/api/badge/badges", { params: { userId } }).catch(
-      () => []
-    ),
     apiFetch<PageData<UserSummary>>("/api/fans/recent/fans", {
       params: { userId },
     })
@@ -75,7 +69,7 @@ async function loadUserShellData(userId: string): Promise<UserShellData> {
       .catch(() => []),
   ])
 
-  return { user, badges, fans, followed }
+  return { user, fans, followed }
 }
 
 function userDisplayName(user: UserSummary | null | undefined) {
@@ -108,7 +102,7 @@ export function UserProfileClientPage({
   if (loading) return <PageLoading />
   if (error || !data) return <PageError message={error} />
 
-  const { user, topics, badges, fans, followed } = data
+  const { user, topics, fans, followed } = data
   const loadMoreLabels = {
     loadMore: t("common.loadMore.loadMore"),
     noMore: t("common.loadMore.noMore"),
@@ -118,7 +112,6 @@ export function UserProfileClientPage({
     <UserCenterShell
       user={user}
       currentUser={currentUser}
-      badges={badges}
       fans={fans}
       followed={followed}
       t={t}
@@ -185,7 +178,7 @@ export function UserArticlesClientPage() {
   if (loading) return <PageLoading />
   if (error || !data) return <PageError message={error} />
 
-  const { user, articles, badges, fans, followed } = data
+  const { user, articles, fans, followed } = data
   const loadMoreLabels = {
     loadMore: t("common.loadMore.loadMore"),
     noMore: t("common.loadMore.noMore"),
@@ -195,8 +188,6 @@ export function UserArticlesClientPage() {
     <UserCenterShell
       user={user}
       currentUser={currentUser}
-      badges={badges}
-      profileBadges={[]}
       fans={fans}
       followed={followed}
       t={t}
@@ -239,27 +230,8 @@ export function UserArticlesClientPage() {
 }
 
 export function UserBadgesClientPage() {
-  const userId = useRouteSegment(1)
-  const currentUser = useCurrentUser()
-  const { t } = useI18n()
-  const load = React.useCallback(() => loadUserShellData(userId), [userId])
-  const { data, loading, error } = useRouteData(`user-badges:${userId}`, load)
-
-  if (loading) return <PageLoading />
-  if (error || !data) return <PageError message={error} />
-
-  const { user, badges, fans, followed } = data
-
-  return (
-    <UserCenterShell
-      user={user}
-      currentUser={currentUser}
-      badges={badges.filter((badge) => badge.owned)}
-      fans={fans}
-      followed={followed}
-      t={t}
-    >
-      <WidgetCard>
+  return null
+/*
         <div className="mb-4">
           <p className="text-lg font-semibold text-slate-900 dark:text-slate-50">
             {t("pages.user.badgesTitle")}
@@ -332,6 +304,7 @@ export function UserBadgesClientPage() {
     </UserCenterShell>
   )
 }
+*/
 
 export function UserFansClientPage() {
   return <UserFollowClientPage kind="fans" />
@@ -361,7 +334,7 @@ function UserFollowClientPage({ kind }: { kind: "fans" | "followed" }) {
   if (loading) return <PageLoading />
   if (error || !data) return <PageError message={error} />
 
-  const { user, pageData, badges, fans, followed } = data
+  const { user, pageData, fans, followed } = data
   const labels = {
     loadMore: t("common.loadMore.loadMore"),
     noMore: t("common.loadMore.noMore"),
@@ -371,7 +344,6 @@ function UserFollowClientPage({ kind }: { kind: "fans" | "followed" }) {
     <UserCenterShell
       user={user}
       currentUser={currentUser}
-      badges={badges}
       fans={fans}
       followed={followed}
       t={t}

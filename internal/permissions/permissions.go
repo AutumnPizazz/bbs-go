@@ -10,7 +10,6 @@ const (
 	GroupWorkspace = "workspace"
 	GroupContent   = "content"
 	GroupCommunity = "community"
-	GroupGrowth    = "growth"
 	GroupSystem    = "system"
 	GroupLogs      = "logs"
 )
@@ -81,19 +80,6 @@ var (
 	PermissionUserUpdatePassword   = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.user.updatePassword", GroupName: GroupCommunity, SortNo: 740, NameEn: "Update Own Password", NameZh: "修改自己的密码"}
 	PermissionUserResetPassword    = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.user.resetPassword", GroupName: GroupCommunity, SortNo: 750, NameEn: "Reset User Password", NameZh: "重置用户密码"}
 
-	PermissionBadgeView   = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.badge.view", GroupName: GroupGrowth, SortNo: 800, NameEn: "View Badges", NameZh: "查看徽章"}
-	PermissionBadgeCreate = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.badge.create", GroupName: GroupGrowth, SortNo: 810, NameEn: "Create Badges", NameZh: "创建徽章"}
-	PermissionBadgeUpdate = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.badge.update", GroupName: GroupGrowth, SortNo: 820, NameEn: "Update Badges", NameZh: "编辑徽章"}
-	PermissionBadgeDelete = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.badge.delete", GroupName: GroupGrowth, SortNo: 830, NameEn: "Delete Badges", NameZh: "删除徽章"}
-
-	PermissionLevelView   = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.level.view", GroupName: GroupGrowth, SortNo: 900, NameEn: "View Levels", NameZh: "查看等级"}
-	PermissionLevelUpdate = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.level.update", GroupName: GroupGrowth, SortNo: 910, NameEn: "Update Levels", NameZh: "编辑等级"}
-
-	PermissionTaskView   = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.task.view", GroupName: GroupGrowth, SortNo: 1000, NameEn: "View Tasks", NameZh: "查看任务"}
-	PermissionTaskCreate = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.task.create", GroupName: GroupGrowth, SortNo: 1010, NameEn: "Create Tasks", NameZh: "创建任务"}
-	PermissionTaskUpdate = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.task.update", GroupName: GroupGrowth, SortNo: 1020, NameEn: "Update Tasks", NameZh: "编辑任务"}
-	PermissionTaskDelete = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.task.delete", GroupName: GroupGrowth, SortNo: 1030, NameEn: "Delete Tasks", NameZh: "删除任务"}
-
 	PermissionSettingView     = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.setting.view", GroupName: GroupSystem, SortNo: 1100, NameEn: "View Settings", NameZh: "查看设置"}
 	PermissionSettingUpdate   = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.setting.update", GroupName: GroupSystem, SortNo: 1110, NameEn: "Update Settings", NameZh: "编辑设置"}
 	PermissionSearchReindex   = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.search.reindex", GroupName: GroupSystem, SortNo: 1120, NameEn: "Rebuild Search Index", NameZh: "重建搜索索引"}
@@ -106,9 +92,6 @@ var (
 	PermissionRoleSort             = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.role.sort", GroupName: GroupSystem, SortNo: 1240, NameEn: "Sort Roles", NameZh: "排序角色"}
 	PermissionRolePermissionUpdate = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.role.permission.update", GroupName: GroupSystem, SortNo: 1250, NameEn: "Update Role Permissions", NameZh: "编辑角色权限"}
 
-	PermissionUserBadgeView   = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.userBadge.view", GroupName: GroupCommunity, SortNo: 760, NameEn: "View User Badges", NameZh: "查看用户徽章"}
-	PermissionUserExpLogView  = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.userExpLog.view", GroupName: GroupCommunity, SortNo: 770, NameEn: "View XP Logs", NameZh: "查看经验日志"}
-	PermissionUserTaskLogView = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.userTaskLog.view", GroupName: GroupCommunity, SortNo: 780, NameEn: "View Task Logs", NameZh: "查看任务日志"}
 	PermissionUserReportView  = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.userReport.view", GroupName: GroupCommunity, SortNo: 790, NameEn: "View User Reports", NameZh: "查看用户举报"}
 	PermissionUserReportAudit = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.userReport.audit", GroupName: GroupCommunity, SortNo: 795, NameEn: "Audit User Reports", NameZh: "处理用户举报"}
 
@@ -150,16 +133,6 @@ var Permissions = []PermissionDefinition{
 	PermissionUserForbiddenForever,
 	PermissionUserUpdatePassword,
 	PermissionUserResetPassword,
-	PermissionBadgeView,
-	PermissionBadgeCreate,
-	PermissionBadgeUpdate,
-	PermissionBadgeDelete,
-	PermissionLevelView,
-	PermissionLevelUpdate,
-	PermissionTaskView,
-	PermissionTaskCreate,
-	PermissionTaskUpdate,
-	PermissionTaskDelete,
 	PermissionRoleView,
 	PermissionRoleCreate,
 	PermissionRoleUpdate,
@@ -171,9 +144,6 @@ var Permissions = []PermissionDefinition{
 	PermissionSearchReindex,
 	PermissionSitemapGenerate,
 	PermissionEmailLogView,
-	PermissionUserTaskLogView,
-	PermissionUserExpLogView,
-	PermissionUserBadgeView,
 	PermissionUserReportView,
 	PermissionUserReportAudit,
 	PermissionOperateLogView,

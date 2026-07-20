@@ -36,10 +36,7 @@ func (s *attachmentService) extAllowed(ext string, allowedTypes []string) bool {
 }
 
 // Upload 流式上传附件；content 为数据流，contentLength 为文件大小（用于存储 FileSize 与上传 ContentLength）。
-func (s *attachmentService) Upload(userId int64, filename string, content io.Reader, contentLength int64, contentType string, downloadScore int) (*models.Attachment, error) {
-	if downloadScore < 0 {
-		downloadScore = 0
-	}
+func (s *attachmentService) Upload(userId int64, filename string, content io.Reader, contentLength int64, contentType string) (*models.Attachment, error) {
 	cfg := SysConfigService.GetAttachmentConfig()
 	ext := strings.ToLower(filepath.Ext(filename))
 	if !s.extAllowed(ext, cfg.AllowedTypes) {
@@ -62,7 +59,6 @@ func (s *attachmentService) Upload(userId int64, filename string, content io.Rea
 		FileUrl:       fileUrl,
 		FileSize:      contentLength,
 		FileType:      contentType,
-		DownloadScore: downloadScore,
 		Status:        constants.StatusOk,
 		CreateTime:    dates.NowTimestamp(),
 		UpdateTime:    dates.NowTimestamp(),
@@ -71,29 +67,6 @@ func (s *attachmentService) Upload(userId int64, filename string, content io.Rea
 		return nil, err
 	}
 	return att, nil
-}
-
-// UpdateDownloadScore 更新附件的下载积分（仅附件所属用户可更新）
-func (s *attachmentService) UpdateDownloadScore(attachmentId string, userId int64, downloadScore int) (*models.Attachment, error) {
-	if strs.IsBlank(attachmentId) {
-		return nil, errors.New(locales.Get("attachment.not_found"))
-	}
-	att := repositories.AttachmentRepository.Get(sqls.DB(), attachmentId)
-	if att == nil || att.Status != constants.StatusOk {
-		return nil, errors.New(locales.Get("attachment.not_found"))
-	}
-	if att.UserId != userId {
-		return nil, errors.New(locales.Get("attachment.no_permission"))
-	}
-	if downloadScore < 0 {
-		downloadScore = 0
-	}
-	att.DownloadScore = downloadScore
-	att.UpdateTime = dates.NowTimestamp()
-	return att, repositories.AttachmentRepository.Updates(sqls.DB(), attachmentId, map[string]any{
-		"download_score": downloadScore,
-		"update_time":    dates.NowTimestamp(),
-	})
 }
 
 // Get 根据 ID 获取附件（仅返回存在且正常的）
@@ -110,40 +83,12 @@ func (s *attachmentService) ListByTopicId(topicId int64) []models.Attachment {
 	return repositories.AttachmentRepository.ListByTopicId(sqls.DB(), topicId)
 }
 
-// HasDownloaded 当前用户是否已购买该附件
-func (s *attachmentService) HasDownloaded(userId int64, attachmentId string) bool {
-	if userId <= 0 || strs.IsBlank(attachmentId) {
-		return false
-	}
-	return repositories.AttachmentDownloadLogRepository.Exists(sqls.DB(), userId, attachmentId)
-}
-
-func (s *attachmentService) FindDownloadedAttachmentIds(userId int64, attachmentIds []string) []string {
-	if userId <= 0 || len(attachmentIds) == 0 {
-		return nil
-	}
-
-	filteredIds := make([]string, 0, len(attachmentIds))
-	seen := make(map[string]bool, len(attachmentIds))
-	for _, attachmentId := range attachmentIds {
-		if strs.IsBlank(attachmentId) || seen[attachmentId] {
-			continue
-		}
-		seen[attachmentId] = true
-		filteredIds = append(filteredIds, attachmentId)
-	}
-	if len(filteredIds) == 0 {
-		return nil
-	}
-	return repositories.AttachmentDownloadLogRepository.FindDownloadedAttachmentIds(sqls.DB(), userId, filteredIds)
-}
-
 // GetDownloadRedirectUrl 根据附件访问地址生成 302 目标 URL（Local 需拼 baseURL）
 func (s *attachmentService) GetDownloadRedirectUrl(att *models.Attachment) string {
 	return att.FileUrl
 }
 
-// Download 鉴权并返回下载重定向 URL；如需扣积分则在事务内扣费并写入 download_log
+// Download 鉴权并返回下载重定向 URL。
 func (s *attachmentService) Download(attachmentId string, userId int64) (redirectURL string, err error) {
 	if strs.IsBlank(attachmentId) {
 		return "", errors.New(locales.Get("attachment.not_found"))
@@ -161,53 +106,6 @@ func (s *attachmentService) Download(attachmentId string, userId int64) (redirec
 		return "", errors.New(locales.Get("attachment.not_found"))
 	}
 
-	// 已购买：直接放行
-	if repositories.AttachmentDownloadLogRepository.Exists(sqls.DB(), userId, attachmentId) {
-		redirectURL = s.GetDownloadRedirectUrl(att)
-		if strs.IsNotBlank(redirectURL) {
-			repositories.AttachmentRepository.IncrDownloadCount(sqls.DB(), att.Id)
-		}
-		return redirectURL, nil
-	}
-
-	// 帖主本人或 0 积分：免费，写入 download_log 便于统计
-	if att.UserId == userId || att.DownloadScore <= 0 {
-		_ = repositories.AttachmentDownloadLogRepository.Create(sqls.DB(), &models.AttachmentDownloadLog{
-			UserId:       userId,
-			AttachmentId: attachmentId,
-			CreateTime:   dates.NowTimestamp(),
-		})
-		redirectURL = s.GetDownloadRedirectUrl(att)
-		if strs.IsNotBlank(redirectURL) {
-			repositories.AttachmentRepository.IncrDownloadCount(sqls.DB(), att.Id)
-		}
-		return redirectURL, nil
-	}
-
-	// 需扣积分：事务内扣费 + 写 UserScoreLog + 插入 download_log
-	err = sqls.WithTransaction(func(ctx *sqls.TxContext) error {
-		user := repositories.UserRepository.Get(ctx.Tx, userId)
-		if user == nil {
-			return errors.New(locales.Get("common.not_found"))
-		}
-		if user.Score < att.DownloadScore {
-			return errors.New(locales.Get("attachment.insufficient_score"))
-		}
-		if err := UserService.DecrScoreTx(ctx, userId, att.DownloadScore, constants.SourceTypeAttachmentDownload, attachmentId, locales.Get("attachment.download_deduct")); err != nil {
-			return err
-		}
-		if err := repositories.AttachmentDownloadLogRepository.Create(ctx.Tx, &models.AttachmentDownloadLog{
-			UserId:       userId,
-			AttachmentId: attachmentId,
-			CreateTime:   dates.NowTimestamp(),
-		}); err != nil {
-			return err
-		}
-		return nil
-	})
-	if err != nil {
-		return "", err
-	}
 	redirectURL = s.GetDownloadRedirectUrl(att)
 	if strs.IsNotBlank(redirectURL) {
 		repositories.AttachmentRepository.IncrDownloadCount(sqls.DB(), att.Id)

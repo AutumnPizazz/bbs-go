@@ -35,41 +35,24 @@ func BuildTopic(ctx *gin.Context, topic *models.Topic) *resp.TopicResponse {
 	// 附件仅在帖子详情接口返回。
 	list := services.AttachmentService.ListByTopicId(topic.Id)
 	if len(list) > 0 {
-		var currentUser *models.User
-		if u := common.GetCurrentUser(ctx); u != nil {
-			currentUser = u
-		}
-		rsp.Attachments = BuildAttachmentResponses(list, currentUser)
+		rsp.Attachments = BuildAttachmentResponses(list)
 	}
 
 	return rsp
 }
 
-// BuildAttachmentResponses 将附件列表转为 AttachmentResponse 列表；currentUser 为 nil 时 downloaded 均为 false（如编辑表单）
-func BuildAttachmentResponses(list []models.Attachment, currentUser *models.User) []resp.AttachmentResponse {
+// BuildAttachmentResponses 将附件列表转为 AttachmentResponse 列表。
+func BuildAttachmentResponses(list []models.Attachment) []resp.AttachmentResponse {
 	if len(list) == 0 {
 		return nil
 	}
 	atts := make([]resp.AttachmentResponse, 0, len(list))
-	downloadedMap := make(map[string]bool)
-	if currentUser != nil && len(list) > 0 {
-		attachmentIds := make([]string, 0, len(list))
-		for _, att := range list {
-			attachmentIds = append(attachmentIds, att.Id)
-		}
-		for _, attachmentId := range services.AttachmentService.FindDownloadedAttachmentIds(currentUser.Id, attachmentIds) {
-			downloadedMap[attachmentId] = true
-		}
-	}
-
 	for _, att := range list {
 		atts = append(atts, resp.AttachmentResponse{
 			Id:            att.Id,
 			FileName:      att.FileName,
 			FileSize:      att.FileSize,
-			DownloadScore: att.DownloadScore,
 			DownloadCount: att.DownloadCount,
-			Downloaded:    downloadedMap[att.Id],
 		})
 	}
 	return atts
@@ -118,7 +101,6 @@ func _buildTopic(topic *models.Topic, buildContent bool) *resp.TopicResponse {
 	rsp.QaStatus = topic.QaStatus
 	rsp.AcceptedCommentId = topic.AcceptedCommentId
 	rsp.SolvedAt = topic.SolvedAt
-	rsp.BountyScore = topic.BountyScore
 	rsp.Title = topic.Title
 	rsp.User = BuildUserInfoDefaultIfNull(topic.UserId)
 	rsp.LastCommentTime = topic.LastCommentTime

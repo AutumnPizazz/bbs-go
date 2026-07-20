@@ -25,10 +25,6 @@ type SysConfigAdminResponse struct {
 	CreateArticleEmailVerified bool                        `json:"createArticleEmailVerified"`
 	CreateCommentEmailVerified bool                        `json:"createCommentEmailVerified"`
 	EnableHideContent          bool                        `json:"enableHideContent"`
-	EnableQaBounty             bool                        `json:"enableQaBounty"`
-	QaBountyMin                int                         `json:"qaBountyMin"`
-	QaBountyMax                int                         `json:"qaBountyMax"`
-	QaBountyRequired           bool                        `json:"qaBountyRequired"`
 	Modules                    ModulesConfig               `json:"modules"`
 	EmailWhitelist             []string                    `json:"emailWhitelist"`             // 邮箱白名单
 	EmailNoticeIntervalSeconds int                         `json:"emailNoticeIntervalSeconds"` // 邮件通知间隔(秒)
@@ -64,10 +60,6 @@ type SysConfigOpenResponse struct {
 	CreateArticleEmailVerified bool              `json:"createArticleEmailVerified"`
 	CreateCommentEmailVerified bool              `json:"createCommentEmailVerified"`
 	EnableHideContent          bool              `json:"enableHideContent"`
-	EnableQaBounty             bool              `json:"enableQaBounty"`
-	QaBountyMin                int               `json:"qaBountyMin"`
-	QaBountyMax                int               `json:"qaBountyMax"`
-	QaBountyRequired           bool              `json:"qaBountyRequired"`
 	Modules                    ModulesConfig     `json:"modules"`
 	EmailNoticeIntervalSeconds int               `json:"emailNoticeIntervalSeconds"` // 邮件通知间隔(秒)
 	AttachmentConfig           AttachmentConfig  `json:"attachmentConfig"`           // 附件配置

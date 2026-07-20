@@ -9,7 +9,6 @@ import (
 	"errors"
 	"math"
 	"net/http"
-	"strconv"
 
 	"bbs-go/internal/pkg/params"
 
@@ -89,13 +88,6 @@ func (s *topicService) Delete(topicId, deleteUserId int64, r *http.Request) erro
 		return nil
 	}
 	err := sqls.WithTransaction(func(ctx *sqls.TxContext) error {
-		// 问答帖未采纳答案即被删除时，将悬赏积分退还给发帖人
-		if topic.Type == constants.TopicTypeQA && topic.BountyScore > 0 && topic.AcceptedCommentId == 0 {
-			if err := UserService.AddScoreTx(ctx, topic.UserId, topic.BountyScore, constants.SourceTypeQaBountyRefund,
-				strconv.FormatInt(topic.Id, 10), locales.Get("topic.bounty_refund")); err != nil {
-				return err
-			}
-		}
 		if err := repositories.TopicRepository.UpdateColumn(ctx.Tx, topicId, "status", constants.StatusDeleted); err != nil {
 			return err
 		}
@@ -567,11 +559,6 @@ func (s *topicService) AcceptAnswer(topicId, commentId, userId int64, isAdmin bo
 			"solved_at":           now,
 		}); err != nil {
 			return err
-		}
-		if topic.BountyScore > 0 && comment.UserId != topic.UserId {
-			if err := UserService.AddScoreTx(ctx, comment.UserId, topic.BountyScore, constants.SourceTypeQaBounty, strconv.FormatInt(topic.Id, 10), locales.Get("topic.bounty_reward")); err != nil {
-				return err
-			}
 		}
 		return nil
 	}); err != nil {

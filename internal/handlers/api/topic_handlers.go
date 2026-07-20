@@ -173,7 +173,7 @@ func TopicEditForm(ctx *gin.Context) {
 		}
 	}
 
-	attachments := render.BuildAttachmentResponses(services.AttachmentService.ListByTopicId(topicId), nil)
+	attachments := render.BuildAttachmentResponses(services.AttachmentService.ListByTopicId(topicId))
 
 	ginx.WriteJSON(ctx, map[string]any{
 		"id":          idcodec.Encode(topic.Id),
