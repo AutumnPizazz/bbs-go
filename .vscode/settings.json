@@ -1,0 +1,7 @@
+{
+    "go.alternateTools": {
+        "dlv": "${env:USERPROFILE}\\go\\bin\\dlv.exe",
+        "gopls": "${env:USERPROFILE}\\go\\bin\\gopls.exe"
+    },
+    "go.toolsManagement.autoUpdate": false
+}
