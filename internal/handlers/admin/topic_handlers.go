@@ -72,6 +72,10 @@ func TopicList(ctx *gin.Context) {
 			Op:        params.Eq,
 		},
 		params.QueryFilter{
+			ParamName: "format",
+			Op:        params.Eq,
+		},
+		params.QueryFilter{
 			ParamName: "recommend",
 			Op:        params.Eq,
 		},

@@ -53,28 +53,6 @@ type TagResponse struct {
 	Description string `json:"description"`
 }
 
-type ArticleSimpleResponse struct {
-	Id           int64          `json:"id"`
-	User         *UserInfo      `json:"user"`
-	Tags         *[]TagResponse `json:"tags"`
-	Title        string         `json:"title"`
-	Summary      string         `json:"summary"`
-	Cover        *ImageInfo     `json:"cover"`
-	SourceUrl    string         `json:"sourceUrl"`
-	ViewCount    int64          `json:"viewCount"`
-	CommentCount int64          `json:"commentCount"`
-	LikeCount    int64          `json:"likeCount"`
-	CreateTime   int64          `json:"createTime"`
-	Status       int            `json:"status"`
-	Favorited    bool           `json:"favorited"`
-}
-
-type ArticleResponse struct {
-	ArticleSimpleResponse
-	Content string         `json:"content"`
-	Toc     []TopicTocItem `json:"toc,omitempty"`
-}
-
 type CategoryResponse struct {
 	Id          int64                  `json:"id"`
 	ParentId    int64                  `json:"parentId"` // 父节点ID，0=一级
@@ -101,21 +79,13 @@ type CategoryTreeItem struct {
 
 type SearchTopicResponse struct {
 	Id         int64             `json:"id"`
+	Format     string            `json:"format"`
 	User       *UserInfo         `json:"user"`
 	Category   *CategoryResponse `json:"category"`
 	Tags       *[]TagResponse    `json:"tags"`
 	Title      string            `json:"title"`
 	Summary    string            `json:"summary"`
 	CreateTime int64             `json:"createTime"`
-}
-
-type SearchArticleResponse struct {
-	Id         int64          `json:"id"`
-	User       *UserInfo      `json:"user"`
-	Tags       *[]TagResponse `json:"tags"`
-	Title      string         `json:"title"`
-	Summary    string         `json:"summary"`
-	CreateTime int64          `json:"createTime"`
 }
 
 type SearchUserResponse struct {
@@ -134,34 +104,38 @@ type TopicTocItem struct {
 
 // 帖子列表返回实体
 type TopicResponse struct {
-	Id                string               `json:"id"`
-	Type              constants.TopicType  `json:"type"`
-	QaStatus          constants.QaStatus   `json:"qaStatus"`
-	AcceptedCommentId int64                `json:"acceptedCommentId"`
-	SolvedAt          int64                `json:"solvedAt"`
-	User              *UserInfo            `json:"user"`
-	Category          *CategoryResponse    `json:"category"`
-	Tags              *[]TagResponse       `json:"tags"`
-	Title             string               `json:"title"`
-	Summary           string               `json:"summary"`
-	Content           string               `json:"content"`
-	Toc               []TopicTocItem       `json:"toc,omitempty"`
-	ImageList         []ImageInfo          `json:"imageList"`
-	LastCommentTime   int64                `json:"lastCommentTime"`
-	ViewCount         int64                `json:"viewCount"`
-	CommentCount      int64                `json:"commentCount"`
-	LikeCount         int64                `json:"likeCount"`
-	Liked             bool                 `json:"liked"`
-	CreateTime        int64                `json:"createTime"`
-	Recommend         bool                 `json:"recommend"`
-	RecommendTime     int64                `json:"recommendTime"`
-	Sticky            bool                 `json:"sticky"`
-	StickyTime        int64                `json:"stickyTime"`
-	Status            int                  `json:"status"`
-	Favorited         bool                 `json:"favorited"`
-	IpLocation        string               `json:"ipLocation"`
-	Vote              *VoteResponse        `json:"vote"`
-	Attachments       []AttachmentResponse `json:"attachments,omitempty"`
+	Id                string                `json:"id"`
+	Type              constants.TopicType   `json:"type"`
+	Format            constants.TopicFormat `json:"format"`
+	QaStatus          constants.QaStatus    `json:"qaStatus"`
+	AcceptedCommentId int64                 `json:"acceptedCommentId"`
+	SolvedAt          int64                 `json:"solvedAt"`
+	User              *UserInfo             `json:"user"`
+	Category          *CategoryResponse     `json:"category"`
+	Tags              *[]TagResponse        `json:"tags"`
+	Title             string                `json:"title"`
+	Summary           string                `json:"summary"`
+	Content           string                `json:"content"`
+	Cover             *ImageInfo            `json:"cover"`
+	SourceUrl         string                `json:"sourceUrl"`
+	Toc               []TopicTocItem        `json:"toc,omitempty"`
+	ImageList         []ImageInfo           `json:"imageList"`
+	LastCommentTime   int64                 `json:"lastCommentTime"`
+	ViewCount         int64                 `json:"viewCount"`
+	CommentCount      int64                 `json:"commentCount"`
+	LikeCount         int64                 `json:"likeCount"`
+	Liked             bool                  `json:"liked"`
+	CreateTime        int64                 `json:"createTime"`
+	UpdateTime        int64                 `json:"updateTime"`
+	Recommend         bool                  `json:"recommend"`
+	RecommendTime     int64                 `json:"recommendTime"`
+	Sticky            bool                  `json:"sticky"`
+	StickyTime        int64                 `json:"stickyTime"`
+	Status            int                   `json:"status"`
+	Favorited         bool                  `json:"favorited"`
+	IpLocation        string                `json:"ipLocation"`
+	Vote              *VoteResponse         `json:"vote"`
+	Attachments       []AttachmentResponse  `json:"attachments,omitempty"`
 }
 
 // AttachmentResponse 附件返回（不包含直链）
@@ -294,4 +268,3 @@ type DictListResponse struct {
 	DictResponse
 	Children []DictListResponse `json:"children"`
 }
-

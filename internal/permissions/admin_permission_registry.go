@@ -26,14 +26,6 @@ var (
 		{Method: "POST", Pattern: "/api/admin/topic/mark_solved", Permissions: []PermissionDefinition{PermissionTopicSolve}},
 		{Method: "POST", Pattern: "/api/admin/topic/mark_unsolved", Permissions: []PermissionDefinition{PermissionTopicSolve}},
 
-		{Method: "GET", Pattern: "/api/admin/article/*", Permissions: []PermissionDefinition{PermissionArticleView}},
-		{Method: "POST", Pattern: "/api/admin/article/list", Permissions: []PermissionDefinition{PermissionArticleView}},
-		{Method: "GET", Pattern: "/api/admin/article/tags", Permissions: []PermissionDefinition{PermissionArticleView}},
-		{Method: "POST", Pattern: "/api/admin/article/update", Permissions: []PermissionDefinition{PermissionArticleUpdate}},
-		{Method: "POST", Pattern: "/api/admin/article/audit", Permissions: []PermissionDefinition{PermissionArticleAudit}},
-		{Method: "POST", Pattern: "/api/admin/article/delete", Permissions: []PermissionDefinition{PermissionArticleDelete}},
-		{Method: "POST", Pattern: "/api/admin/article/tags", Permissions: []PermissionDefinition{PermissionArticleTags}},
-
 		{Method: "GET", Pattern: "/api/admin/category/*", Permissions: []PermissionDefinition{PermissionCategoryView}},
 		{Method: "GET", Pattern: "/api/admin/category/options", Permissions: []PermissionDefinition{PermissionCategoryView}},
 		{Method: "POST", Pattern: "/api/admin/category/list", Permissions: []PermissionDefinition{PermissionCategoryView}},

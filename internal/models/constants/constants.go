@@ -75,7 +75,6 @@ const (
 
 // EntityType
 const (
-	EntityArticle    = "article"
 	EntityTopic      = "topic"
 	EntityComment    = "comment"
 	EntityUser       = "user"
@@ -125,6 +124,21 @@ const (
 	TopicTypeTweet TopicType = 1 // 动态
 	TopicTypeQA    TopicType = 2 // 问答
 )
+
+type TopicFormat string
+
+const (
+	TopicFormatPost    TopicFormat = "post"
+	TopicFormatArticle TopicFormat = "article"
+)
+
+func IsArticleTopicFormat(format TopicFormat) bool {
+	return format == TopicFormatArticle
+}
+
+func IsTopicFormatValid(format TopicFormat) bool {
+	return format == TopicFormatPost || format == TopicFormatArticle
+}
 
 type CategoryType string
 

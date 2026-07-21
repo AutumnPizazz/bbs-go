@@ -166,6 +166,25 @@ export function TopicDetailClientPage({
               ) : null}
               <TopicMeta topic={topic} currentUser={currentUser} t={t} />
             </div>
+            {topic.format === "article" && topic.cover?.url ? (
+              <img
+                src={topic.cover.preview || topic.cover.url}
+                alt={topic.title || ""}
+                className="mx-4 mb-4 aspect-[16/9] max-h-[28rem] w-[calc(100%-2rem)] rounded-md object-cover"
+              />
+            ) : null}
+            {topic.format === "article" && topic.sourceUrl ? (
+              <div className="mx-4 mb-4 text-sm text-muted-foreground">
+                <a
+                  href={topic.sourceUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="break-all hover:text-primary"
+                >
+                  {topic.sourceUrl}
+                </a>
+              </div>
+            ) : null}
             <TopicContent topic={topic} />
             <div className="mx-4 mb-4">
               <TopicHideContentLive

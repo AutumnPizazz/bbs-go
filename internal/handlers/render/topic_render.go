@@ -98,13 +98,18 @@ func _buildTopic(topic *models.Topic, buildContent bool) *resp.TopicResponse {
 
 	rsp.Id = idcodec.Encode(topic.Id)
 	rsp.Type = topic.Type
+	rsp.Format = topic.Format
 	rsp.QaStatus = topic.QaStatus
 	rsp.AcceptedCommentId = topic.AcceptedCommentId
 	rsp.SolvedAt = topic.SolvedAt
 	rsp.Title = topic.Title
+	rsp.Summary = topic.Summary
+	rsp.Cover = BuildImage(topic.Cover)
+	rsp.SourceUrl = topic.SourceUrl
 	rsp.User = BuildUserInfoDefaultIfNull(topic.UserId)
 	rsp.LastCommentTime = topic.LastCommentTime
 	rsp.CreateTime = topic.CreateTime
+	rsp.UpdateTime = topic.UpdateTime
 	rsp.ViewCount = topic.ViewCount
 	rsp.CommentCount = topic.CommentCount
 	rsp.LikeCount = topic.LikeCount
@@ -133,6 +138,9 @@ func _buildTopic(topic *models.Topic, buildContent bool) *resp.TopicResponse {
 				contentHtml = markdown.ToHTML(topic.Content)
 			}
 			rsp.Summary = html2.GetSummary(contentHtml, 128)
+			if topic.Summary != "" {
+				rsp.Summary = topic.Summary
+			}
 		} else {
 			rsp.Summary = text.GetSummary(topic.Content, 128)
 		}

@@ -6,7 +6,7 @@ import { LoadMore } from "@/components/common/load-more"
 import { HomeAside } from "@/components/layout/home-aside"
 import { MainShell } from "@/components/layout/main-shell"
 import { apiFetch } from "@/lib/api/client"
-import type { Article, PageData } from "@/lib/api/types"
+import type { PageData, Topic } from "@/lib/api/types"
 import { useI18n } from "@/lib/i18n/provider"
 import { localizedTitle, rootDataFromMatches, sitePageMeta } from "@/lib/seo"
 import { useDocumentTitle } from "@/lib/use-document-title"
@@ -35,26 +35,26 @@ export function meta({
 }
 
 export default function ArticlesRoute() {
-  const articles = useLoaderData() as PageData<Article>
+  const articles = useLoaderData() as PageData<Topic>
   const { t } = useI18n()
   useDocumentTitle(t("pages.articles.title"))
 
   return (
     <MainShell aside={<HomeAside />}>
       <div className="overflow-hidden rounded-lg bg-background">
-        <LoadMore<Article>
+        <LoadMore<Topic>
           initialItems={articles.results}
           initialCursor={articles.cursor || ""}
           initialHasMore={articles.hasMore}
           initialLoad={false}
-          resetKey="/api/article/articles"
+          resetKey="/api/topic/topics?format=article"
           labels={{
             loadMore: t("common.loadMore.loadMore"),
             noMore: t("common.loadMore.noMore"),
           }}
           loadPage={({ cursor }) =>
-            apiFetch<PageData<Article>>("/api/article/articles", {
-              params: { cursor },
+            apiFetch<PageData<Topic>>("/api/topic/topics", {
+              params: { cursor, format: "article" },
             })
           }
           renderItems={(items) => <ArticleList articles={items} t={t} />}

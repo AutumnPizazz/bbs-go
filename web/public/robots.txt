@@ -7,8 +7,6 @@ Disallow: /redirect
 Disallow: /search
 Disallow: /topic/create
 Disallow: /topic/edit
-Disallow: /article/create
-Disallow: /article/edit
 Disallow: /auth
 Disallow: /private
 Disallow: /user/profile

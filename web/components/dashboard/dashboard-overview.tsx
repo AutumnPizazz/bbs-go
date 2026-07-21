@@ -180,7 +180,7 @@ export function DashboardOverview() {
       key: "pendingArticles",
       href: "/dashboard/articles",
       icon: FileTextIcon,
-      permission: PERMISSIONS.DASHBOARD_ARTICLE_VIEW,
+      permission: PERMISSIONS.DASHBOARD_TOPIC_VIEW,
     },
     {
       key: "pendingReports",

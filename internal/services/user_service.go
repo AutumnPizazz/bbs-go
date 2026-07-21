@@ -155,15 +155,6 @@ func (s *userService) Forbidden(operatorId, userId int64, days int, reason strin
 					}
 				})
 
-				// 删除文章
-				ArticleService.ScanByUser(userId, func(articles []models.Article) {
-					for _, article := range articles {
-						if article.Status != constants.StatusDeleted {
-							_ = ArticleService.Delete(article.Id)
-						}
-					}
-				})
-
 				// 删除评论
 				CommentService.ScanByUser(userId, func(comments []models.Comment) {
 					for _, comment := range comments {

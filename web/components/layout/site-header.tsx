@@ -124,7 +124,7 @@ function moduleItems(config: SiteConfig | null, t: TFunction) {
     items.push({
       command: "article",
       name: t("common.createBtn.article"),
-      href: "/article/create",
+      href: "/topic/create?format=article",
       icon: FileText,
     })
   }

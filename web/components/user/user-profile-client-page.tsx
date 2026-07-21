@@ -14,7 +14,7 @@ import { TopicListItem } from "@/components/topic/topic-list-item"
 import { UserCenterShell } from "@/components/user/user-center-shell"
 import { UserFollowList } from "@/components/user/user-follow-list"
 import { apiFetch } from "@/lib/api/client"
-import type { Article, PageData, Topic, UserSummary } from "@/lib/api/types"
+import type { PageData, Topic, UserSummary } from "@/lib/api/types"
 import { useI18n } from "@/lib/i18n/provider"
 import { useRouteData, useRouteSegment } from "@/lib/spa-route"
 import { useDocumentTitle } from "@/lib/use-document-title"
@@ -26,11 +26,11 @@ type UserShellData = {
 }
 
 type UserProfileData = UserShellData & { topics: PageData<Topic> }
-type UserArticlesData = UserShellData & { articles: PageData<Article> }
+type UserArticlesData = UserShellData & { articles: PageData<Topic> }
 type UserFollowData = UserShellData & { pageData: PageData<UserSummary> }
 
 const emptyPage: PageData<Topic> = { results: [], cursor: "0", hasMore: false }
-const emptyArticlePage: PageData<Article> = {
+const emptyArticlePage: PageData<Topic> = {
   results: [],
   cursor: "0",
   hasMore: false,
@@ -153,8 +153,8 @@ export function UserArticlesClientPage() {
   const load = React.useCallback(async (): Promise<UserArticlesData> => {
     const [shell, articles] = await Promise.all([
       loadUserShellData(userId),
-      apiFetch<PageData<Article>>("/api/article/user_articles", {
-        params: { userId },
+      apiFetch<PageData<Topic>>("/api/topic/user_topics", {
+        params: { userId, format: "article" },
       }).catch(() => emptyArticlePage),
     ])
 
@@ -196,7 +196,7 @@ export function UserArticlesClientPage() {
             <span>{t("pages.user.articles")}</span>
           </Link>
         </nav>
-        <LoadMore<Article>
+        <LoadMore<Topic>
           initialItems={articles.results || []}
           initialCursor={articles.cursor}
           initialHasMore={articles.hasMore}
@@ -204,8 +204,8 @@ export function UserArticlesClientPage() {
           resetKey={`user-articles:${userId}:${articles.cursor}:${articles.hasMore}`}
           labels={loadMoreLabels}
           loadPage={({ cursor }) =>
-            apiFetch<PageData<Article>>("/api/article/user_articles", {
-              params: { userId, cursor },
+          apiFetch<PageData<Topic>>("/api/topic/user_topics", {
+            params: { userId, cursor, format: "article" },
             })
           }
           renderItems={(items) => <ArticleList articles={items} t={t} />}

@@ -78,15 +78,6 @@ func (s *favoriteService) GetBy(userId int64, entityType string, entityId int64)
 		userId, entityType, entityId)
 }
 
-// AddArticleFavorite 收藏文章
-func (s *favoriteService) AddArticleFavorite(userId, articleId int64) error {
-	article := repositories.ArticleRepository.Get(sqls.DB(), articleId)
-	if article == nil || article.Status != constants.StatusOk {
-		return errors.New(locales.Get("favorite.article_not_found"))
-	}
-	return s.addFavorite(userId, constants.EntityArticle, articleId)
-}
-
 // AddTopicFavorite 收藏主题
 func (s *favoriteService) AddTopicFavorite(userId, topicId int64) error {
 	topic := repositories.TopicRepository.Get(sqls.DB(), topicId)

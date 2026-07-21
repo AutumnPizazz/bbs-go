@@ -103,9 +103,12 @@ export interface TopicVote {
 export interface Topic {
   id: EntityId
   type?: number
+  format?: "post" | "article" | string
   title?: string
   content?: string
   summary?: string
+  cover?: ImageInfo | null
+  sourceUrl?: string
   createTime?: number
   updateTime?: number
   user: UserSummary
@@ -215,42 +218,17 @@ export interface SiteConfig {
   }>
 }
 
-export interface ArticleEditForm {
-  id: number
-  articleId: number
-  title: string
-  content: string
-  tags?: string[]
-  cover?: ImageInfo | null
-}
-
 export interface LoginResult {
   user: UserSummary
   token: string
   redirect?: string
 }
 
-export interface Article {
+export interface SearchTopic {
   id: number
-  user: UserSummary
-  tags?: Tag[]
-  title: string
-  content?: string
-  summary?: string
-  cover?: ImageInfo | null
-  sourceUrl?: string
-  viewCount?: number
-  commentCount?: number
-  likeCount?: number
-  createTime?: number
-  status?: number
-  favorited?: boolean
-  toc?: TopicTocItem[]
-}
-
-export interface SearchArticle {
-  id: number
+  format?: "post" | "article" | string
   user?: UserSummary
+  category?: Category
   tags?: Tag[]
   title?: string
   summary?: string
@@ -266,8 +244,7 @@ export interface SearchUser {
 }
 
 export interface SearchAllResult {
-  topics?: Topic[]
-  articles?: SearchArticle[]
+  topics?: SearchTopic[]
   users?: SearchUser[]
 }
 

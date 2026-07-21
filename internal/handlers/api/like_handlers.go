@@ -32,8 +32,6 @@ func LikeLike(ctx *gin.Context) {
 	switch req.EntityType {
 	case constants.EntityTopic:
 		err = services.UserLikeService.TopicLike(user.Id, entityId)
-	case constants.EntityArticle:
-		err = services.UserLikeService.ArticleLike(user.Id, entityId)
 	case constants.EntityComment:
 		err = services.UserLikeService.CommentLike(user.Id, entityId)
 	}
@@ -63,8 +61,6 @@ func LikeUnlike(ctx *gin.Context) {
 	switch req.EntityType {
 	case constants.EntityTopic:
 		err = services.UserLikeService.TopicUnLike(user.Id, entityId)
-	case constants.EntityArticle:
-		err = services.UserLikeService.ArticleUnLike(user.Id, entityId)
 	case constants.EntityComment:
 		err = services.UserLikeService.CommentUnLike(user.Id, entityId)
 	}

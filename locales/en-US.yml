@@ -179,7 +179,6 @@ message:
   topic_like_msg_title: "Your topic has been liked"
   qa_answer_accepted_msg_title: "Your answer was accepted as the best answer"
   comment_topic_reply_msg_title: "Someone replied to your topic"
-  comment_article_reply_msg_title: "Someone replied to your article"
   comment_reply_msg_title: "Someone replied to your comment"
 
 email:

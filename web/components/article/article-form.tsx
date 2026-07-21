@@ -8,8 +8,9 @@ import { TagInput } from "@/components/common/tag-input"
 import { ContentEditor } from "@/components/editor/content-editor"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { apiFetch, toFormData } from "@/lib/api/client"
-import type { Article, ArticleEditForm, ImageInfo, SiteConfig } from "@/lib/api/types"
+import { apiFetch } from "@/lib/api/client"
+import type { ImageInfo, SiteConfig, Topic } from "@/lib/api/types"
+import type { TopicEditData } from "@/lib/api/topics"
 import { useI18n } from "@/lib/i18n/provider"
 import { msg, useToastActions } from "@/lib/toast"
 
@@ -18,8 +19,11 @@ export { TagInput } from "@/components/common/tag-input"
 type ArticleFormMode = "create" | "edit"
 
 type ArticleFormState = {
+  categoryId: number
   title: string
+  summary: string
   content: string
+  sourceUrl: string
   tags: string[]
   cover: ImageInfo[]
 }
@@ -105,18 +109,23 @@ export function ArticleForm({
   mode,
   config,
   initialArticle,
+  categoryId = 0,
 }: {
   mode: ArticleFormMode
   config: SiteConfig | null
-  initialArticle?: ArticleEditForm | null
+  initialArticle?: TopicEditData | null
+  categoryId?: number
 }) {
   const router = useRouter()
   const { t } = useI18n()
   const { catchError } = useToastActions()
   const [publishing, setPublishing] = React.useState(false)
   const [form, setForm] = React.useState<ArticleFormState>({
+    categoryId: initialArticle?.categoryId || categoryId || config?.defaultCategoryId || 0,
     title: initialArticle?.title || "",
+    summary: initialArticle?.summary || "",
     content: initialArticle?.content || "",
+    sourceUrl: initialArticle?.sourceUrl || "",
     tags: initialArticle?.tags || [],
     cover: initialArticle?.cover ? [initialArticle.cover] : [],
   })
@@ -132,34 +141,39 @@ export function ArticleForm({
 
     setPublishing(true)
     try {
-      const cover = form.cover.length ? JSON.stringify(form.cover[0]) : null
-      const body = toFormData({
+      const body = {
+        type: 0,
+        format: "article",
+        categoryId: form.categoryId,
         title: form.title,
+        summary: form.summary,
         content: form.content,
-        tags: form.tags.length ? form.tags.join(",") : "",
-        cover,
-      })
+        contentType: "markdown",
+        sourceUrl: form.sourceUrl,
+        tags: form.tags,
+        cover: form.cover.length ? form.cover[0] : { url: "" },
+      }
 
       if (mode === "create") {
-        const article = await apiFetch<Article>("/api/article/create", {
+        const article = await apiFetch<Topic>("/api/topic/create", {
           method: "POST",
           body,
         })
         msg({
           message: t("pages.article.create.success"),
           onClose() {
-            router.push(`/article/${article.id}`)
+            router.push(`/topic/${article.id}`)
           },
         })
       } else if (initialArticle?.id) {
-        await apiFetch<{ articleId: number }>(`/api/article/edit/${initialArticle.id}`, {
+        await apiFetch<Topic>(`/api/topic/edit/${initialArticle.id}`, {
           method: "POST",
           body,
         })
         msg({
           message: t("pages.article.edit.editSuccess"),
           onClose() {
-            router.push(`/article/${initialArticle.id}`)
+            router.push(`/topic/${initialArticle.id}`)
           },
         })
       }
@@ -188,12 +202,28 @@ export function ArticleForm({
         />
       </div>
       <div className="mb-4">
+        <Input
+          value={form.summary}
+          type="text"
+          placeholder={t("pages.article.create.summaryPlaceholder")}
+          onChange={(event) => updateForm({ summary: event.currentTarget.value })}
+        />
+      </div>
+      <div className="mb-4">
         <ContentEditor
           contentType="markdown"
           value={form.content}
           placeholder={t(contentPlaceholderKey)}
           height="400px"
           onChange={(content) => updateForm({ content })}
+        />
+      </div>
+      <div className="mb-4">
+        <Input
+          value={form.sourceUrl}
+          type="url"
+          placeholder={t("pages.article.create.sourceUrlPlaceholder")}
+          onChange={(event) => updateForm({ sourceUrl: event.currentTarget.value })}
         />
       </div>
       <div className="mb-4">

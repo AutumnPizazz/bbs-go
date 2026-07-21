@@ -19,8 +19,6 @@ type SearchReindexStatus struct {
 	Total            int64  `json:"total"`
 	TopicProcessed   int64  `json:"topicProcessed"`
 	TopicTotal       int64  `json:"topicTotal"`
-	ArticleProcessed int64  `json:"articleProcessed"`
-	ArticleTotal     int64  `json:"articleTotal"`
 	UserProcessed    int64  `json:"userProcessed"`
 	UserTotal        int64  `json:"userTotal"`
 	StartedAt        int64  `json:"startedAt"`
@@ -71,11 +69,9 @@ func (s *searchReindexService) run() {
 	}()
 
 	topicTotal := TopicService.Count(sqls.NewCnd().Where("status <> ?", constants.StatusDeleted))
-	var articleTotal int64
-	sqls.DB().Model(&models.Article{}).Where("status <> ?", constants.StatusDeleted).Count(&articleTotal)
 	var userTotal int64
 	sqls.DB().Model(&models.User{}).Where("status <> ?", constants.StatusDeleted).Count(&userTotal)
-	s.setTotals(topicTotal, articleTotal, userTotal)
+	s.setTotals(topicTotal, userTotal)
 
 	TopicService.ScanDesc(func(topics []models.Topic) {
 		for _, topic := range topics {
@@ -84,15 +80,6 @@ func (s *searchReindexService) run() {
 			}
 			search.UpdateTopicIndex(&topic)
 			s.incrementTopicProcessed()
-		}
-	})
-	ArticleService.ScanDesc(func(articles []models.Article) {
-		for _, article := range articles {
-			if article.Status == constants.StatusDeleted {
-				continue
-			}
-			search.UpdateArticleIndex(&article)
-			s.incrementArticleProcessed()
 		}
 	})
 	UserService.Scan(func(users []models.User) {
@@ -107,13 +94,12 @@ func (s *searchReindexService) run() {
 	s.finishWithError("")
 }
 
-func (s *searchReindexService) setTotals(topicTotal, articleTotal, userTotal int64) {
+func (s *searchReindexService) setTotals(topicTotal, userTotal int64) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.status.TopicTotal = topicTotal
-	s.status.ArticleTotal = articleTotal
 	s.status.UserTotal = userTotal
-	s.status.Total = topicTotal + articleTotal + userTotal
+	s.status.Total = topicTotal + userTotal
 }
 
 func (s *searchReindexService) incrementTopicProcessed() {
@@ -121,13 +107,6 @@ func (s *searchReindexService) incrementTopicProcessed() {
 	defer s.mu.Unlock()
 	s.status.Processed++
 	s.status.TopicProcessed++
-}
-
-func (s *searchReindexService) incrementArticleProcessed() {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.status.Processed++
-	s.status.ArticleProcessed++
 }
 
 func (s *searchReindexService) incrementUserProcessed() {

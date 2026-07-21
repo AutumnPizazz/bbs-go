@@ -179,7 +179,6 @@ message:
   topic_like_msg_title: "点赞了你的话题"
   qa_answer_accepted_msg_title: "你的回答被采纳为最佳答案"
   comment_topic_reply_msg_title: "回复了你的话题"
-  comment_article_reply_msg_title: "回复了你的文章"
   comment_reply_msg_title: "回复了你的评论"
 
 email:

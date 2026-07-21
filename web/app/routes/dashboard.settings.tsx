@@ -107,8 +107,6 @@ type SearchReindexStatus = {
   total: number
   topicProcessed?: number
   topicTotal?: number
-  articleProcessed?: number
-  articleTotal?: number
   userProcessed?: number
   userTotal?: number
   startedAt: number
@@ -137,7 +135,6 @@ const NOTIFICATION_TYPE_KEYS = [
   "topicFavorite",
   "topicRecommend",
   "topicDelete",
-  "articleComment",
   "qaAnswerAccepted",
 ] as const
 const DEFAULT_ATTACHMENT_TYPES = [
@@ -823,8 +820,6 @@ function SearchIndexSettings({
   const total = status?.total ?? 0
   const topicProcessed = status?.topicProcessed ?? 0
   const topicTotal = status?.topicTotal ?? 0
-  const articleProcessed = status?.articleProcessed ?? 0
-  const articleTotal = status?.articleTotal ?? 0
   const userProcessed = status?.userProcessed ?? 0
   const userTotal = status?.userTotal ?? 0
   const progress =
@@ -869,17 +864,11 @@ function SearchIndexSettings({
                 </span>
               </div>
               <Progress value={progress} />
-              <div className="grid gap-1 text-xs text-muted-foreground sm:grid-cols-3">
+              <div className="grid gap-1 text-xs text-muted-foreground sm:grid-cols-2">
                 <span>
                   {s("search.topicProgress", {
                     processed: topicProcessed,
                     total: topicTotal,
-                  })}
-                </span>
-                <span>
-                  {s("search.articleProgress", {
-                    processed: articleProcessed,
-                    total: articleTotal,
                   })}
                 </span>
                 <span>

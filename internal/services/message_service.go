@@ -190,8 +190,6 @@ func (s *messageService) buildEmailNoticeFallbackTitle(t *models.Message) string
 		return locales.Get("email.topic_recommend")
 	case msg.TypeTopicDelete:
 		return locales.Get("email.topic_delete")
-	case msg.TypeArticleComment:
-		return locales.Get("email.article_comment")
 	case msg.TypeQaAnswerAccepted:
 		return locales.Get("email.qa_answer_accepted")
 	}
@@ -221,20 +219,16 @@ func (s *messageService) buildEmailNoticeContent(content, noticeTitle string) st
 func (s *messageService) buildEmailNoticeDetailURL(t *models.Message) string {
 	msgType := msg.Type(t.Type)
 	switch msgType {
-	case msg.TypeTopicComment, msg.TypeArticleComment:
+	case msg.TypeTopicComment:
 		entityType := gjson.Get(t.ExtraData, "entityType")
 		entityId := gjson.Get(t.ExtraData, "entityId")
-		if entityType.String() == constants.EntityArticle {
-			return bbsurls.ArticleUrl(entityId.Int())
-		} else if entityType.String() == constants.EntityTopic {
+		if entityType.String() == constants.EntityTopic {
 			return bbsurls.TopicUrl(entityId.Int())
 		}
 	case msg.TypeCommentReply:
 		entityType := gjson.Get(t.ExtraData, "rootEntityType")
 		entityId := gjson.Get(t.ExtraData, "rootEntityId")
-		if entityType.String() == constants.EntityArticle {
-			return bbsurls.ArticleUrl(entityId.Int())
-		} else if entityType.String() == constants.EntityTopic {
+		if entityType.String() == constants.EntityTopic {
 			return bbsurls.TopicUrl(entityId.Int())
 		}
 	case msg.TypeTopicLike, msg.TypeTopicFavorite, msg.TypeTopicRecommend, msg.TypeQaAnswerAccepted:

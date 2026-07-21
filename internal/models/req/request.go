@@ -14,10 +14,14 @@ import (
 
 type CreateTopicReq struct {
 	Type          constants.TopicType   `json:"type" form:"type"`
+	Format        constants.TopicFormat `json:"format" form:"format"`
 	CategoryId    int64                 `json:"categoryId" form:"categoryId"`
 	Title         string                `json:"title" form:"title"`
+	Summary       string                `json:"summary" form:"summary"`
 	Content       string                `json:"content" form:"content"`
 	ContentType   constants.ContentType `json:"contentType" form:"contentType"`
+	Cover         *ImageDTO             `json:"cover" form:"cover"`
+	SourceUrl     string                `json:"sourceUrl" form:"sourceUrl"`
 	HideContent   string                `json:"hideContent" form:"hideContent"`
 	Tags          []string              `json:"tags" form:"tags"`
 	ImageList     []ImageDTO            `json:"imageList" form:"imageList"`
@@ -49,22 +53,15 @@ type VoteCastReq struct {
 }
 
 type EditTopicReq struct {
-	CategoryId    int64    `json:"categoryId" form:"categoryId"`
-	Title         string   `json:"title" form:"title"`
-	Content       string   `json:"content" form:"content"`
-	HideContent   string   `json:"hideContent" form:"hideContent"`
-	Tags          []string `json:"tags" form:"tags"`
-	AttachmentIds []string `json:"attachmentIds" form:"attachmentIds"` // 附件 ID 列表（UUID），全量替换
-}
-
-type CreateArticleReq struct {
-	Title       string                `json:"title" form:"title"`
-	Summary     string                `json:"summary" form:"summary"`
-	Content     string                `json:"content" form:"content"`
-	ContentType constants.ContentType `json:"contentType" form:"contentType"`
-	Cover       *ImageDTO             `json:"cover" form:"cover"`
-	Tags        []string              `json:"tags" form:"tags"`
-	SourceUrl   string                `json:"sourceUrl" form:"sourceUrl"`
+	CategoryId    int64     `json:"categoryId" form:"categoryId"`
+	Title         string    `json:"title" form:"title"`
+	Summary       string    `json:"summary" form:"summary"`
+	Content       string    `json:"content" form:"content"`
+	Cover         *ImageDTO `json:"cover" form:"cover"`
+	SourceUrl     string    `json:"sourceUrl" form:"sourceUrl"`
+	HideContent   string    `json:"hideContent" form:"hideContent"`
+	Tags          []string  `json:"tags" form:"tags"`
+	AttachmentIds []string  `json:"attachmentIds" form:"attachmentIds"` // 附件 ID 列表（UUID），全量替换
 }
 
 type ImageDTO struct {
@@ -128,11 +125,6 @@ type PasswordUpdateReq struct {
 	OldPassword string `json:"oldPassword" form:"oldPassword"`
 	Password    string `json:"password" form:"password"`
 	RePassword  string `json:"rePassword" form:"rePassword"`
-}
-
-type ArticleTagsReq struct {
-	ArticleId int64  `json:"articleId" form:"articleId"`
-	Tags      string `json:"tags" form:"tags"`
 }
 
 type RolePermissionsReq struct {
@@ -216,18 +208,6 @@ type UserForbiddenReq struct {
 
 func (r UserForbiddenReq) DecodedUserId() int64 {
 	return idcodec.Decode(r.UserId)
-}
-
-type ArticleReq struct {
-	Title   string `json:"title" form:"title"`
-	Summary string `json:"summary" form:"summary"`
-	Content string `json:"content" form:"content"`
-	Cover   string `json:"cover" form:"cover"`
-	Tags    string `json:"tags" form:"tags"`
-}
-
-func (r ArticleReq) ParsedTags() []string {
-	return SplitCommaStrings(r.Tags)
 }
 
 type CreateCommentReq struct {

@@ -131,17 +131,6 @@ func buildUserReportTarget(report *models.UserReport) map[string]interface{} {
 			target["url"] = "/topic/" + idcodec.Encode(topic.Id)
 			return target
 		}
-	case "article":
-		if article := services.ArticleService.Get(report.DataId); article != nil {
-			target["title"] = article.Title
-			target["summary"] = article.Summary
-			target["content"] = article.Content
-			target["contentType"] = article.ContentType
-			target["userId"] = article.UserId
-			target["status"] = article.Status
-			target["url"] = "/article/" + strconv.FormatInt(article.Id, 10)
-			return target
-		}
 	case "comment":
 		if comment := services.CommentService.Get(report.DataId); comment != nil {
 			target["content"] = comment.Content

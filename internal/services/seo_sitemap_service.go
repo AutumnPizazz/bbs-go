@@ -166,11 +166,6 @@ func (s *seoSitemapService) generateAndUpload(client sitemapUploadClient) error 
 		return err
 	}
 	files = append(files, topicFiles...)
-	articleFiles, err := s.buildArticleSitemapFiles()
-	if err != nil {
-		return err
-	}
-	files = append(files, articleFiles...)
 
 	_, err = uploadSitemapFiles(client, files, todaySitemapLastMod())
 	return err
@@ -301,42 +296,6 @@ func (s *seoSitemapService) buildTopicSitemapFiles() ([]generatedSitemapFile, er
 	return files, nil
 }
 
-func (s *seoSitemapService) buildArticleSitemapFiles() ([]generatedSitemapFile, error) {
-	var files []generatedSitemapFile
-	var cursor int64
-
-	for {
-		var articles []models.Article
-		if err := sqls.NewCnd().
-			Eq("status", constants.StatusOk).
-			Gt("id", cursor).
-			Asc("id").
-			Limit(sitemapBatchSize).
-			Build(sqls.DB()).
-			Find(&articles).Error; err != nil {
-			return nil, err
-		}
-		if len(articles) == 0 {
-			break
-		}
-
-		items := make([]sitemapURLItem, 0, len(articles))
-		for _, article := range articles {
-			items = append(items, sitemapURLItem{
-				Loc:     bbsurls.ArticleUrl(article.Id),
-				LastMod: seoSitemapLastMod(seoSitemapArticleLastModTime(article)),
-			})
-		}
-		files = append(files, generatedSitemapFile{
-			Key: "seo/sitemap-articles-" + strconv.Itoa(len(files)+1) + ".xml",
-			XML: buildSitemapXML(items),
-		})
-		cursor = articles[len(articles)-1].Id
-	}
-
-	return files, nil
-}
-
 func buildSitemapIndexXML(items []sitemapIndexItem) string {
 	sitemaps := make([]sitemapIndexItem, 0, len(items))
 	for _, item := range items {
@@ -379,17 +338,14 @@ func hasAbsoluteBaseURL(baseURL string) bool {
 }
 
 func seoSitemapTopicLastModTime(topic models.Topic) int64 {
-	if topic.LastCommentTime > topic.CreateTime {
-		return topic.LastCommentTime
+	lastMod := topic.UpdateTime
+	if topic.LastCommentTime > lastMod {
+		lastMod = topic.LastCommentTime
 	}
-	return topic.CreateTime
-}
-
-func seoSitemapArticleLastModTime(article models.Article) int64 {
-	if article.UpdateTime > article.CreateTime {
-		return article.UpdateTime
+	if topic.CreateTime > lastMod {
+		lastMod = topic.CreateTime
 	}
-	return article.CreateTime
+	return lastMod
 }
 
 func seoSitemapLastMod(timestamp int64) string {

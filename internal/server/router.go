@@ -109,18 +109,6 @@ func registerAPIRoutes(group *gin.RouterGroup) {
 	topicGroup.GET("/hide_content", apiHandlers.TopicHideContent)
 	topicGroup.GET("/:id", apiHandlers.TopicDetail)
 
-	articleGroup := group.Group("/article")
-	articleGroup.POST("/create", apiHandlers.ArticleCreate)
-	articleGroup.GET("/edit/:id", apiHandlers.ArticleEditForm)
-	articleGroup.POST("/edit/:id", apiHandlers.ArticleEdit)
-	articleGroup.POST("/delete/:id", apiHandlers.ArticleRemove)
-	articleGroup.POST("/favorite/:id", apiHandlers.ArticleFavorite)
-	articleGroup.GET("/redirect/:id", apiHandlers.ArticleRedirect)
-	articleGroup.GET("/user_articles", apiHandlers.ArticleUserArticles)
-	articleGroup.GET("/articles", apiHandlers.ArticleArticles)
-	articleGroup.GET("/tag/articles", apiHandlers.ArticleTagArticles)
-	articleGroup.GET("/:id", apiHandlers.ArticleDetail)
-
 	loginGroup := group.Group("/login")
 	loginGroup.POST("/signup", apiHandlers.LoginSignup)
 	loginGroup.POST("/signin", apiHandlers.LoginSignin)
@@ -205,7 +193,6 @@ func registerAPIRoutes(group *gin.RouterGroup) {
 
 	searchGroup := group.Group("/search")
 	searchGroup.GET("/topic", apiHandlers.SearchTopic)
-	searchGroup.GET("/article", apiHandlers.SearchArticle)
 	searchGroup.GET("/user", apiHandlers.SearchUser)
 
 	fansGroup := group.Group("/fans")
@@ -279,26 +266,11 @@ func registerAdminRoutes(group *gin.RouterGroup) {
 	tagGroup.GET("/tags", adminHandlers.TagTags)
 	tagGroup.GET("/:id", adminHandlers.TagDetail)
 
-	articleGroup := group.Group("/article")
-	articleGroup.POST("/list", adminHandlers.ArticleList)
-	articleGroup.POST("/update", adminHandlers.ArticleUpdate)
-	articleGroup.GET("/tags", adminHandlers.ArticleTags)
-	articleGroup.POST("/tags", adminHandlers.ArticleSaveTags)
-	articleGroup.POST("/delete", adminHandlers.ArticleRemove)
-	articleGroup.POST("/audit", adminHandlers.ArticleAudit)
-	articleGroup.GET("/:id", adminHandlers.ArticleDetail)
-
 	favoriteGroup := group.Group("/favorite")
 	favoriteGroup.POST("/list", adminHandlers.FavoriteList)
 	favoriteGroup.POST("/create", adminHandlers.FavoriteCreate)
 	favoriteGroup.POST("/update", adminHandlers.FavoriteUpdate)
 	favoriteGroup.GET("/:id", adminHandlers.FavoriteDetail)
-
-	articleTagGroup := group.Group("/article-tag")
-	articleTagGroup.POST("/list", adminHandlers.ArticleTagList)
-	articleTagGroup.POST("/create", adminHandlers.ArticleTagCreate)
-	articleTagGroup.POST("/update", adminHandlers.ArticleTagUpdate)
-	articleTagGroup.GET("/:id", adminHandlers.ArticleTagDetail)
 
 	topicGroup := group.Group("/topic")
 	topicGroup.POST("/list", adminHandlers.TopicList)

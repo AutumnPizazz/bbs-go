@@ -147,16 +147,6 @@ func getCommentMsg(comment *models.Comment) *CommentMsg {
 				Entity:     topic,
 			}
 		}
-	} else if comment.EntityType == constants.EntityArticle { // 文章
-		article := services.ArticleService.Get(comment.EntityId)
-		if article != nil && article.Status == constants.StatusOk {
-			return &CommentMsg{
-				Comment:    comment,
-				EntityType: comment.EntityType,
-				EntityId:   comment.EntityId,
-				Entity:     article,
-			}
-		}
 	} else if comment.EntityType == constants.EntityComment { // 二级评论
 		parentComment := services.CommentService.Get(comment.EntityId)
 		if parentComment == nil || parentComment.Status != constants.StatusOk {
@@ -174,11 +164,6 @@ func getCommentMsg(comment *models.Comment) *CommentMsg {
 			topic := services.TopicService.Get(parentComment.EntityId)
 			if topic != nil && topic.Status == constants.StatusOk {
 				ret.Entity = topic
-			}
-		} else if parentComment.EntityType == constants.EntityArticle {
-			article := services.ArticleService.Get(parentComment.EntityId)
-			if article != nil && article.Status == constants.StatusOk {
-				ret.Entity = article
 			}
 		} else {
 			return nil
@@ -209,8 +194,6 @@ type CommentMsg struct {
 func (c *CommentMsg) msgType() msg.Type {
 	if c.EntityType == constants.EntityTopic {
 		return msg.TypeTopicComment
-	} else if c.EntityType == constants.EntityArticle {
-		return msg.TypeArticleComment
 	} else if c.EntityType == constants.EntityComment {
 		return msg.TypeCommentReply
 	}
@@ -221,8 +204,6 @@ func (c *CommentMsg) msgType() msg.Type {
 func (c *CommentMsg) msgTitle() string {
 	if c.EntityType == constants.EntityTopic {
 		return locales.Get("message.comment_topic_reply_msg_title")
-	} else if c.EntityType == constants.EntityArticle {
-		return locales.Get("message.comment_article_reply_msg_title")
 	} else if c.EntityType == constants.EntityComment {
 		return locales.Get("message.comment_reply_msg_title")
 	}
@@ -236,10 +217,7 @@ func (c *CommentMsg) msgContent() string {
 
 // msgRepliedContent 被回复的内容
 func (c *CommentMsg) msgRepliedContent() string {
-	if c.EntityType == constants.EntityArticle {
-		article := c.Entity.(*models.Article)
-		return "《" + article.Title + "》"
-	} else if c.EntityType == constants.EntityTopic {
+	if c.EntityType == constants.EntityTopic {
 		topic := c.Entity.(*models.Topic)
 		return "《" + topic.GetTitle() + "》"
 	}
@@ -251,17 +229,11 @@ func (c *CommentMsg) rootEntityUserId() int64 {
 		if c.ParentComment.EntityType == constants.EntityTopic {
 			topic := c.Entity.(*models.Topic)
 			return topic.UserId
-		} else if c.ParentComment.EntityType == constants.EntityArticle {
-			article := c.Entity.(*models.Article)
-			return article.UserId
 		}
 	} else {
 		if c.Comment.EntityType == constants.EntityTopic {
 			topic := c.Entity.(*models.Topic)
 			return topic.UserId
-		} else if c.Comment.EntityType == constants.EntityArticle {
-			article := c.Entity.(*models.Article)
-			return article.UserId
 		}
 	}
 	return 0

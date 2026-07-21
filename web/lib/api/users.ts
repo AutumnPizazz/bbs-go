@@ -2,7 +2,6 @@ import { serverApiFetch as apiFetch } from "./server"
 
 import { toFormData } from "./client"
 import type {
-  Article,
   BindInfo,
   Favorite,
   PageData,
@@ -38,8 +37,8 @@ export function getUserTopics(userId: string, cursor?: string) {
 }
 
 export function getUserArticles(userId: string, cursor?: string) {
-  return apiFetch<PageData<Article>>("/api/article/user_articles", {
-    params: { userId, cursor },
+  return apiFetch<PageData<Topic>>("/api/topic/user_topics", {
+    params: { userId, cursor, format: "article" },
   })
 }
 

@@ -9,7 +9,7 @@ import { HomeAside } from "@/components/layout/home-aside"
 import { MainShell } from "@/components/layout/main-shell"
 import { PageLoading } from "@/components/common/page-state"
 import { apiFetch } from "@/lib/api/client"
-import type { Article, PageData, Tag } from "@/lib/api/types"
+import type { PageData, Tag, Topic } from "@/lib/api/types"
 import { useI18n } from "@/lib/i18n/provider"
 import { useRouteData, useRouteSegment } from "@/lib/spa-route"
 import { useDocumentTitle } from "@/lib/use-document-title"
@@ -17,7 +17,7 @@ import { useDocumentTitle } from "@/lib/use-document-title"
 export function ArticleTagClientPage({
   initialData,
 }: {
-  initialData?: PageData<Article>
+  initialData?: PageData<Topic>
 }) {
   const tagId = useRouteSegment(2)
   const { t } = useI18n()
@@ -42,7 +42,7 @@ export function ArticleTagClientPage({
             {currentTag.name}
           </div>
         ) : null}
-        <LoadMore<Article>
+        <LoadMore<Topic>
           initialItems={initialData?.results || []}
           initialCursor={initialData?.cursor || "0"}
           initialHasMore={initialData?.hasMore || false}
@@ -50,8 +50,8 @@ export function ArticleTagClientPage({
           resetKey={`article-tag:${tagId}`}
           labels={labels}
           loadPage={({ cursor }) =>
-            apiFetch<PageData<Article>>("/api/article/tag/articles", {
-              params: { tagId, cursor },
+            apiFetch<PageData<Topic>>("/api/topic/tag/topics", {
+              params: { tagId, cursor, format: "article" },
             })
           }
           renderItems={(items) => <ArticleList articles={items} t={t} />}

@@ -2,6 +2,7 @@ package spam
 
 import (
 	"bbs-go/internal/models"
+	"bbs-go/internal/models/constants"
 	"bbs-go/internal/models/req"
 	"bbs-go/internal/pkg/errs"
 	"bbs-go/internal/services"
@@ -14,14 +15,13 @@ func (EmailVerifyStrategy) Name() string {
 }
 
 func (EmailVerifyStrategy) CheckTopic(user *models.User, form req.CreateTopicReq) error {
-	if services.SysConfigService.IsCreateTopicEmailVerified() && !user.EmailVerified {
-		return errs.EmailNotVerified()
+	if constants.IsArticleTopicFormat(form.Format) {
+		if services.SysConfigService.IsCreateArticleEmailVerified() && !user.EmailVerified {
+			return errs.EmailNotVerified()
+		}
+		return nil
 	}
-	return nil
-}
-
-func (EmailVerifyStrategy) CheckArticle(user *models.User, form req.CreateArticleReq) error {
-	if services.SysConfigService.IsCreateArticleEmailVerified() && !user.EmailVerified {
+	if services.SysConfigService.IsCreateTopicEmailVerified() && !user.EmailVerified {
 		return errs.EmailNotVerified()
 	}
 	return nil

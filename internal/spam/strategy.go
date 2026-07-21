@@ -10,8 +10,6 @@ type Strategy interface {
 	Name() string
 	// CheckTopic 检查话题
 	CheckTopic(user *models.User, form req.CreateTopicReq) error
-	// CheckArticle 检查文章
-	CheckArticle(user *models.User, form req.CreateArticleReq) error
 	// CheckComment 检查评论
 	CheckComment(user *models.User, form req.CreateCommentReq) error
 }

@@ -20,7 +20,6 @@ import (
 	"github.com/mlogclub/simple/common/dates"
 	"github.com/mlogclub/simple/common/strs"
 	"github.com/mlogclub/simple/sqls"
-	"github.com/spf13/cast"
 )
 
 var index bleve.Index
@@ -46,71 +45,30 @@ func NewTopicDoc(topic *models.Topic) *TopicDocument {
 		Id:         topic.Id,
 		CategoryId: topic.CategoryId,
 		UserId:     topic.UserId,
+		Format:     string(topic.Format),
 		Title:      html.EscapeString(topic.Title),
+		Summary:    html.EscapeString(topic.Summary),
 		Status:     topic.Status,
 		Recommend:  topic.Recommend,
 		CreateTime: topic.CreateTime,
 	}
 
-	// 处理内容
-	content := markdown.ToHTML(topic.Content)
-	content = html2.GetHtmlText(content)
-	content = html.EscapeString(content)
-
-	doc.Content = content
-
-	// 处理用户
-	user := cache.UserCache.Get(topic.UserId)
-	if user != nil {
-		doc.Nickname = html.EscapeString(user.Nickname)
-	}
-
-	// 处理标签
-	tags := getTopicTags(topic.Id)
-	var tagsArr []string
-	for _, tag := range tags {
-		tagsArr = append(tagsArr, tag.Name)
-	}
-	doc.Tags = tagsArr
-
-	return doc
-}
-
-func NewArticleDoc(article *models.Article) *ArticleDocument {
-	if article == nil {
-		return nil
-	}
-	doc := &ArticleDocument{
-		Type:       EntityTypeArticle,
-		Id:         article.Id,
-		UserId:     article.UserId,
-		Title:      html.EscapeString(article.Title),
-		Summary:    html.EscapeString(article.Summary),
-		Status:     article.Status,
-		CreateTime: article.CreateTime,
-	}
-
-	content := article.Content
-	if article.ContentType == constants.ContentTypeMarkdown {
+	content := topic.Content
+	if topic.ContentType == constants.ContentTypeMarkdown {
 		content = markdown.ToHTML(content)
 	}
-	content = html2.GetHtmlText(content)
-	content = html.EscapeString(content)
+	content = html.EscapeString(html2.GetHtmlText(content))
 	doc.Content = content
 	if strs.IsBlank(doc.Summary) {
 		doc.Summary = text.GetSummary(content, constants.SummaryLen)
 	}
 
-	user := cache.UserCache.Get(article.UserId)
-	if user != nil {
+	if user := cache.UserCache.Get(topic.UserId); user != nil {
 		doc.Nickname = html.EscapeString(user.Nickname)
 	}
-
-	tags := getArticleTags(article.Id)
-	for _, tag := range tags {
+	for _, tag := range getTopicTags(topic.Id) {
 		doc.Tags = append(doc.Tags, tag.Name)
 	}
-
 	return doc
 }
 
@@ -136,7 +94,6 @@ func NewUserDoc(user *models.User) *UserDocument {
 
 func getTopicTags(topicId int64) []models.Tag {
 	topicTags := repositories.TopicTagRepository.Find(sqls.DB(), sqls.NewCnd().Where("topic_id = ?", topicId))
-
 	var tagIds []int64
 	for _, topicTag := range topicTags {
 		tagIds = append(tagIds, topicTag.TagId)
@@ -144,23 +101,16 @@ func getTopicTags(topicId int64) []models.Tag {
 	return cache.TagCache.GetList(tagIds)
 }
 
-func getArticleTags(articleId int64) []models.Tag {
-	tagIds := cache.ArticleTagCache.Get(articleId)
-	return cache.TagCache.GetList(tagIds)
-}
-
 func UpdateTopicIndexAsync(topic *models.Topic) {
 	go UpdateTopicIndex(topic)
 }
 
-// IndexData 索引数据
 func UpdateTopicIndex(topic *models.Topic) {
 	doc := NewTopicDoc(topic)
-	if doc == nil {
+	if doc == nil || index == nil {
 		return
 	}
-	err := index.Index(searchDocID(EntityTypeTopic, topic.Id), doc)
-	if err != nil {
+	if err := index.Index(searchDocID(EntityTypeTopic, topic.Id), doc); err != nil {
 		slog.Error(err.Error())
 	} else {
 		slog.Info("add topic search index", slog.Any("id", topic.Id))
@@ -168,36 +118,18 @@ func UpdateTopicIndex(topic *models.Topic) {
 }
 
 func DeleteTopicIndex(id int64) error {
-	if err := index.Delete(searchDocID(EntityTypeTopic, id)); err != nil {
-		return err
+	if index == nil {
+		return nil
 	}
-	return index.Delete(cast.ToString(id))
-}
-
-func UpdateArticleIndex(article *models.Article) {
-	doc := NewArticleDoc(article)
-	if doc == nil {
-		return
-	}
-	err := index.Index(searchDocID(EntityTypeArticle, article.Id), doc)
-	if err != nil {
-		slog.Error(err.Error())
-	} else {
-		slog.Info("add article search index", slog.Any("id", article.Id))
-	}
-}
-
-func DeleteArticleIndex(id int64) error {
-	return index.Delete(searchDocID(EntityTypeArticle, id))
+	return index.Delete(searchDocID(EntityTypeTopic, id))
 }
 
 func UpdateUserIndex(user *models.User) {
 	doc := NewUserDoc(user)
-	if doc == nil {
+	if doc == nil || index == nil {
 		return
 	}
-	err := index.Index(searchDocID(EntityTypeUser, user.Id), doc)
-	if err != nil {
+	if err := index.Index(searchDocID(EntityTypeUser, user.Id), doc); err != nil {
 		slog.Error(err.Error())
 	} else {
 		slog.Info("add user search index", slog.Any("id", user.Id))
@@ -205,110 +137,34 @@ func UpdateUserIndex(user *models.User) {
 }
 
 func DeleteUserIndex(id int64) error {
+	if index == nil {
+		return nil
+	}
 	return index.Delete(searchDocID(EntityTypeUser, id))
 }
 
-// 分页查询
-func SearchTopic(keyword string, categoryId int64, categoryIds []int64, timeRange, page, limit int) (docs []TopicDocument, paging *sqls.Paging, err error) {
+func SearchTopic(keyword string, categoryId int64, categoryIds []int64, timeRange int, format string, page, limit int) (docs []TopicDocument, paging *sqls.Paging, err error) {
 	paging = &sqls.Paging{Page: page, Limit: limit}
-
 	query := bleve.NewBooleanQuery()
 	query.AddMust(bleve.NewMatchAllQuery())
 	query.AddMust(typeQuery(EntityTypeTopic))
 
-	if strs.IsNotBlank(keyword) {
-		query.AddMust(keywordQuery(keyword, []string{"title", "content", "tags", "nickname"}))
+	if strs.IsNotBlank(format) {
+		formatQuery := bleve.NewTermQuery(format)
+		formatQuery.SetField("format")
+		query.AddMust(formatQuery)
 	}
-
+	if strs.IsNotBlank(keyword) {
+		query.AddMust(keywordQuery(keyword, []string{"title", "summary", "content", "tags", "nickname"}))
+	}
 	if categoryId != 0 {
-		if categoryId == -1 { // 推荐
+		if categoryId == -1 {
 			boolFieldQuery := bleve.NewBoolFieldQuery(true)
 			boolFieldQuery.SetField("recommend")
 			query.AddMust(boolFieldQuery)
-		} else {
-			categoryQuery := buildCategoryQuery(categoryId, categoryIds)
-			if categoryQuery != nil {
-				query.AddMust(categoryQuery)
-			}
+		} else if categoryQuery := buildCategoryQuery(categoryId, categoryIds); categoryQuery != nil {
+			query.AddMust(categoryQuery)
 		}
-	}
-	if timeRange != 0 {
-		var beginTime int64
-		switch timeRange {
-		case 1: // 一天内
-			beginTime = dates.Timestamp(time.Now().Add(-24 * time.Hour))
-		case 2: // 一周内
-			beginTime = dates.Timestamp(time.Now().Add(-7 * 24 * time.Hour))
-		case 3: // 一月内
-			beginTime = dates.Timestamp(time.Now().AddDate(0, -1, 0))
-		case 4: // 一年内
-			beginTime = dates.Timestamp(time.Now().AddDate(-1, 0, 0))
-		}
-
-		min := float64(beginTime)
-		max := float64(math.MaxInt64)
-		createTimeQuery := bleve.NewNumericRangeQuery(&min, &max)
-		createTimeQuery.SetField("createTime")
-		query.AddMust(createTimeQuery)
-	}
-
-	searchRequest := bleve.NewSearchRequest(query)
-	searchRequest.From = paging.Offset()
-	searchRequest.Size = paging.Limit
-	searchRequest.Fields = []string{"*"}
-	searchRequest.Highlight = bleve.NewHighlightWithStyle("html")
-	searchRequest.Highlight.AddField("title")
-	searchRequest.Highlight.AddField("content")
-
-	result, err := index.Search(searchRequest)
-	if err != nil {
-		slog.Error("搜索失败:", slog.Any("err", err))
-	}
-
-	for _, hit := range result.Hits {
-
-		storedDoc := make(map[string]interface{})
-		for key, field := range hit.Fields {
-			storedDoc[key] = field
-		}
-
-		for field, fragments := range hit.Fragments {
-			if len(fragments) > 0 {
-				storedDoc[field] = fragments[0]
-			}
-		}
-
-		if tagField, ok := storedDoc["tags"]; ok {
-			switch v := tagField.(type) {
-			case string:
-				storedDoc["tags"] = []string{v}
-			case []interface{}:
-				var tags []string
-				for _, tag := range v {
-					tags = append(tags, tag.(string))
-				}
-				storedDoc["tags"] = tags
-			}
-		}
-
-		var doc TopicDocument
-		if err := mapstructure.Decode(storedDoc, &doc); err != nil {
-			slog.Error(err.Error())
-		}
-		docs = append(docs, doc)
-	}
-
-	return
-}
-
-func SearchArticle(keyword string, timeRange, page, limit int) (docs []ArticleDocument, paging *sqls.Paging, err error) {
-	paging = &sqls.Paging{Page: page, Limit: limit}
-
-	query := bleve.NewBooleanQuery()
-	query.AddMust(bleve.NewMatchAllQuery())
-	query.AddMust(typeQuery(EntityTypeArticle))
-	if strs.IsNotBlank(keyword) {
-		query.AddMust(keywordQuery(keyword, []string{"title", "summary", "content", "tags", "nickname"}))
 	}
 	addTimeRangeQuery(query, timeRange)
 
@@ -323,31 +179,29 @@ func SearchArticle(keyword string, timeRange, page, limit int) (docs []ArticleDo
 
 	result, err := index.Search(searchRequest)
 	if err != nil {
-		slog.Error("搜索失败:", slog.Any("err", err))
-		return
+		return nil, paging, err
 	}
 	for _, hit := range result.Hits {
 		storedDoc := hitFields(hit.Fields, hit.Fragments)
 		normalizeTags(storedDoc)
-		var doc ArticleDocument
+		var doc TopicDocument
 		if err := mapstructure.Decode(storedDoc, &doc); err != nil {
 			slog.Error(err.Error())
+			continue
 		}
 		docs = append(docs, doc)
 	}
-	return
+	return docs, paging, nil
 }
 
 func SearchUser(keyword string, page, limit int) (docs []UserDocument, paging *sqls.Paging, err error) {
 	paging = &sqls.Paging{Page: page, Limit: limit}
-
 	query := bleve.NewBooleanQuery()
 	query.AddMust(bleve.NewMatchAllQuery())
 	query.AddMust(typeQuery(EntityTypeUser))
 	if strs.IsNotBlank(keyword) {
 		query.AddMust(keywordQuery(keyword, []string{"username", "nickname", "description"}))
 	}
-
 	searchRequest := bleve.NewSearchRequest(query)
 	searchRequest.From = paging.Offset()
 	searchRequest.Size = paging.Limit
@@ -359,29 +213,24 @@ func SearchUser(keyword string, page, limit int) (docs []UserDocument, paging *s
 
 	result, err := index.Search(searchRequest)
 	if err != nil {
-		slog.Error("搜索失败:", slog.Any("err", err))
-		return
+		return nil, paging, err
 	}
 	for _, hit := range result.Hits {
-		storedDoc := hitFields(hit.Fields, hit.Fragments)
 		var doc UserDocument
-		if err := mapstructure.Decode(storedDoc, &doc); err != nil {
+		if err := mapstructure.Decode(hitFields(hit.Fields, hit.Fragments), &doc); err != nil {
 			slog.Error(err.Error())
+			continue
 		}
 		docs = append(docs, doc)
 	}
-	return
+	return docs, paging, nil
 }
 
 func SearchAll(keyword string, limit int) (AllResult, error) {
 	if limit <= 0 {
 		limit = 5
 	}
-	topics, _, err := SearchTopic(keyword, 0, nil, 0, 1, limit)
-	if err != nil {
-		return AllResult{}, err
-	}
-	articles, _, err := SearchArticle(keyword, 0, 1, limit)
+	topics, _, err := SearchTopic(keyword, 0, nil, 0, "", 1, limit)
 	if err != nil {
 		return AllResult{}, err
 	}
@@ -389,7 +238,7 @@ func SearchAll(keyword string, limit int) (AllResult, error) {
 	if err != nil {
 		return AllResult{}, err
 	}
-	return AllResult{Topics: topics, Articles: articles, Users: users}, nil
+	return AllResult{Topics: topics, Users: users}, nil
 }
 
 func buildCategoryQuery(categoryId int64, categoryIds []int64) blevequery.Query {
@@ -409,23 +258,23 @@ func buildCategoryQuery(categoryId int64, categoryIds []int64) blevequery.Query 
 func buildExactCategoryQuery(categoryId int64) blevequery.Query {
 	f := float64(categoryId)
 	b := true
-	categoryIdQuery := bleve.NewNumericRangeInclusiveQuery(&f, &f, &b, &b)
-	categoryIdQuery.SetField("categoryId")
-	return categoryIdQuery
+	query := bleve.NewNumericRangeInclusiveQuery(&f, &f, &b, &b)
+	query.SetField("categoryId")
+	return query
 }
 
 func typeQuery(entityType string) blevequery.Query {
-	q := bleve.NewTermQuery(entityType)
-	q.SetField("type")
-	return q
+	query := bleve.NewTermQuery(entityType)
+	query.SetField("type")
+	return query
 }
 
 func keywordQuery(keyword string, fields []string) blevequery.Query {
 	queries := make([]blevequery.Query, 0, len(fields))
 	for _, field := range fields {
-		q := bleve.NewMatchQuery(keyword)
-		q.SetField(field)
-		queries = append(queries, q)
+		query := bleve.NewMatchQuery(keyword)
+		query.SetField(field)
+		queries = append(queries, query)
 	}
 	return bleve.NewDisjunctionQuery(queries...)
 }
@@ -435,13 +284,14 @@ func addTimeRangeQuery(query *blevequery.BooleanQuery, timeRange int) {
 		return
 	}
 	var beginTime int64
-	if timeRange == 1 {
+	switch timeRange {
+	case 1:
 		beginTime = dates.Timestamp(time.Now().Add(-24 * time.Hour))
-	} else if timeRange == 2 {
+	case 2:
 		beginTime = dates.Timestamp(time.Now().Add(-7 * 24 * time.Hour))
-	} else if timeRange == 3 {
+	case 3:
 		beginTime = dates.Timestamp(time.Now().AddDate(0, -1, 0))
-	} else if timeRange == 4 {
+	case 4:
 		beginTime = dates.Timestamp(time.Now().AddDate(-1, 0, 0))
 	}
 	if beginTime == 0 {
@@ -472,12 +322,12 @@ func normalizeTags(storedDoc map[string]interface{}) {
 	if !ok {
 		return
 	}
-	switch v := tagField.(type) {
+	switch value := tagField.(type) {
 	case string:
-		storedDoc["tags"] = []string{v}
+		storedDoc["tags"] = []string{value}
 	case []interface{}:
-		var tags []string
-		for _, tag := range v {
+		tags := make([]string, 0, len(value))
+		for _, tag := range value {
 			if name, ok := tag.(string); ok {
 				tags = append(tags, name)
 			}

@@ -56,11 +56,6 @@ func UserUrl(userId int64) string {
 	return AbsUrl("/user/" + idcodec.Encode(userId))
 }
 
-// 文章详情
-func ArticleUrl(articleId int64) string {
-	return AbsUrl("/article/" + strconv.FormatInt(articleId, 10))
-}
-
 // 标签文章列表
 func TagArticlesUrl(tagId int64) string {
 	return AbsUrl("/articles/" + strconv.FormatInt(tagId, 10))

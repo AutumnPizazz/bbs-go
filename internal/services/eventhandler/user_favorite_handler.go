@@ -18,8 +18,6 @@ func handleUserFavorite(i interface{}) {
 
 	if e.EntityType == constants.EntityTopic {
 		sendTopicFavoriteMsg(e.EntityId, e.UserId)
-	} else if e.EntityType == constants.EntityArticle {
-		// TODO
 	}
 }
 

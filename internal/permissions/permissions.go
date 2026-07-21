@@ -48,12 +48,6 @@ var (
 	PermissionTopicDelete    = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.topic.delete", GroupName: GroupContent, SortNo: 130, NameEn: "Delete Topics", NameZh: "删除话题"}
 	PermissionTopicSolve     = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.topic.solve", GroupName: GroupContent, SortNo: 140, NameEn: "Solve Topics", NameZh: "标记问答解决"}
 
-	PermissionArticleView   = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.article.view", GroupName: GroupContent, SortNo: 200, NameEn: "View Articles", NameZh: "查看文章"}
-	PermissionArticleUpdate = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.article.update", GroupName: GroupContent, SortNo: 210, NameEn: "Update Articles", NameZh: "编辑文章"}
-	PermissionArticleAudit  = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.article.audit", GroupName: GroupContent, SortNo: 220, NameEn: "Audit Articles", NameZh: "审核文章"}
-	PermissionArticleDelete = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.article.delete", GroupName: GroupContent, SortNo: 230, NameEn: "Delete Articles", NameZh: "删除文章"}
-	PermissionArticleTags   = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.article.tags", GroupName: GroupContent, SortNo: 240, NameEn: "Update Article Tags", NameZh: "维护文章标签"}
-
 	PermissionCommentDelete = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.comment.delete", GroupName: GroupContent, SortNo: 310, NameEn: "Delete Comments", NameZh: "删除评论"}
 
 	PermissionCategoryView   = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.category.view", GroupName: GroupContent, SortNo: 400, NameEn: "View Categories", NameZh: "查看分类"}
@@ -107,11 +101,6 @@ var Permissions = []PermissionDefinition{
 	PermissionTopicAudit,
 	PermissionTopicDelete,
 	PermissionTopicSolve,
-	PermissionArticleView,
-	PermissionArticleUpdate,
-	PermissionArticleAudit,
-	PermissionArticleDelete,
-	PermissionArticleTags,
 	PermissionCommentDelete,
 	PermissionCategoryView,
 	PermissionCategoryCreate,

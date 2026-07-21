@@ -1,6 +1,7 @@
 import { useParams } from "react-router"
 
 import { useAppState } from "@/components/app/app-provider"
+import { ArticleForm } from "@/components/article/article-form"
 import { EmptyState } from "@/components/common/empty-state"
 import { TopicEditForm } from "@/components/topic/topic-edit-form"
 import { apiFetch } from "@/lib/api/client"
@@ -56,7 +57,11 @@ export default function TopicEditRoute() {
   return (
     <main className="main">
       <div className="container">
-        <TopicEditForm topic={data.topic} config={config} categories={data.categories} />
+        {data.topic.format === "article" ? (
+          <ArticleForm mode="edit" config={config} initialArticle={data.topic} />
+        ) : (
+          <TopicEditForm topic={data.topic} config={config} categories={data.categories} />
+        )}
       </div>
     </main>
   )

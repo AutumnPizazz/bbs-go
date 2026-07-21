@@ -55,14 +55,14 @@ func CommonOverview(ctx *gin.Context) {
 	metrics := map[string]int64{
 		"totalUsers":    repositories.UserRepository.Count(db, sqls.NewCnd().Eq("status", constants.StatusOk)),
 		"totalTopics":   repositories.TopicRepository.Count(db, sqls.NewCnd().Eq("status", constants.StatusOk)),
-		"totalArticles": repositories.ArticleRepository.Count(db, sqls.NewCnd().Eq("status", constants.StatusOk)),
+		"totalArticles": repositories.TopicRepository.Count(db, sqls.NewCnd().Eq("status", constants.StatusOk).Eq("format", constants.TopicFormatArticle)),
 		"todayUsers":    repositories.UserRepository.Count(db, sqls.NewCnd().Eq("status", constants.StatusOk).Gte("create_time", todayStart)),
 		"todayTopics":   repositories.TopicRepository.Count(db, sqls.NewCnd().Eq("status", constants.StatusOk).Gte("create_time", todayStart)),
 	}
 
 	pending := map[string]int64{
 		"pendingTopics":   repositories.TopicRepository.Count(db, sqls.NewCnd().Eq("status", constants.StatusReview)),
-		"pendingArticles": repositories.ArticleRepository.Count(db, sqls.NewCnd().Eq("status", constants.StatusReview)),
+		"pendingArticles": repositories.TopicRepository.Count(db, sqls.NewCnd().Eq("status", constants.StatusReview).Eq("format", constants.TopicFormatArticle)),
 		"pendingReports":  repositories.UserReportRepository.Count(db, sqls.NewCnd().Eq("audit_status", 0)),
 		"failedEmails":    repositories.EmailLogRepository.Count(db, sqls.NewCnd().Eq("status", constants.EmailLogStatusFailed)),
 	}

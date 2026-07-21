@@ -28,9 +28,12 @@ func (s *topicPublishService) Publish(userId int64, form req.CreateTopicReq) (*m
 	if err := s.checkParams(userId, form); err != nil {
 		return nil, err
 	}
+	if form.Format == "" {
+		form.Format = constants.TopicFormatPost
+	}
 
 	// QA 话题不处理隐藏内容和投票，前端即使传入也忽略。
-	if form.Type == constants.TopicTypeQA {
+	if form.Type == constants.TopicTypeQA || constants.IsArticleTopicFormat(form.Format) {
 		form.HideContent = ""
 		form.Vote = nil
 	}
@@ -38,12 +41,15 @@ func (s *topicPublishService) Publish(userId int64, form req.CreateTopicReq) (*m
 	now := dates.NowTimestamp()
 	topic := &models.Topic{
 		Type:            form.Type,
+		Format:          form.Format,
 		QaStatus:        constants.QaStatusUnsolved,
 		UserId:          userId,
 		CategoryId:      form.CategoryId,
 		Title:           form.Title,
+		Summary:         form.Summary,
 		ContentType:     form.ContentType,
 		Content:         form.Content,
+		SourceUrl:       strings.TrimSpace(form.SourceUrl),
 		HideContent:     form.HideContent,
 		Status:          constants.StatusOk,
 		UserAgent:       form.UserAgent,
@@ -51,6 +57,10 @@ func (s *topicPublishService) Publish(userId int64, form req.CreateTopicReq) (*m
 		IpLocation:      iplocator.IpLocation(form.Ip),
 		LastCommentTime: now,
 		CreateTime:      now,
+		UpdateTime:      now,
+	}
+	if form.Cover != nil {
+		topic.Cover = jsons.ToJsonStr(form.Cover)
 	}
 
 	if len(form.ImageList) > 0 {
@@ -150,6 +160,19 @@ func (s *topicPublishService) _IsNeedReview(form req.CreateTopicReq) bool {
 
 func (s topicPublishService) checkParams(userId int64, form req.CreateTopicReq) (err error) {
 	modules := SysConfigService.GetModules()
+	format := form.Format
+	if format == "" {
+		format = constants.TopicFormatPost
+	}
+	if !constants.IsTopicFormatValid(format) {
+		return errors.New(locales.Get("topic.type_not_supported"))
+	}
+	if format == constants.TopicFormatArticle && form.Type != constants.TopicTypeTopic {
+		return errors.New(locales.Get("topic.type_not_supported"))
+	}
+	if format == constants.TopicFormatArticle && !modules.Article {
+		return errors.New(locales.Get("article.disabled"))
+	}
 	if form.Type == constants.TopicTypeTweet {
 		if !modules.Tweet {
 			return errors.New(locales.Get("topic.updates_disabled"))
@@ -161,7 +184,7 @@ func (s topicPublishService) checkParams(userId int64, form req.CreateTopicReq) 
 		// 	return errors.New("内容或图片不能为空")
 		// }
 	} else if form.Type == constants.TopicTypeTopic {
-		if !modules.Topic {
+		if format != constants.TopicFormatArticle && !modules.Topic {
 			return errors.New(locales.Get("topic.discussions_disabled"))
 		}
 		if strs.IsBlank(form.Title) {
@@ -216,8 +239,11 @@ func (s topicPublishService) checkParams(userId int64, form req.CreateTopicReq) 
 	if category == nil || category.Status != constants.StatusOk {
 		return errors.New(locales.Get("topic.category_not_found"))
 	}
-	if !category.Type.Supports(form.Type) {
+	if !category.Type.Supports(form.Type) || (format == constants.TopicFormatArticle && category.Type != constants.CategoryTypeNormal) {
 		return errors.New(locales.Get("topic.category_type_mismatch"))
+	}
+	if format == constants.TopicFormatArticle && (len(form.AttachmentIds) > 0 || strings.TrimSpace(form.HideContent) != "" || form.Vote != nil) {
+		return errors.New(locales.Get("topic.type_not_supported"))
 	}
 	if form.Type == constants.TopicTypeQA {
 		form.Vote = nil

@@ -178,10 +178,14 @@ func TopicEditForm(ctx *gin.Context) {
 	ginx.WriteJSON(ctx, map[string]any{
 		"id":          idcodec.Encode(topic.Id),
 		"type":        topic.Type,
+		"format":      topic.Format,
 		"categoryId":  topic.CategoryId,
 		"title":       topic.Title,
+		"summary":     topic.Summary,
 		"content":     topic.Content,
 		"contentType": topic.ContentType,
+		"cover":       render.BuildImage(topic.Cover),
+		"sourceUrl":   topic.SourceUrl,
 		"hideContent": topic.HideContent,
 		"tags":        tagNames,
 		"attachments": attachments,
@@ -345,7 +349,8 @@ func TopicUserTopics(ctx *gin.Context) {
 		return
 	}
 	cursor := params.FormValueInt64Default(ctx, "cursor", 0)
-	topics, cursor, hasMore := services.TopicService.GetUserTopics(userId, cursor)
+	format := constants.TopicFormat(strings.TrimSpace(params.FormValue(ctx, "format")))
+	topics, cursor, hasMore := services.TopicService.GetUserTopics(userId, cursor, format)
 	ginx.WriteJSON(ctx, ginx.CursorData(render.BuildSimpleTopics(ctx, topics), strconv.FormatInt(cursor, 10), hasMore))
 
 }
@@ -356,6 +361,7 @@ func TopicTopics(ctx *gin.Context) {
 		categoryId = params.FormValueInt64Default(ctx, "categoryId", 0)
 		qaStatus   = strings.TrimSpace(params.FormValue(ctx, "qaStatus"))
 		sort       = strings.TrimSpace(params.FormValue(ctx, "sort"))
+		format     = constants.TopicFormat(strings.TrimSpace(params.FormValue(ctx, "format")))
 		user       = common.GetCurrentUser(ctx)
 	)
 	if categoryId == constants.CategoryIdFollow && user == nil {
@@ -365,10 +371,10 @@ func TopicTopics(ctx *gin.Context) {
 
 	var temp []models.Topic
 	if cursor <= 0 {
-		stickyTopics := services.TopicService.GetStickyTopics(categoryId, 3, qaStatus)
+		stickyTopics := services.TopicService.GetStickyTopics(categoryId, 3, qaStatus, format)
 		temp = append(temp, stickyTopics...)
 	}
-	topics, cursor, hasMore := services.TopicService.GetTopics(user, categoryId, cursor, qaStatus, sort)
+	topics, cursor, hasMore := services.TopicService.GetTopics(user, categoryId, cursor, qaStatus, sort, format)
 	for _, topic := range topics {
 		topic.Sticky = false // 正常列表不要渲染置顶
 		temp = append(temp, topic)
@@ -428,7 +434,8 @@ func TopicTagTopics(ctx *gin.Context) {
 		ginx.WriteJSON(ctx, err)
 		return
 	}
-	topics, cursor, hasMore := services.TopicService.GetTagTopics(tagId, cursor)
+	format := constants.TopicFormat(strings.TrimSpace(params.FormValue(ctx, "format")))
+	topics, cursor, hasMore := services.TopicService.GetTagTopics(tagId, cursor, format)
 	ginx.WriteJSON(ctx, ginx.CursorData(render.BuildSimpleTopics(ctx, topics), strconv.FormatInt(cursor, 10), hasMore))
 
 }

@@ -297,7 +297,7 @@ func (s *sysConfigService) GetNotificationTypes() map[string]dto.NoticeTypeConfi
 		_ = jsons.Parse(str, &out)
 	}
 	// 默认补全缺失类型：topicDelete 默认不发邮件（保持历史行为），其余全部开启
-	allKeys := []string{"topicComment", "commentReply", "topicLike", "topicFavorite", "topicRecommend", "topicDelete", "articleComment", "qaAnswerAccepted"}
+	allKeys := []string{"topicComment", "commentReply", "topicLike", "topicFavorite", "topicRecommend", "topicDelete", "qaAnswerAccepted"}
 	for _, k := range allKeys {
 		if _, ok := out[k]; !ok {
 			if k == "topicDelete" {
@@ -325,8 +325,6 @@ func msgTypeToKey(t msg.Type) string {
 		return "topicRecommend"
 	case msg.TypeTopicDelete:
 		return "topicDelete"
-	case msg.TypeArticleComment:
-		return "articleComment"
 	case msg.TypeQaAnswerAccepted:
 		return "qaAnswerAccepted"
 	default:

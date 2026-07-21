@@ -104,17 +104,17 @@ export default function DashboardArticlesRoute() {
   const page = Number(filters.page || 1)
   const limit = Number(filters.limit || 20)
   const pageCount = Math.max(1, Math.ceil(total / limit))
-  const canView = userHasPermission(currentUser, PERMISSIONS.DASHBOARD_ARTICLE_VIEW)
-  const canAudit = userHasPermission(currentUser, PERMISSIONS.DASHBOARD_ARTICLE_AUDIT)
-  const canDelete = userHasPermission(currentUser, PERMISSIONS.DASHBOARD_ARTICLE_DELETE)
+  const canView = userHasPermission(currentUser, PERMISSIONS.DASHBOARD_TOPIC_VIEW)
+  const canAudit = userHasPermission(currentUser, PERMISSIONS.DASHBOARD_TOPIC_AUDIT)
+  const canDelete = userHasPermission(currentUser, PERMISSIONS.DASHBOARD_TOPIC_DELETE)
 
   const load = React.useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
       const data = await adminList<ArticleRecord>(
-        "/api/admin/article/list",
-        filters
+        "/api/admin/topic/list",
+        { ...filters, format: "article" }
       )
       setRecords(data.results || [])
       setTotal(data.page?.total ?? data.results?.length ?? 0)
@@ -165,8 +165,8 @@ export default function DashboardArticlesRoute() {
     try {
       await adminPostForm(
         action === "audit"
-          ? "/api/admin/article/audit"
-          : "/api/admin/article/delete",
+          ? "/api/admin/topic/audit"
+          : "/api/admin/topic/delete",
         { id }
       )
       msgSuccess(articleActionSuccessMessage(t, action))
@@ -301,7 +301,7 @@ function ArticleFeedItem({
     article.user?.nickname ||
     article.user?.username ||
     t("dashboard.user.anonymous")
-  const articleUrl = `/article/${article.id}`
+  const articleUrl = `/topic/${article.id}`
   const coverSrc = imageSrc(article.cover)
   const userUrl = article.user?.idEncode
     ? `/user/${article.user.idEncode}`

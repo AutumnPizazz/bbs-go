@@ -10,9 +10,8 @@ import (
 )
 
 const (
-	EntityTypeTopic   = "topic"
-	EntityTypeArticle = "article"
-	EntityTypeUser    = "user"
+	EntityTypeTopic = "topic"
+	EntityTypeUser  = "user"
 )
 
 type TopicDocument struct {
@@ -22,22 +21,11 @@ type TopicDocument struct {
 	UserId     int64    `json:"userId"`
 	Nickname   string   `json:"nickname"`
 	Title      string   `json:"title"`
-	Content    string   `json:"content"`
-	Tags       []string `json:"tags"`
-	Recommend  bool     `json:"recommend"`
-	Status     int      `json:"status"`
-	CreateTime int64    `json:"createTime"`
-}
-
-type ArticleDocument struct {
-	Type       string   `json:"type"`
-	Id         int64    `json:"id"`
-	UserId     int64    `json:"userId"`
-	Nickname   string   `json:"nickname"`
-	Title      string   `json:"title"`
+	Format     string   `json:"format"`
 	Summary    string   `json:"summary"`
 	Content    string   `json:"content"`
 	Tags       []string `json:"tags"`
+	Recommend  bool     `json:"recommend"`
 	Status     int      `json:"status"`
 	CreateTime int64    `json:"createTime"`
 }
@@ -58,9 +46,8 @@ type UserDocument struct {
 }
 
 type AllResult struct {
-	Topics   []TopicDocument   `json:"topics"`
-	Articles []ArticleDocument `json:"articles"`
-	Users    []UserDocument    `json:"users"`
+	Topics []TopicDocument `json:"topics"`
+	Users  []UserDocument  `json:"users"`
 }
 
 func (t *TopicDocument) ToStr() string {
@@ -85,6 +72,7 @@ func newIndex(indexPath string) bleve.Index {
 	mapping.DefaultMapping.AddFieldMappingsAt("nickname", newTextField())
 	mapping.DefaultMapping.AddFieldMappingsAt("avatar", newTextField())
 	mapping.DefaultMapping.AddFieldMappingsAt("title", newTextField())
+	mapping.DefaultMapping.AddFieldMappingsAt("format", newTextField())
 	mapping.DefaultMapping.AddFieldMappingsAt("summary", newTextField())
 	mapping.DefaultMapping.AddFieldMappingsAt("content", newTextField())
 	mapping.DefaultMapping.AddFieldMappingsAt("description", newTextField())

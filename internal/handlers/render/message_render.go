@@ -53,21 +53,17 @@ func BuildMessages(messages []models.Message) []resp.MessageResponse {
 func getMessageDetailUrl(t *models.Message) string {
 	msgType := msg.Type(t.Type)
 	switch msgType {
-	case msg.TypeTopicComment, msg.TypeArticleComment:
+	case msg.TypeTopicComment:
 		entityType := gjson.Get(t.ExtraData, "entityType")
 		entityId := gjson.Get(t.ExtraData, "entityId")
-		if entityType.String() == constants.EntityArticle {
-			return bbsurls.ArticleUrl(entityId.Int())
-		} else if entityType.String() == constants.EntityTopic {
+		if entityType.String() == constants.EntityTopic {
 			return bbsurls.TopicUrl(entityId.Int())
 		}
 	case msg.TypeCommentReply:
 		entityType := gjson.Get(t.ExtraData, "rootEntityType")
 		entityId := gjson.Get(t.ExtraData, "rootEntityId")
 
-		if entityType.String() == constants.EntityArticle {
-			return bbsurls.ArticleUrl(entityId.Int())
-		} else if entityType.String() == constants.EntityTopic {
+		if entityType.String() == constants.EntityTopic {
 			return bbsurls.TopicUrl(entityId.Int())
 		}
 	case msg.TypeTopicLike, msg.TypeTopicFavorite, msg.TypeTopicRecommend:

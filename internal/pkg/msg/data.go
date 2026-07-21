@@ -16,7 +16,6 @@ const (
 	TypeTopicFavorite    Type = 3 // 话题被收藏
 	TypeTopicRecommend   Type = 4 // 话题被设为推荐
 	TypeTopicDelete      Type = 5 // 话题被删除
-	TypeArticleComment   Type = 6 // 收到文章评论
 	TypeQaAnswerAccepted Type = 9 // 回答被采纳为最佳答案
 )
 

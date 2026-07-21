@@ -2,7 +2,6 @@ import type { MetaDescriptor } from "react-router"
 
 import type { RootLoaderData } from "@/app/route-helpers/types"
 import type {
-  Article,
   SiteConfig,
   Tag,
   Topic,
@@ -266,7 +265,10 @@ export function topicMeta(
   canonicalPath?: string
 ) {
   const title = topic?.type === 1 ? topic?.content : topic?.title
-  const image = topic?.imageList?.[0]?.url || topic?.imageList?.[0]?.preview
+  const isArticle = topic?.format === "article"
+  const image = isArticle
+    ? topic?.cover?.url || topic?.cover?.preview
+    : topic?.imageList?.[0]?.url || topic?.imageList?.[0]?.preview
   return contentMeta(config, {
     title,
     description: topic?.summary,
@@ -276,9 +278,9 @@ export function topicMeta(
     structuredData: topic
       ? compactObject({
           "@context": "https://schema.org",
-          "@type": "DiscussionForumPosting",
+          "@type": isArticle ? "Article" : "DiscussionForumPosting",
           headline: title,
-          text: topic.summary,
+          ...(isArticle ? { description: topic.summary } : { text: topic.summary }),
           image: imageURL(config, image),
           url: canonicalURL(config, canonicalPath),
           datePublished: timestampToIso(topic.createTime),
@@ -312,35 +314,6 @@ export function tagPageMeta(
   return pageMeta(config, title ? `${title} - ${suffix}` : suffix, {
     description: tag?.description,
     canonicalPath,
-  })
-}
-
-export function articleMeta(
-  config: SiteConfig | null | undefined,
-  article: Article | null | undefined,
-  canonicalPath?: string
-) {
-  const image = article?.cover?.url || article?.cover?.preview
-  return contentMeta(config, {
-    title: article?.title,
-    description: article?.summary,
-    keywords: tagKeywords(article?.tags),
-    image,
-    canonicalPath,
-    structuredData: article
-      ? compactObject({
-          "@context": "https://schema.org",
-          "@type": "Article",
-          headline: article.title,
-          description: article.summary,
-          image: imageURL(config, image),
-          url: canonicalURL(config, canonicalPath),
-          datePublished: timestampToIso(article.createTime),
-          dateModified: timestampToIso(article.createTime),
-          author: personStructuredData(config, article.user),
-        })
-      : undefined,
-    ogType: "article",
   })
 }
 

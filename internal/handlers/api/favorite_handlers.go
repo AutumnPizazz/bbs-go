@@ -33,8 +33,6 @@ func FavoriteAdd(ctx *gin.Context) {
 	switch req.EntityType {
 	case constants.EntityTopic:
 		err = services.FavoriteService.AddTopicFavorite(user.Id, entityId)
-	case constants.EntityArticle:
-		err = services.FavoriteService.AddArticleFavorite(user.Id, entityId)
 	default:
 		err = errors.New("unsupported")
 	}

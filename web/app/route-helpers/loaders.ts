@@ -1,7 +1,7 @@
 import { redirect } from "react-router"
 
 import { apiFetch } from "@/lib/api/client"
-import type { Article, PageData, Tag, Topic, Category } from "@/lib/api/types"
+import type { PageData, Tag, Topic, Category } from "@/lib/api/types"
 
 import { getCurrentUser } from "./auth"
 
@@ -184,19 +184,20 @@ export async function loadArticles(params: {
   tagId?: string | number
 }) {
   const path = params.tagId
-    ? "/api/article/tag/articles"
-    : "/api/article/articles"
+    ? "/api/topic/tag/topics"
+    : "/api/topic/topics"
 
-  return apiFetch<PageData<Article>>(path, {
+  return apiFetch<PageData<Topic>>(path, {
     request: params.request,
     params: {
       cursor: params.cursor || "",
       tagId: params.tagId,
+      format: "article",
     },
   })
 }
 
-export type ArticleListRouteData = PageData<Article> & {
+export type ArticleListRouteData = PageData<Topic> & {
   tag?: Tag | null
 }
 
@@ -217,15 +218,6 @@ export async function loadTopicDetail(params: {
   id: string | number
 }) {
   return apiFetch<Topic>(`/api/topic/${params.id}`, {
-    request: params.request,
-  })
-}
-
-export async function loadArticleDetail(params: {
-  request?: Request
-  id: string | number
-}) {
-  return apiFetch<Article>(`/api/article/${params.id}`, {
     request: params.request,
   })
 }

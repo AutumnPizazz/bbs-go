@@ -3,11 +3,11 @@
 import Link from "@/components/common/link"
 import { UserAvatar } from "@/components/common/avatar"
 import { EmptyState } from "@/components/common/empty-state"
-import type { SearchArticle } from "@/lib/api/types"
+import type { SearchTopic } from "@/lib/api/types"
 import { formatDate } from "@/lib/format"
 import { useI18n } from "@/lib/i18n/provider"
 
-export function SearchArticleList({ results }: { results: SearchArticle[] }) {
+export function SearchArticleList({ results }: { results: SearchTopic[] }) {
   const { t } = useI18n()
 
   if (!results.length) {
@@ -28,7 +28,7 @@ export function SearchArticleList({ results }: { results: SearchArticle[] }) {
           >
             <h3 className="text-base leading-6 font-semibold text-foreground sm:text-[17px]">
               <Link
-                href={`/article/${item.id}`}
+                href={`/topic/${item.id}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="transition-colors group-hover:text-primary"
@@ -41,7 +41,7 @@ export function SearchArticleList({ results }: { results: SearchArticle[] }) {
             </h3>
             {item.summary ? (
               <Link
-                href={`/article/${item.id}`}
+                href={`/topic/${item.id}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-2 block text-sm leading-6 text-muted-foreground transition-colors hover:text-foreground"

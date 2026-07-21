@@ -142,7 +142,7 @@ export function reportTargetUrl(record: Record<string, unknown>) {
   if (dataId === undefined || dataId === null || dataId === "") return undefined
 
   if (dataType === "topic") return `/topic/${String(dataId)}`
-  if (dataType === "article") return `/article/${String(dataId)}`
+  if (dataType === "article") return `/topic/${String(dataId)}`
   if (dataType === "user") return `/user/${String(dataId)}`
   return undefined
 }

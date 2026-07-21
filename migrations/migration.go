@@ -115,4 +115,5 @@ func init() {
 	register(13, "drop legacy menu tables", migrate_drop_legacy_menu_tables)
 	register(15, "remove comment admin permissions", migrate_remove_comment_admin_permissions)
 	register(16, "remove task growth and points systems", migrate_remove_task_growth_and_points)
+	register(17, "unify articles as topic format", migrate_unify_article_topics)
 }

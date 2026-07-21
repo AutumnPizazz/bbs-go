@@ -2,7 +2,7 @@ import Link from "@/components/common/link"
 import { UserAvatar } from "@/components/common/avatar"
 
 import { EmptyState } from "@/components/common/empty-state"
-import type { Article } from "@/lib/api/types"
+import type { Topic } from "@/lib/api/types"
 import { prettyDate } from "@/lib/format"
 import type { TFunction } from "@/lib/i18n"
 import { EyeIcon, HeartIcon, MessageCircleIcon } from "lucide-react"
@@ -11,7 +11,7 @@ export function ArticleList({
   articles,
   t,
 }: {
-  articles: Article[]
+  articles: Topic[]
   t: TFunction
 }) {
   if (!articles.length) {
@@ -27,10 +27,10 @@ export function ArticleList({
   )
 }
 
-function ArticleListItem({ article, t }: { article: Article; t: TFunction }) {
+function ArticleListItem({ article, t }: { article: Topic; t: TFunction }) {
   const authorName =
     article.user.nickname || article.user.username || `#${article.user.id}`
-  const articleUrl = `/article/${article.id}`
+  const articleUrl = `/topic/${article.id}`
 
   return (
     <article className="group border-b border-border/70 bg-background px-3 py-4 transition-colors last:border-b-0 hover:bg-muted/35 sm:px-4 sm:py-5">
@@ -102,7 +102,7 @@ function ArticleListMeta({
   article,
   className = "",
 }: {
-  article: Article
+  article: Topic
   className?: string
 }) {
   return (

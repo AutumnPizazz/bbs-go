@@ -14,13 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { apiFetch } from "@/lib/api/client"
-import type {
-  PageData,
-  SearchArticle,
-  SearchUser,
-  Topic,
-  Category,
-} from "@/lib/api/types"
+import type { PageData, SearchTopic, SearchUser, Topic, Category } from "@/lib/api/types"
 import { useI18n } from "@/lib/i18n/provider"
 import { localizedTitle, noindexMeta, rootDataFromMatches } from "@/lib/seo"
 import { useDocumentTitle } from "@/lib/use-document-title"
@@ -214,15 +208,15 @@ export default function SearchRoute() {
             )}
           />
         ) : type === "article" ? (
-          <LoadMore<SearchArticle>
+          <LoadMore<SearchTopic>
             initialCursor=""
             initialHasMore
             initialLoad
             resetKey={`search-article:${keyword}:${timeRange}`}
             labels={labels}
             loadPage={({ cursor }) =>
-              apiFetch<PageData<SearchArticle>>("/api/search/article", {
-                params: { keyword, timeRange, cursor },
+              apiFetch<PageData<SearchTopic>>("/api/search/topic", {
+                params: { keyword, timeRange, cursor, format: "article" },
               })
             }
             renderItems={(items) => <SearchArticleList results={items} />}
