@@ -277,7 +277,7 @@ func InitDB() error {
 		Logger: logger.New(log.New(os.Stdout, "", log.LstdFlags), logger.Config{
 			SlowThreshold:             200 * time.Millisecond,
 			LogLevel:                  resolveGormLogLevel(conf.LogLevel),
-			IgnoreRecordNotFoundError: false,
+			IgnoreRecordNotFoundError: true,
 			Colorful:                  true,
 		}),
 	})
