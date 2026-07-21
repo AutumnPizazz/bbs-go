@@ -6,6 +6,7 @@ import { Popover as PopoverPrimitive } from "radix-ui"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { useI18n } from "@/lib/i18n/provider"
 import { cn } from "@/lib/utils"
 
 export type DashboardSelectOption = {
@@ -46,6 +47,7 @@ export function DashboardSelect({
   contentClassName,
   onValueChange,
 }: DashboardSelectProps) {
+  const { t } = useI18n()
   const [open, setOpen] = React.useState(false)
   const [search, setSearch] = React.useState("")
   const selectedValue =
@@ -103,7 +105,7 @@ export function DashboardSelect({
           </span>
           {canClear ? (
             <span
-              aria-label="Clear selection"
+              aria-label={t("common.accessibility.clearSelection")}
               className="flex size-4 shrink-0 items-center justify-center rounded-sm opacity-50 transition-opacity hover:opacity-100"
               onClick={clearValue}
               onPointerDown={(event) => {
@@ -195,6 +197,7 @@ export function DashboardMultiSelect({
   contentClassName?: string
   onValueChange: (value: string[]) => void
 }) {
+  const { t } = useI18n()
   const [open, setOpen] = React.useState(false)
   const [search, setSearch] = React.useState("")
   const selectedValues = React.useMemo(
@@ -252,7 +255,7 @@ export function DashboardMultiSelect({
           </span>
           {selectedOptions.length ? (
             <span
-              aria-label="Clear selection"
+              aria-label={t("common.accessibility.clearSelection")}
               className="flex size-4 shrink-0 items-center justify-center rounded-sm opacity-50 transition-opacity hover:opacity-100"
               onClick={clearValue}
               onPointerDown={(event) => {

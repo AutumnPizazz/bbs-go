@@ -4,9 +4,11 @@ import { Moon, Sun } from "lucide-react"
 
 import { useTheme } from "@/components/theme-provider"
 import { Button } from "@/components/ui/button"
+import { useI18n } from "@/lib/i18n/provider"
 
 export function ColorModeToggle() {
   const { resolvedTheme, setTheme } = useTheme()
+  const { t } = useI18n()
   const isDark = resolvedTheme === "dark"
 
   return (
@@ -14,7 +16,7 @@ export function ColorModeToggle() {
       type="button"
       variant="ghost"
       size="icon"
-      aria-label="Toggle color mode"
+      aria-label={t("common.accessibility.colorMode")}
       onClick={() => setTheme(isDark ? "light" : "dark")}
     >
       <Sun className="size-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />

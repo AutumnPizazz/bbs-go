@@ -59,8 +59,8 @@ import type { TFunction } from "@/lib/i18n"
 import { useI18n } from "@/lib/i18n/provider"
 import { cn } from "@/lib/utils"
 
-function getUserName(user: UserSummary) {
-  return user.nickname || user.username || "User"
+function getUserName(user: UserSummary, t: TFunction) {
+  return user.nickname || user.username || t("common.user")
 }
 
 function hasChildren(nav: SiteNav) {
@@ -184,9 +184,12 @@ function MsgNotice({ count }: { count: number }) {
   )
 }
 
-function DesktopNav({ navs }: { navs: SiteNav[] }) {
+function DesktopNav({ navs, t }: { navs: SiteNav[]; t: TFunction }) {
   return (
-    <nav className="hidden items-center md:flex" aria-label="Main">
+    <nav
+      className="hidden items-center md:flex"
+      aria-label={t("common.accessibility.mainNavigation")}
+    >
       <div className="group/navigation-menu relative flex max-w-max flex-1 items-center justify-center">
         <div className="group flex flex-1 list-none items-center justify-center gap-1">
           {navs.map((nav, index) =>
@@ -283,7 +286,7 @@ function UserMenu({
         <DropdownMenuTrigger className="flex items-center space-x-2 rounded-md px-1 py-1 transition-colors hover:bg-accent hover:text-accent-foreground">
           <UserAvatar user={user} size={30} />
           <span className="max-w-20 truncate text-sm font-medium">
-            {getUserName(user)}
+            {getUserName(user, t)}
           </span>
           <ChevronDown className="h-4 w-4" />
         </DropdownMenuTrigger>
@@ -423,7 +426,7 @@ function MobileMenu({
               <UserAvatar user={user} size={40} />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">
-                  {getUserName(user)}
+                  {getUserName(user, t)}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {user.description}
@@ -432,7 +435,10 @@ function MobileMenu({
             </div>
           ) : null}
 
-          <nav className="flex flex-col space-y-2" aria-label="Mobile">
+          <nav
+            className="flex flex-col space-y-2"
+            aria-label={t("common.accessibility.mobileNavigation")}
+          >
             {navs.map((nav, index) => (
               <div key={`${nav.title}-${index}`} className="flex flex-col">
                 {hasChildren(nav) ? (
@@ -596,7 +602,7 @@ export function SiteHeader() {
               )}
             </Link>
 
-            <DesktopNav navs={navs} />
+            <DesktopNav navs={navs} t={t} />
           </div>
 
           <div className="hidden items-center space-x-4 md:flex">

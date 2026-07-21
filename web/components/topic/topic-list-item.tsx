@@ -183,7 +183,7 @@ export function TopicListItem({
           </div>
           <span
             className="inline-flex h-7 min-w-9 items-center justify-center rounded-full bg-muted px-2 text-sm leading-none font-medium text-muted-foreground"
-            aria-label="views"
+            aria-label={t("common.accessibility.views")}
           >
             {formatCompactTopicViewCount(topic.viewCount)}
           </span>

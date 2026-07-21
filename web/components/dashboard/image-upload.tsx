@@ -4,6 +4,7 @@ import * as React from "react"
 import { LoaderCircleIcon, PencilIcon, PlusIcon } from "lucide-react"
 
 import { apiFetch } from "@/lib/api/client"
+import { useI18n } from "@/lib/i18n/provider"
 import { cn } from "@/lib/utils"
 
 export function DashboardImageUpload({
@@ -17,6 +18,7 @@ export function DashboardImageUpload({
   className?: string
   size?: number
 }) {
+  const { t } = useI18n()
   const [uploading, setUploading] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
 
@@ -32,7 +34,7 @@ export function DashboardImageUpload({
       })
       onChange(data.url)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed")
+      setError(err instanceof Error ? err.message : t("composables.unknownError"))
     } finally {
       setUploading(false)
     }

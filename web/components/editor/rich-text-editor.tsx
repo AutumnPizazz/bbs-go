@@ -144,6 +144,7 @@ type RichTextEditorLabels = {
     cancel: string
   }
   slash: {
+    label: string
     hintContinueTyping: string
     noMatchingCommand: string
     paragraph: { title: string; description: string }
@@ -200,6 +201,7 @@ function createEditorLabels(t: Translate): RichTextEditorLabels {
       cancel: t(key("linkDialog.cancel")),
     },
     slash: {
+      label: t("common.accessibility.slashCommands"),
       hintContinueTyping: t(key("slash.hintContinueTyping")),
       noMatchingCommand: t(key("slash.noMatchingCommand")),
       paragraph: {
@@ -627,7 +629,7 @@ const SlashCommandMenu = React.forwardRef<SlashCommandMenuHandle, SlashCommandMe
   )
 
   return (
-    <div className="slash-commands" role="listbox" aria-label="Slash commands">
+    <div className="slash-commands" role="listbox" aria-label={labels.slash.label}>
       <div className="search-hint">{items.length ? labels.slash.hintContinueTyping : labels.slash.noMatchingCommand}</div>
       {items.length ? (
         <div className="slash-items-container">

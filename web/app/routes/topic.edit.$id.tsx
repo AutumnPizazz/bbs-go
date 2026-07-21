@@ -51,7 +51,7 @@ export default function TopicEditRoute() {
       </main>
     )
   }
-  if (error || !data) return <EmptyState title={error || "No data"} />
+  if (error || !data) return <EmptyState title={error || t("common.noData")} />
 
   return (
     <main className="main">

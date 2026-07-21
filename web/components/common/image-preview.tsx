@@ -4,6 +4,7 @@ import * as React from "react"
 import { ChevronLeft, ChevronRight, X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { useI18n } from "@/lib/i18n/provider"
 
 type PreviewImage = string | { src?: string; preview?: string }
 
@@ -27,6 +28,7 @@ function ImagePreviewDialog({
   initialIndex: number
   onClose: () => void
 }) {
+  const { t } = useI18n()
   const [currentIndex, setCurrentIndex] = React.useState(initialIndex)
   const touchStartRef = React.useRef<{ x: number; y: number } | null>(null)
   const current = images[currentIndex] || images[0] || ""
@@ -70,13 +72,13 @@ function ImagePreviewDialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <button
         type="button"
-        aria-label="close"
+        aria-label={t("common.accessibility.close")}
         className="fixed inset-0 bg-black/80"
         onClick={onClose}
       />
       <button
         type="button"
-        aria-label="close"
+        aria-label={t("common.accessibility.close")}
         className="fixed top-4 right-4 z-[60] flex h-10 w-10 cursor-pointer items-center justify-center rounded-sm bg-white/20 text-white opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-white/50 focus:outline-none"
         onClick={onClose}
       >
@@ -113,7 +115,7 @@ function ImagePreviewDialog({
         {images.length > 1 ? (
           <button
             type="button"
-            aria-label="previous"
+            aria-label={t("common.accessibility.previousSlide")}
             className="absolute top-1/2 left-4 z-10 hidden -translate-y-1/2 items-center justify-center rounded-full bg-white/20 p-3 text-white transition-colors hover:bg-white/30 focus:ring-2 focus:ring-white/50 focus:outline-none md:flex"
             onClick={goPrevious}
           >
@@ -130,7 +132,7 @@ function ImagePreviewDialog({
         {images.length > 1 ? (
           <button
             type="button"
-            aria-label="next"
+            aria-label={t("common.accessibility.nextSlide")}
             className="absolute top-1/2 right-4 z-10 hidden -translate-y-1/2 items-center justify-center rounded-full bg-white/20 p-3 text-white transition-colors hover:bg-white/30 focus:ring-2 focus:ring-white/50 focus:outline-none md:flex"
             onClick={goNext}
           >

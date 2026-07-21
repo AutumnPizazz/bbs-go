@@ -1,4 +1,5 @@
 import { EmptyState } from "@/components/common/empty-state"
+import { useI18n } from "@/lib/i18n/provider"
 
 export function PageLoading() {
   return (
@@ -7,5 +8,7 @@ export function PageLoading() {
 }
 
 export function PageError({ message }: { message?: string | null }) {
-  return <EmptyState title={message || "No data"} />
+  const { t } = useI18n()
+
+  return <EmptyState title={message || t("common.noData")} />
 }

@@ -3,6 +3,7 @@
 import { ArrowUp, Heart, MessageCircle, Star } from "lucide-react"
 
 import { useTopicActions } from "@/components/topic/topic-action-context"
+import { useI18n } from "@/lib/i18n/provider"
 import { cn } from "@/lib/utils"
 
 export function TopicSideActionBar() {
@@ -16,6 +17,7 @@ export function TopicSideActionBar() {
     scrollToComment,
     scrollToTop,
   } = useTopicActions()
+  const { t } = useI18n()
 
   return (
     <div className="fixed top-75 -ml-14.5 max-[1300px]:hidden">
@@ -23,7 +25,7 @@ export function TopicSideActionBar() {
         <button
           type="button"
           className={cn("action", liked && "active")}
-          aria-label="like"
+          aria-label={t("common.accessibility.like")}
           onClick={() => void toggleLike("side")}
         >
           {likeCount > 0 ? <span className="act-num">{likeCount}</span> : null}
@@ -37,7 +39,7 @@ export function TopicSideActionBar() {
         <button
           type="button"
           className="action"
-          aria-label="comment"
+          aria-label={t("common.accessibility.comment")}
           onClick={scrollToComment}
         >
           {commentCount > 0 ? (
@@ -48,7 +50,7 @@ export function TopicSideActionBar() {
         <button
           type="button"
           className={cn("action", favorited && "active")}
-          aria-label="favorite"
+          aria-label={t("common.accessibility.favorite")}
           onClick={() => void toggleFavorite("side")}
         >
           <Star
@@ -61,7 +63,7 @@ export function TopicSideActionBar() {
         <button
           type="button"
           className="action"
-          aria-label="top"
+          aria-label={t("common.accessibility.backToTop")}
           onClick={scrollToTop}
         >
           <ArrowUp className="size-6 text-muted-foreground" />
