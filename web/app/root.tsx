@@ -40,6 +40,14 @@ import "@/styles/globals.css"
 const LOCALE_STORAGE_KEY = "bbsgo-dashboard-locale"
 const LEGACY_LOCALE_STORAGE_KEY = "bbsgo-web-locale"
 
+function readStoredLocale(): ReturnType<typeof normalizeLocale> | null {
+  const value =
+    window.localStorage.getItem(LOCALE_STORAGE_KEY) ||
+    window.localStorage.getItem(LEGACY_LOCALE_STORAGE_KEY)
+
+  return value === "zh-CN" || value === "en-US" ? value : null
+}
+
 const GoogleOneTap = React.lazy(() =>
   import("@/components/auth/google-one-tap").then((module) => ({
     default: module.GoogleOneTap,
@@ -186,15 +194,17 @@ function RuntimeScriptInjections() {
 export default function Root() {
   const loaderData = useLoaderData<typeof loader>()
   const [locale, setLocale] = React.useState(loaderData.locale)
+  const configuredLocale = loaderData.config?.language
+    ? normalizeLocale(loaderData.config.language)
+    : null
 
   React.useEffect(() => {
-    const storedLocale =
-      window.localStorage.getItem(LOCALE_STORAGE_KEY) ||
-      window.localStorage.getItem(LEGACY_LOCALE_STORAGE_KEY)
-    setLocale(
-      normalizeLocale(storedLocale || getBrowserLocale(loaderData.locale))
-    )
-  }, [loaderData.locale])
+    const storedLocale = readStoredLocale()
+    const nextLocale = storedLocale
+      ? storedLocale
+      : configuredLocale || getBrowserLocale(loaderData.locale)
+    setLocale(nextLocale)
+  }, [configuredLocale, loaderData.locale])
 
   React.useEffect(() => {
     document.documentElement.lang = locale
@@ -206,6 +216,11 @@ export default function Root() {
     setLocale(nextLocale)
   }, [])
 
+  const syncLocaleFromConfig = React.useCallback((config: SiteConfig | null) => {
+    if (readStoredLocale() || !config?.language) return
+    setLocale(normalizeLocale(config.language))
+  }, [])
+
   const appState = React.useMemo(
     () => ({ ...loaderData, locale }),
     [loaderData, locale]
@@ -213,7 +228,10 @@ export default function Root() {
 
   return (
     <I18nProvider locale={locale} setLocale={updateLocale}>
-      <AppProvider initialState={appState}>
+      <AppProvider
+        initialState={appState}
+        onConfigLoaded={syncLocaleFromConfig}
+      >
         <ThemeProvider>
           <TooltipProvider>
             <RuntimeScriptInjections />

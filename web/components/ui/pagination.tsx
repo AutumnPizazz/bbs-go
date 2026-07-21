@@ -112,6 +112,8 @@ function PaginationEllipsis({
   className,
   ...props
 }: React.ComponentProps<"span">) {
+  const { t } = useI18n()
+
   return (
     <span
       aria-hidden
@@ -124,7 +126,7 @@ function PaginationEllipsis({
     >
       <MoreHorizontalIcon
       />
-      <span className="sr-only">More pages</span>
+      <span className="sr-only">{t("common.accessibility.morePages")}</span>
     </span>
   )
 }

@@ -25,9 +25,11 @@ const AppContext = React.createContext<AppContextValue | null>(null)
 
 export function AppProvider({
   initialState,
+  onConfigLoaded,
   children,
 }: {
   initialState: ClientAppState
+  onConfigLoaded?: (config: SiteConfig | null) => void
   children: React.ReactNode
 }) {
   const [config, setConfig] = React.useState(initialState.config)
@@ -59,6 +61,7 @@ export function AppProvider({
 
       if (nextState.config !== undefined) {
         setConfig(nextState.config)
+        onConfigLoaded?.(nextState.config)
       }
       if (!userStateTouchedRef.current) {
         setCurrentUserState(nextState.currentUser)
@@ -72,7 +75,7 @@ export function AppProvider({
     return () => {
       mounted = false
     }
-  }, [])
+  }, [onConfigLoaded])
 
   const value = React.useMemo<AppContextValue>(
     () => ({

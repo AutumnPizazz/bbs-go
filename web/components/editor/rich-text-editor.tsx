@@ -778,6 +778,7 @@ function ToolbarDivider() {
 
 function ColorButton({
   title,
+  clearTitle,
   type,
   palette,
   activeColor,
@@ -786,6 +787,7 @@ function ColorButton({
   children,
 }: {
   title: string
+  clearTitle: string
   type: "text" | "background"
   palette: string[]
   activeColor: string
@@ -866,7 +868,7 @@ function ColorButton({
               <button
                 type="button"
                 className="clear-color"
-                title="clear"
+                title={clearTitle}
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => {
                   setOpen(false)
@@ -1116,10 +1118,10 @@ export function RichTextEditor({
             <AlignRight size={16} />
           </ToolbarButton>
           <ToolbarDivider />
-          <ColorButton title={toolbar.textColor} type="text" palette={TEXT_COLOR_PALETTE} activeColor={activeTextColor} onApply={(color) => editor?.chain().focus().setColor(color).run()} onClear={() => editor?.chain().focus().unsetColor().run()}>
+          <ColorButton title={toolbar.textColor} clearTitle={toolbar.clearColor} type="text" palette={TEXT_COLOR_PALETTE} activeColor={activeTextColor} onApply={(color) => editor?.chain().focus().setColor(color).run()} onClear={() => editor?.chain().focus().unsetColor().run()}>
             <Palette size={16} />
           </ColorButton>
-          <ColorButton title={toolbar.backgroundColor} type="background" palette={BACKGROUND_COLOR_PALETTE} activeColor={activeBackgroundColor} onApply={(color) => editor?.chain().focus().setBackgroundColor(color).run()} onClear={() => editor?.chain().focus().unsetBackgroundColor().run()}>
+          <ColorButton title={toolbar.backgroundColor} clearTitle={toolbar.clearColor} type="background" palette={BACKGROUND_COLOR_PALETTE} activeColor={activeBackgroundColor} onApply={(color) => editor?.chain().focus().setBackgroundColor(color).run()} onClear={() => editor?.chain().focus().unsetBackgroundColor().run()}>
             <Paintbrush size={16} />
           </ColorButton>
           <ToolbarDivider />

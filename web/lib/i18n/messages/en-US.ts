@@ -1,10 +1,15 @@
 const enUS = {
   common: {
     noData: "No items yet",
+    user: "User",
     confirm: "Confirm",
     cancel: "Cancel",
     message: "Messages",
     moreActions: "More actions",
+    pagination: {
+      previous: "Previous",
+      next: "Next",
+    },
     loadMore: {
       loadMore: "Load more",
       noMore: "You're all caught up",
@@ -54,6 +59,7 @@ const enUS = {
       loading: "Loading",
       slashCommands: "Slash commands",
       clearSelection: "Clear selection",
+      morePages: "More pages",
       mainNavigation: "Main navigation",
       mobileNavigation: "Mobile navigation",
       colorMode: "Toggle color mode",

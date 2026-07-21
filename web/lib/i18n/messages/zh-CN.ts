@@ -1,10 +1,15 @@
 const zhCN = {
   common: {
     noData: "暂无数据",
+    user: "用户",
     confirm: "确定",
     cancel: "取消",
     message: "消息",
     moreActions: "更多操作",
+    pagination: {
+      previous: "上一页",
+      next: "下一页",
+    },
     loadMore: {
       loadMore: "查看更多",
       noMore: "到底啦",
@@ -54,6 +59,7 @@ const zhCN = {
       loading: "加载中",
       slashCommands: "斜杠菜单",
       clearSelection: "清除选择",
+      morePages: "更多页",
       mainNavigation: "主导航",
       mobileNavigation: "移动端导航",
       colorMode: "切换颜色模式",
