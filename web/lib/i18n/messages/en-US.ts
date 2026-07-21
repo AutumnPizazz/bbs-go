@@ -379,13 +379,15 @@ const enUS = {
         attachmentAllowedTypes: "Allowed File Types",
         attachmentMaxSizeMB: "Max Size per File (MB)",
         attachmentMaxSizeMBTooltip:
-          "Maximum size for a single attachment in MB",
+          "Maximum size for a single attachment in MB; enter -1 for unlimited",
         attachmentMaxCount: "Max Attachments per Topic",
-        attachmentMaxCountTooltip: "Maximum number of attachments per topic",
+        attachmentMaxCountTooltip:
+          "Maximum number of attachments per topic; enter -1 for unlimited",
         placeholder: {
           defaultCategoryId: "Default category for posting",
           recommendTags: "Featured tags",
-          attachmentAllowedTypes: "e.g. .pdf .doc, select multiple or add new",
+          attachmentAllowedTypes:
+            "e.g. .pdf .doc; enter * to allow any file extension",
         },
       },
       nav: {
@@ -1245,6 +1247,10 @@ const enUS = {
         attachment: {
           label: "Attachments (optional)",
           limitHint: "Up to {maxCount} attachments, max {maxSizeMB} MB each",
+          sizeUnlimitedHint:
+            "Up to {maxCount} attachments, no per-file size limit",
+          countUnlimitedHint: "Unlimited attachments, max {maxSizeMB} MB each",
+          unlimitedHint: "No attachment count or size limit",
           add: "Add attachment",
           remove: "Remove",
         },

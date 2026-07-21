@@ -374,13 +374,16 @@ const zhCN = {
         attachmentEnabledTooltip: "开启后发帖时可上传附件",
         attachmentAllowedTypes: "允许的附件类型",
         attachmentMaxSizeMB: "单个附件大小限制(MB)",
-        attachmentMaxSizeMBTooltip: "单个附件最大体积，单位 MB",
+        attachmentMaxSizeMBTooltip:
+          "单个附件最大体积，单位 MB；输入 -1 表示不限制",
         attachmentMaxCount: "每篇帖子最多附件数",
-        attachmentMaxCountTooltip: "每篇帖子最多可上传的附件数量",
+        attachmentMaxCountTooltip:
+          "每篇帖子最多可上传的附件数量；输入 -1 表示不限制",
         placeholder: {
           defaultCategoryId: "发帖默认分类",
           recommendTags: "推荐标签",
-          attachmentAllowedTypes: "如 .pdf .doc，可多选或输入新增",
+          attachmentAllowedTypes:
+            "如 .pdf .doc，可多选或输入新增；输入 * 表示允许任意扩展名",
         },
       },
       nav: {
@@ -1221,6 +1224,9 @@ const zhCN = {
         attachment: {
           label: "附件（可选）",
           limitHint: "最多 {maxCount} 个，单个 ≤ {maxSizeMB} MB",
+          sizeUnlimitedHint: "最多 {maxCount} 个，单个大小不限制",
+          countUnlimitedHint: "附件数量不限制，单个 ≤ {maxSizeMB} MB",
+          unlimitedHint: "附件数量和大小均不限制",
           add: "添加附件",
           remove: "移除",
         },

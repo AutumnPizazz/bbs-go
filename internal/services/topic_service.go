@@ -154,7 +154,7 @@ func (s *topicService) Edit(userId, topicId int64, form req.EditTopicReq) error 
 		if !attCfg.Enabled {
 			return errors.New(locales.Get("attachment.disabled"))
 		}
-		if len(form.AttachmentIds) > attCfg.MaxCount {
+		if attCfg.MaxCount > 0 && len(form.AttachmentIds) > attCfg.MaxCount {
 			return errors.New(locales.Getf("attachment.too_many", attCfg.MaxCount))
 		}
 	}

@@ -28,7 +28,8 @@ func (s *attachmentService) extAllowed(ext string, allowedTypes []string) bool {
 	}
 	ext = strings.ToLower(ext)
 	for _, a := range allowedTypes {
-		if strings.ToLower(strings.TrimSpace(a)) == ext {
+		allowed := strings.ToLower(strings.TrimSpace(a))
+		if allowed == "*" || allowed == "*/*" || allowed == ext {
 			return true
 		}
 	}
@@ -52,16 +53,16 @@ func (s *attachmentService) Upload(userId int64, filename string, content io.Rea
 		return nil, err
 	}
 	att := &models.Attachment{
-		Id:            attId,
-		TopicId:       0,
-		UserId:        userId,
-		FileName:      filename,
-		FileUrl:       fileUrl,
-		FileSize:      contentLength,
-		FileType:      contentType,
-		Status:        constants.StatusOk,
-		CreateTime:    dates.NowTimestamp(),
-		UpdateTime:    dates.NowTimestamp(),
+		Id:         attId,
+		TopicId:    0,
+		UserId:     userId,
+		FileName:   filename,
+		FileUrl:    fileUrl,
+		FileSize:   contentLength,
+		FileType:   contentType,
+		Status:     constants.StatusOk,
+		CreateTime: dates.NowTimestamp(),
+		UpdateTime: dates.NowTimestamp(),
 	}
 	if err := repositories.AttachmentRepository.Create(sqls.DB(), att); err != nil {
 		return nil, err

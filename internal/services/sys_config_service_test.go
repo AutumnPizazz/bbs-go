@@ -2,8 +2,25 @@ package services
 
 import (
 	"bbs-go/internal/models/constants"
+	"bbs-go/internal/models/dto"
 	"testing"
 )
+
+func TestNormalizeAttachmentConfig_PreservesUnlimitedValues(t *testing.T) {
+	cfg := normalizeAttachmentConfig(dto.AttachmentConfig{MaxSizeMB: -1, MaxCount: -1})
+
+	if cfg.MaxSizeMB != -1 || cfg.MaxCount != -1 {
+		t.Fatalf("expected -1 attachment limits to remain unlimited, got size=%d count=%d", cfg.MaxSizeMB, cfg.MaxCount)
+	}
+}
+
+func TestNormalizeAttachmentConfig_DefaultsZeroValues(t *testing.T) {
+	cfg := normalizeAttachmentConfig(dto.AttachmentConfig{})
+
+	if cfg.MaxSizeMB != 10 || cfg.MaxCount != 5 {
+		t.Fatalf("expected zero attachment limits to use defaults, got size=%d count=%d", cfg.MaxSizeMB, cfg.MaxCount)
+	}
+}
 
 func TestParseModulesConfig_BackfillsQaFromTopicForLegacyConfig(t *testing.T) {
 	cfg := parseModulesConfig(`{"tweet":true,"topic":true,"article":false}`)

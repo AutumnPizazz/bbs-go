@@ -1126,8 +1126,7 @@ function ContentSettings({
       <Field label={s("content.attachmentMaxSizeMB")}>
         <TooltipNumberInput
           value={getNumber(attachment.maxSizeMB || 10)}
-          min={1}
-          max={100}
+          min={-1}
           tooltip={s("content.attachmentMaxSizeMBTooltip")}
           onChange={(value) => update("attachmentConfig.maxSizeMB", value)}
         />
@@ -1135,8 +1134,7 @@ function ContentSettings({
       <Field label={s("content.attachmentMaxCount")}>
         <TooltipNumberInput
           value={getNumber(attachment.maxCount || 5)}
-          min={1}
-          max={20}
+          min={-1}
           tooltip={s("content.attachmentMaxCountTooltip")}
           onChange={(value) => update("attachmentConfig.maxCount", value)}
         />

@@ -71,9 +71,28 @@ function TopicAttachmentField({
   const inputRef = React.useRef<HTMLInputElement>(null)
   const maxCount = config?.maxCount ?? 5
   const maxSizeMB = config?.maxSizeMB ?? 10
-  const accept = Array.isArray(config?.allowedTypes)
-    ? config.allowedTypes.join(",")
-    : ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.md,.csv,.zip,.rar,.7z,.tar,.gz"
+  const hasCountLimit = maxCount > 0
+  const hasSizeLimit = maxSizeMB > 0
+  const limitHint =
+    hasCountLimit && hasSizeLimit
+      ? t("pages.topic.create.attachment.limitHint", { maxCount, maxSizeMB })
+      : hasCountLimit
+        ? t("pages.topic.create.attachment.sizeUnlimitedHint", { maxCount })
+        : hasSizeLimit
+          ? t("pages.topic.create.attachment.countUnlimitedHint", { maxSizeMB })
+          : t("pages.topic.create.attachment.unlimitedHint")
+  const configuredAllowedTypes = config?.allowedTypes
+  const hasWildcardType =
+    Array.isArray(configuredAllowedTypes) &&
+    configuredAllowedTypes.some((type) => {
+      const normalized = type.trim().toLowerCase()
+      return normalized === "*" || normalized === "*/*"
+    })
+  const accept = hasWildcardType
+    ? undefined
+    : Array.isArray(configuredAllowedTypes) && configuredAllowedTypes.length
+      ? configuredAllowedTypes.join(",")
+      : ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.md,.csv,.zip,.rar,.7z,.tar,.gz"
 
   async function upload(file: File) {
     onUploadingChange(true)
@@ -101,17 +120,12 @@ function TopicAttachmentField({
         <span className="text-sm text-muted-foreground">
           {t("pages.topic.create.attachment.label")}
         </span>
-        <span className="text-xs text-muted-foreground">
-          {t("pages.topic.create.attachment.limitHint", {
-            maxCount,
-            maxSizeMB,
-          })}
-        </span>
+        <span className="text-xs text-muted-foreground">{limitHint}</span>
         <Button
           type="button"
           variant="outline"
           size="sm"
-          disabled={uploading || value.length >= maxCount}
+          disabled={uploading || (hasCountLimit && value.length >= maxCount)}
           onClick={() => inputRef.current?.click()}
         >
           {t("pages.topic.create.attachment.add")}

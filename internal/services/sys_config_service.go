@@ -397,11 +397,15 @@ func (s *sysConfigService) GetAttachmentConfig() dto.AttachmentConfig {
 	if err := jsons.Parse(str, &cfg); err != nil {
 		slog.Warn("附件配置解析错误", slog.Any("err", err))
 	}
+	return normalizeAttachmentConfig(cfg)
+}
+
+func normalizeAttachmentConfig(cfg dto.AttachmentConfig) dto.AttachmentConfig {
 	// 默认值
-	if cfg.MaxSizeMB <= 0 {
+	if cfg.MaxSizeMB == 0 {
 		cfg.MaxSizeMB = 10
 	}
-	if cfg.MaxCount <= 0 {
+	if cfg.MaxCount == 0 {
 		cfg.MaxCount = 5
 	}
 	if len(cfg.AllowedTypes) == 0 {

@@ -62,7 +62,7 @@ func AttachmentUpload(ctx *gin.Context) {
 	defer file.Close()
 
 	maxBytes := int64(cfg.MaxSizeMB) * 1024 * 1024
-	if header.Size > maxBytes {
+	if cfg.MaxSizeMB > 0 && header.Size > maxBytes {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage(locales.Getf("attachment.too_large", cfg.MaxSizeMB)))
 		return
 	}
@@ -94,9 +94,9 @@ func AttachmentUpload(ctx *gin.Context) {
 	}
 
 	ginx.WriteJSON(ctx, resp.AttachmentResponse{
-		Id:            att.Id,
-		FileName:      att.FileName,
-		FileSize:      att.FileSize,
+		Id:       att.Id,
+		FileName: att.FileName,
+		FileSize: att.FileSize,
 	})
 
 }
@@ -140,4 +140,3 @@ func AttachmentDownload(ctx *gin.Context) {
 
 	ctx.Redirect(302, redirectURL)
 }
-
