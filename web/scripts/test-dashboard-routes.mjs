@@ -41,15 +41,6 @@ const dedicatedRoutes = {
   "dashboard.roles.tsx": {
     expectedDefaultExport: "DashboardRolesRoute",
   },
-  "dashboard.user-badges.tsx": {
-    expectedDefaultExport: "DashboardUserBadgesRoute",
-  },
-  "dashboard.user-exp-logs.tsx": {
-    expectedDefaultExport: "DashboardUserExpLogsRoute",
-  },
-  "dashboard.user-task-logs.tsx": {
-    expectedDefaultExport: "DashboardUserTaskLogsRoute",
-  },
   "dashboard.email-logs.tsx": {
     expectedDefaultExport: "DashboardEmailLogsRoute",
   },

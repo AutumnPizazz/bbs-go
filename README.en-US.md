@@ -4,7 +4,7 @@
 
 A lightweight community and Q&A platform for forums, knowledge bases, and discussions.
 
-It combines discussions, Q&A workflows, articles, comments, notifications, moderation, roles, an admin dashboard, and optional engagement mechanics such as tasks, points, levels, and badges. Use it when chat is too noisy, static docs are not interactive enough, or heavyweight forum suites feel like too much for your team.
+It combines discussions, Q&A workflows, articles, comments, notifications, moderation, roles, and an admin dashboard. Use it when chat is too noisy, static docs are not interactive enough, or heavyweight forum suites feel like too much for your team.
 
 ## Official Links
 
@@ -44,7 +44,7 @@ For production deployment options, environment variables, upgrades, and troubles
 - **Community knowledge ready**: Give members one searchable place for discussions, questions, answers, articles, announcements, and reusable knowledge.
 - **Deploy in minutes**: Use the official Docker image and Docker Compose setup for a simple self-hosted deployment.
 - **Lightweight but complete**: Cover discussions, Q&A, articles, profiles, search, and admin workflows without a heavy enterprise stack.
-- **Community engagement included**: Tasks, points, EXP, levels, rankings, and badges help communities create repeat engagement loops when needed.
+- **Community knowledge ready**: Discussions, Q&A, articles, and search help communities build durable knowledge without a heavy platform.
 - **Operations ready**: Manage users, content, reports, keyword filters, roles, site settings, and audit logs from the dashboard.
 - **International by default**: Built-in `en-US` and `zh-CN` UI and server-message support.
 
@@ -66,8 +66,8 @@ This comparison is based on public product positioning and common use cases. The
 | Discord / Slack | Real-time chat communities | Fast conversations and broad adoption | You need searchable, long-lived discussions and accepted answers instead of knowledge disappearing in chat |
 | GitHub Discussions | GitHub-centered project conversations | Close to code and contributors | You want an independent community space with articles, moderation, member profiles, and engagement tools outside GitHub |
 | Discourse | Mature large communities and advanced governance workflows | Strong ecosystem, extensive moderation tools, hosted and self-hosted options | You want a lighter self-hosted platform, an all-in-one Go-based release, and built-in forum + Q&A + knowledge publishing workflows |
-| Flarum / NodeBB | Modern forum communities | Polished forum UX and extension ecosystems | You need more built-in operations tools, Q&A flows, article-style publishing, and engagement mechanics without assembling many extensions |
-| Question2Answer | Dedicated Q&A websites | Focused Q&A model, points and ranking features, simple PHP/MySQL deployment | You need Q&A plus broader forum discussions, articles, moderation, member operations, and long-term community engagement tools |
+| Flarum / NodeBB | Modern forum communities | Polished forum UX and extension ecosystems | You need more built-in operations tools, Q&A flows, and article-style publishing without assembling many extensions |
+| Question2Answer | Dedicated Q&A websites | Focused Q&A model and simple PHP/MySQL deployment | You need Q&A plus broader forum discussions, articles, moderation, and member operations outside a dedicated Q&A site |
 
 ## Feature Map
 
@@ -90,14 +90,6 @@ This comparison is based on public product positioning and common use cases. The
 - Tags and nodes for content organization and discovery
 - Voting and hidden content
 - Built-in search
-
-### Growth Mechanics
-
-- Daily check-in incentives
-- Configurable task system for new-user, daily, and achievement rewards
-- Points and EXP reward mechanisms
-- Level progression configuration
-- Badge and honor system
 
 ### Operations and Governance
 

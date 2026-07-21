@@ -63,23 +63,6 @@
     font-weight: 500;
   }
 
-  .profile .level-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 1px 8px;
-    border-radius: var(--radius);
-    background: #fef3c7;
-    color: #92400e;
-    font-size: 12px;
-    font-weight: 500;
-  }
-
-  .profile .level-label {
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-
   .profile .description {
     max-width: 100%;
     overflow: hidden;

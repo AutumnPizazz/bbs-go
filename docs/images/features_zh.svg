@@ -92,7 +92,7 @@
         <text x="26" y="96">主题</text>
         <text x="26" y="136">问题</text>
         <text x="26" y="176">文章</text>
-        <text x="26" y="216">任务</text>
+        <text x="26" y="216">搜索</text>
         <text x="26" y="256">后台</text>
       </g>
       <g fill="#CBD8EA">
@@ -200,11 +200,11 @@
     <rect x="22" y="24" width="58" height="58" rx="18" fill="#E7F8FA"/>
     <path d="M40 36 h22 v16 c0,8 -5,15 -11,15 c-6,0 -11,-7 -11,-15 z" fill="#079BAB"/>
     <path d="M40 42 h-9 c0,10 5,18 14,20 M62 42 h9 c0,10 -5,18 -14,20 M51 67 v9 M40 78 h22" stroke="#079BAB" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-    <text class="font module-title" x="98" y="47">用户激励</text>
-    <text class="font module-copy" x="98" y="74">任务、积分、等级</text>
-    <text class="font module-copy" x="98" y="94">和勋章</text>
-    <rect x="98" y="100" width="58" height="28" rx="14" fill="#ECFAFC"/><text class="font chip-text" x="127" y="119">任务</text>
-    <rect x="164" y="100" width="70" height="28" rx="14" fill="#ECFAFC"/><text class="font chip-text" x="199" y="119">勋章</text>
+    <text class="font module-title" x="98" y="47">知识沉淀</text>
+    <text class="font module-copy" x="98" y="74">可搜索的问答</text>
+    <text class="font module-copy" x="98" y="94">和文章</text>
+    <rect x="98" y="100" width="58" height="28" rx="14" fill="#ECFAFC"/><text class="font chip-text" x="127" y="119">问答</text>
+    <rect x="164" y="100" width="70" height="28" rx="14" fill="#ECFAFC"/><text class="font chip-text" x="199" y="119">搜索</text>
   </g>
 
   <g transform="translate(88 840)" filter="url(#cardShadow)">
