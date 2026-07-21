@@ -3,6 +3,9 @@ package migrations
 import (
 	"reflect"
 	"testing"
+
+	"github.com/glebarez/sqlite"
+	"gorm.io/gorm"
 )
 
 func TestRemoveTaskNavigationItems(t *testing.T) {
@@ -38,5 +41,28 @@ func TestRemoveTaskNavigationItems(t *testing.T) {
 
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("unexpected filtered navigation: %#v", got)
+	}
+}
+
+func TestDropColumnAfterLegacyIndex(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open("file:migration_index_test?mode=memory&cache=shared"), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("open sqlite test db: %v", err)
+	}
+	if err := db.Exec(`CREATE TABLE "t_user" ("id" INTEGER PRIMARY KEY, "score" INTEGER NOT NULL)`).Error; err != nil {
+		t.Fatalf("create test table: %v", err)
+	}
+	if err := db.Exec(`CREATE INDEX "idx_user_score" ON "t_user" ("score")`).Error; err != nil {
+		t.Fatalf("create legacy index: %v", err)
+	}
+
+	if err := dropLegacyIndex(db, "t_user", "idx_user_score"); err != nil {
+		t.Fatalf("drop legacy index: %v", err)
+	}
+	if err := dropColumn(db, "t_user", "score"); err != nil {
+		t.Fatalf("drop indexed column: %v", err)
+	}
+	if db.Migrator().HasColumn("t_user", "score") {
+		t.Fatal("expected score column to be removed")
 	}
 }

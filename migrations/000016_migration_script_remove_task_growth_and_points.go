@@ -38,6 +38,10 @@ func migrate_remove_task_growth_and_points() error {
 		}
 	}
 
+	if err := dropLegacyIndex(db, "t_user", "idx_user_score"); err != nil {
+		return err
+	}
+
 	for _, item := range []struct {
 		table  string
 		column string
@@ -81,6 +85,13 @@ func dropColumn(db *gorm.DB, table, column string) error {
 		return nil
 	}
 	return db.Exec("ALTER TABLE " + quoteIdentifier(db, table) + " DROP COLUMN " + quoteIdentifier(db, column)).Error
+}
+
+func dropLegacyIndex(db *gorm.DB, table, index string) error {
+	if !db.Migrator().HasIndex(table, index) {
+		return nil
+	}
+	return db.Migrator().DropIndex(table, index)
 }
 
 func quoteIdentifier(db *gorm.DB, value string) string {
