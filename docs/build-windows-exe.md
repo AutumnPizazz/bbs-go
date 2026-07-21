@@ -21,22 +21,14 @@ node --version
 corepack pnpm --version
 ```
 
-### 2. 把 Unix 环境变量写法直接用于 Windows
+### 2. 使用了不兼容 Windows 的 SPA 构建命令
 
-`package.json` 中的脚本包含：
-
-```text
-BBSGO_WEB_SPA=true react-router build
-```
-
-这在 Windows CMD 中会被当成命令，报错“`BBSGO_WEB_SPA` 不是命令”。PowerShell 的等价写法是：
+SPA 构建现在由 `web/scripts/build-spa.mjs` 设置环境变量并启动 React Router，Windows 和 Unix 使用同一条命令即可：
 
 ```powershell
-$env:BBSGO_WEB_SPA = "true"
-pnpm exec react-router build
+cd web
+corepack pnpm build:spa
 ```
-
-长期维护时应让项目脚本使用跨平台环境变量工具，或提供 Windows 专用脚本。
 
 ### 3. 把 SSR 的 `build/client` 直接复制成 SPA 产物
 
@@ -65,23 +57,15 @@ Go 服务只提供静态文件，无法继续提供 SSR hydration 所需的服�
    corepack pnpm install --frozen-lockfile
    ```
 
-2. 生成 client/server 构建：
+2. 生成 Go 服务需要的 SPA 产物：
 
    ```powershell
-   Remove-Item Env:BBSGO_WEB_SPA -ErrorAction SilentlyContinue
-   corepack pnpm exec react-router build
+   corepack pnpm build:spa
    ```
 
-3. 使用 React Router 的 `createRequestHandler` 生成真正的 SPA fallback。构建对象必须使用：
+   该命令使用 `ssr: false` / `isSpaMode: true` 构建客户端，并将完整的 `build/client` 复制到 `build/spa`。不需要手动设置 `BBSGO_WEB_SPA`。
 
-   ```text
-   ssr: false
-   isSpaMode: true
-   ```
-
-   生成时需要设置 `BBSGO_SERVER_URL`，因为部分 route loader 会请求 BBS-GO API。API 服务应临时启动，生成完成后再停止。
-
-4. 将完整的 `build/client/assets/manifest-*.js` 保留在 `build/spa/assets` 中。首页 HTML 必须同时满足：
+3. 确认首页包含真正的 SPA fallback。首页必须同时满足：
 
    - 包含 `"ssr":false`
    - 包含 `"isSpaMode":true`
@@ -89,7 +73,7 @@ Go 服务只提供静态文件，无法继续提供 SSR hydration 所需的服�
    - 包含 `entry.client-*.js`
    - 通过 manifest 提供全部 routes，包括 `routes/install`
 
-5. 最后编译 Go：
+4. 最后编译 Go：
 
    ```powershell
    $env:GOPROXY = "https://goproxy.cn,direct"
