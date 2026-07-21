@@ -157,7 +157,7 @@
 
 ### 阶段 5：验证和发布
 
-- [ ] `go test ./...`（受网络依赖下载和 Windows Bolt 索引文件清理冲突影响，见执行记录）
+- [ ] `go test ./...`（使用国内 Go 镜像后依赖下载已通过；剩余失败仅为 Windows Bolt 索引文件清理冲突，见执行记录）
 - [x] `pnpm typecheck`（通过，使用 `corepack pnpm`）
 - [x] `pnpm lint`（通过，使用 `corepack pnpm`）
 - [x] `pnpm build:spa`（通过 Windows 等价命令，见执行记录）
@@ -243,7 +243,11 @@
 - 迁移 16 的系统配置字段使用方言引用，先删除旧的 `idx_user_score` 索引再删字段，并递归清理站点导航中的 `/tasks` 子项；迁移包和服务测试通过。
 - 清理 README、双语功能图、用户等级样式及后台路由测试中的成长体系残留。
 
+依赖镜像验证：
+
+- 使用 `$env:GOPROXY = "https://goproxy.cn,direct"` 和 `$env:GOSUMDB = "sum.golang.google.cn"` 执行 `go mod download` 成功，`codegen` 和 JWT 依赖均可解析。
+- 在同一环境执行 `go test ./...` 后，除 `internal/handlers/admin` 的 3 个测试因 Windows 临时目录中的 `root.bolt` 文件仍被占用而清理失败外，其余包均通过；该失败与依赖下载无关。
+
 仍待发布前验证：
 
-- `go test ./...` 中 `cmd/generator` 的 `codegen` 依赖和 `internal/pkg/token` 的 JWT 依赖无法从 `proxy.golang.org` 下载；后台用户测试另有 Bolt 索引文件在 Windows 临时目录清理时被占用的问题。
 - 尚未使用 SQLite、MySQL、PostgreSQL 分别执行全新安装和升级迁移验证，也尚未执行最终嵌入 SPA 的 Go 二进制启动冒烟。
