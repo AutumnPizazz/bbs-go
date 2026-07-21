@@ -11,7 +11,6 @@ import {
   MailWarningIcon,
   MessageSquareIcon,
   SettingsIcon,
-  ShieldCheckIcon,
   TagsIcon,
   UsersIcon,
 } from "lucide-react"
@@ -228,16 +227,6 @@ export function DashboardOverview() {
       permission: PERMISSIONS.DASHBOARD_SETTING_VIEW,
     },
     {
-      key: "tasks",
-      href: "/dashboard/tasks",
-      icon: ShieldCheckIcon,
-      permission: PERMISSIONS.DASHBOARD_TASK_VIEW,
-    },
-    {
-      key: "levels",
-      href: "/dashboard/levels",
-      icon: GaugeIcon,
-      permission: PERMISSIONS.DASHBOARD_LEVEL_VIEW,
     },
   ]
 

@@ -190,13 +190,6 @@ export function codeBlock(value: unknown) {
   )
 }
 
-export function taskPeriodOptionsFor(t: TFunction) {
-  return [
-    { label: t("dashboard.period.once"), value: 0 },
-    { label: t("dashboard.period.daily"), value: 1 },
-  ]
-}
-
 export function roleTypeCell(t: TFunction, value: unknown) {
   return Number(value) === 0
     ? t("dashboard.roleTypes.system")

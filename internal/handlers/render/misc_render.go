@@ -1,11 +1,9 @@
 package render
 
 import (
-	"bbs-go/internal/cache"
 	"bbs-go/internal/models/constants"
 	"bbs-go/internal/models/resp"
 	"bbs-go/internal/pkg/bbsurls"
-	"bbs-go/internal/pkg/event"
 	"bbs-go/internal/pkg/ginx"
 	"bbs-go/internal/pkg/locales"
 	"fmt"
@@ -14,7 +12,6 @@ import (
 	"unicode"
 
 	"github.com/gin-gonic/gin"
-	"github.com/mlogclub/simple/common/dates"
 
 	"github.com/microcosm-cc/bluemonday"
 
@@ -188,15 +185,6 @@ func BuildLoginSuccess(ctx *gin.Context, user *models.User, redirect string) *we
 		return web.JsonError(err)
 	}
 	ginx.SetCookieKV(ctx, constants.CookieTokenKey, token, ginx.CookieHTTPOnly(true), ginx.CookieExpires(365*24*time.Hour))
-	event.Send(event.UserLoginEvent{
-		UserId:     user.Id,
-		LoginTime:  dates.NowTimestamp(),
-		IsNewLogin: true,
-	})
-
-	// 与「登录态访问」每日只发一次去重
-	cache.DailyVisitCache.MarkSentToday(user.Id)
-
 	return web.NewEmptyRspBuilder().
 		Put("token", token).
 		Put("user", BuildUserProfile(user)).

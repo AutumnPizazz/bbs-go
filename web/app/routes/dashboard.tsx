@@ -79,27 +79,6 @@ function dashboardBreadcrumbs(
       url: "/dashboard/users",
       items: {
         users: { title: t("dashboard.nav.userList"), url: "/dashboard/users" },
-        "user-badges": {
-          title: t("dashboard.nav.userBadges"),
-          url: "/dashboard/user-badges",
-        },
-        "user-exp-logs": {
-          title: t("dashboard.nav.userExpLogs"),
-          url: "/dashboard/user-exp-logs",
-        },
-        "user-task-logs": {
-          title: t("dashboard.nav.userTaskLogs"),
-          url: "/dashboard/user-task-logs",
-        },
-      },
-    },
-    {
-      title: t("dashboard.nav.growth"),
-      url: "/dashboard/badges",
-      items: {
-        badges: { title: t("dashboard.nav.badges"), url: "/dashboard/badges" },
-        levels: { title: t("dashboard.nav.levels"), url: "/dashboard/levels" },
-        tasks: { title: t("dashboard.nav.tasks"), url: "/dashboard/tasks" },
       },
     },
     {

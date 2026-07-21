@@ -63,8 +63,6 @@ export default function DashboardUsersRoute() {
         render: (record) => dashboardData.userLinkCell(record, record.nickname),
       },
       { key: "email", label: dashboardData.label(t, "email") },
-      { key: "score", label: dashboardData.label(t, "score") },
-      { key: "level", label: dashboardData.label(t, "level") },
       {
         key: "forbidden",
         label: dashboardData.label(t, "forbidden"),

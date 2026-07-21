@@ -47,7 +47,6 @@ export function SearchUserList({ results }: { results: SearchUser[] }) {
                   />
                 ) : null}
                 <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted-foreground/90">
-                  {user.levelTitle ? <span>{user.levelTitle}</span> : null}
                   {typeof user.topicCount === "number" ? (
                     <span>
                       {t("pages.search.userTopics", {

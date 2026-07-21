@@ -9,17 +9,12 @@ import { useCurrentUser } from "@/components/app/app-provider"
 import { EmptyState } from "@/components/common/empty-state"
 import { LoadMore } from "@/components/common/load-more"
 import { PageError, PageLoading } from "@/components/common/page-state"
+import { WidgetCard } from "@/components/common/widget-card"
 import { TopicListItem } from "@/components/topic/topic-list-item"
 import { UserCenterShell } from "@/components/user/user-center-shell"
 import { UserFollowList } from "@/components/user/user-follow-list"
-import { WidgetCard } from "@/components/common/widget-card"
 import { apiFetch } from "@/lib/api/client"
-import type {
-  Article,
-  PageData,
-  Topic,
-  UserSummary,
-} from "@/lib/api/types"
+import type { Article, PageData, Topic, UserSummary } from "@/lib/api/types"
 import { useI18n } from "@/lib/i18n/provider"
 import { useRouteData, useRouteSegment } from "@/lib/spa-route"
 import { useDocumentTitle } from "@/lib/use-document-title"
@@ -30,17 +25,9 @@ type UserShellData = {
   followed: UserSummary[]
 }
 
-type UserProfileData = UserShellData & {
-  topics: PageData<Topic>
-}
-
-type UserArticlesData = UserShellData & {
-  articles: PageData<Article>
-}
-
-type UserFollowData = UserShellData & {
-  pageData: PageData<UserSummary>
-}
+type UserProfileData = UserShellData & { topics: PageData<Topic> }
+type UserArticlesData = UserShellData & { articles: PageData<Article> }
+type UserFollowData = UserShellData & { pageData: PageData<UserSummary> }
 
 const emptyPage: PageData<Topic> = { results: [], cursor: "0", hasMore: false }
 const emptyArticlePage: PageData<Article> = {
@@ -228,83 +215,6 @@ export function UserArticlesClientPage() {
     </UserCenterShell>
   )
 }
-
-export function UserBadgesClientPage() {
-  return null
-/*
-        <div className="mb-4">
-          <p className="text-lg font-semibold text-slate-900 dark:text-slate-50">
-            {t("pages.user.badgesTitle")}
-          </p>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            {t("pages.user.badgesSubtitle")}
-          </p>
-        </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-          {badges.map((badge) => (
-            <div
-              key={badge.id}
-              className={
-                badge.owned
-                  ? "flex flex-col items-center gap-2 rounded-xl border border-amber-200/80 bg-amber-50/50 p-4 transition dark:border-amber-800/60 dark:bg-amber-900/20"
-                  : "flex flex-col items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/50 p-4 opacity-70 transition dark:border-slate-700 dark:bg-slate-900/40"
-              }
-            >
-              <div className="relative">
-                {badge.icon ? (
-                  <img
-                    src={badge.icon}
-                    alt={badge.title || ""}
-                    className={
-                      badge.owned
-                        ? "h-14 w-14 object-contain"
-                        : "h-14 w-14 object-contain opacity-40 grayscale"
-                    }
-                  />
-                ) : (
-                  <div
-                    className={
-                      badge.owned
-                        ? "flex h-14 w-14 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-700"
-                        : "flex h-14 w-14 items-center justify-center rounded-full bg-slate-200 opacity-40 dark:bg-slate-700"
-                    }
-                  >
-                    <Medal className="h-8 w-8 text-slate-600 dark:text-slate-300" />
-                  </div>
-                )}
-                {badge.worn ? (
-                  <span className="absolute -top-1 -right-4 rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                    {t("component.userBadges.worn")}
-                  </span>
-                ) : null}
-              </div>
-              <span
-                className={
-                  badge.owned
-                    ? "line-clamp-2 text-center text-sm font-medium text-slate-800 dark:text-slate-100"
-                    : "line-clamp-2 text-center text-sm font-medium text-slate-500 dark:text-slate-400"
-                }
-              >
-                {badge.title}
-              </span>
-              {badge.owned && badge.obtainTime ? (
-                <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                  {t("component.userBadges.obtainedAt")}{" "}
-                  {formatDate(badge.obtainTime, "yyyy-MM-dd")}
-                </span>
-              ) : !badge.owned ? (
-                <span className="text-[11px] text-slate-400 dark:text-slate-500">
-                  {t("component.userBadges.notObtained")}
-                </span>
-              ) : null}
-            </div>
-          ))}
-        </div>
-      </WidgetCard>
-    </UserCenterShell>
-  )
-}
-*/
 
 export function UserFansClientPage() {
   return <UserFollowClientPage kind="fans" />

@@ -15,7 +15,6 @@ import {
   FileText,
   Heart,
   LayoutDashboard,
-  ListChecks,
   LogOut,
   Menu,
   MessageCircle,
@@ -299,12 +298,6 @@ function UserMenu({
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link href="/tasks" className="flex cursor-pointer items-center">
-              <ListChecks className="mr-2 h-4 w-4" />
-              {t("common.header.tasks")}
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
             <Link
               href="/user/favorites"
               className="flex cursor-pointer items-center"
@@ -524,15 +517,6 @@ function MobileMenu({
                 >
                   <Heart className="mr-3 h-4 w-4" />
                   {t("common.header.favorites")}
-                </Link>
-              </SheetClose>
-              <SheetClose asChild onClick={closeMobileMenu}>
-                <Link
-                  href="/tasks"
-                  className="flex items-center rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
-                >
-                  <ListChecks className="mr-3 h-4 w-4" />
-                  {t("common.header.tasks")}
                 </Link>
               </SheetClose>
               <SheetClose asChild onClick={closeMobileMenu}>

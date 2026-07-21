@@ -80,7 +80,6 @@ function TopicAttachmentField({
     try {
       const body = new FormData()
       body.append("file", file, file.name)
-      body.append("downloadScore", "0")
       const attachment = await apiFetch<TopicAttachment>(
         "/api/attachment/upload",
         {
@@ -93,25 +92,6 @@ function TopicAttachmentField({
       catchError(error)
     } finally {
       onUploadingChange(false)
-    }
-  }
-
-  async function updateScore(
-    attachment: TopicAttachment,
-    downloadScore: number
-  ) {
-    onChange(
-      value.map((item) =>
-        item.id === attachment.id ? { ...item, downloadScore } : item
-      )
-    )
-    try {
-      await apiFetch<null>("/api/attachment/update_download_score", {
-        method: "POST",
-        body: { id: attachment.id, downloadScore },
-      })
-    } catch (error) {
-      catchError(error)
     }
   }
 
@@ -168,22 +148,6 @@ function TopicAttachmentField({
                   {attachment.fileSize || 0} B
                 </span>
               </div>
-              <label className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
-                {t("pages.topic.create.attachment.scorePlaceholder")}
-                <Input
-                  type="number"
-                  min="0"
-                  step="1"
-                  className="h-8 w-20"
-                  value={attachment.downloadScore ?? 0}
-                  onChange={(event) =>
-                    void updateScore(
-                      attachment,
-                      Math.max(0, Number(event.currentTarget.value) || 0)
-                    )
-                  }
-                />
-              </label>
               <Button
                 type="button"
                 variant="ghost"

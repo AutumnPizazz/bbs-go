@@ -1,5 +1,3 @@
-import { CheckCircle2 } from "lucide-react"
-
 import type { Attachment } from "@/lib/api/types"
 import type { TFunction } from "@/lib/i18n"
 
@@ -36,22 +34,6 @@ export function TopicAttachments({ attachments, t }: { attachments?: Attachment[
                 {typeof attachment.downloadCount === "number" ? (
                   <span>{t("pages.topic.detail.attachmentDownloadCount", { count: attachment.downloadCount })}</span>
                 ) : null}
-                {attachment.downloadScore && !attachment.downloaded ? (
-                  <>
-                    <span>·</span>
-                    <span>{t("pages.topic.detail.attachmentScoreRequired", { score: attachment.downloadScore })}</span>
-                  </>
-                ) : attachment.downloaded ? (
-                  <>
-                    <span>·</span>
-                    <span>{t("pages.topic.detail.attachmentPurchased")}</span>
-                  </>
-                ) : (
-                  <>
-                    <span>·</span>
-                    <span>{t("pages.topic.detail.attachmentFree")}</span>
-                  </>
-                )}
               </div>
             </div>
             <a
@@ -60,7 +42,6 @@ export function TopicAttachments({ attachments, t }: { attachments?: Attachment[
               rel="noopener noreferrer"
               className="inline-flex h-8 w-full shrink-0 items-center justify-center rounded-md border border-border bg-background px-3 text-sm font-medium hover:bg-muted sm:w-auto"
             >
-              {attachment.downloaded ? <CheckCircle2 className="mr-1 size-3" aria-hidden="true" /> : null}
               {t("pages.topic.detail.download")}
             </a>
           </li>

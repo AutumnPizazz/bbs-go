@@ -381,7 +381,7 @@ func initWelcomeTopic(language config.Language, userId int64) error {
 
 这是一个轻量、高性能、易扩展的社区系统。
 
-你可以发帖、评论、点赞，并通过任务系统获得积分与成长奖励。
+你可以发帖、评论和点赞，参与社区交流。
 
 现在就开始发布你的第一篇帖子吧。`
 	} else {
@@ -390,7 +390,7 @@ func initWelcomeTopic(language config.Language, userId int64) error {
 
 A lightweight, high-performance, and extensible community platform.
 
-You can create topics, comment, like, and earn points through the task system.
+You can create topics, comment, and like to participate in the community.
 
 Start by publishing your first post.`
 	}

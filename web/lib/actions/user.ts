@@ -1,8 +1,6 @@
 import { apiFetch, toFormData } from "@/lib/api/client"
 import type {
   Favorite,
-  PageData,
-  ScoreLog,
   UserMessage,
   UserSummary,
 } from "@/lib/api/types"
@@ -36,12 +34,6 @@ export async function loadFavorites(cursor?: string) {
 
 export async function loadMessages(cursor?: string) {
   return apiFetch<PageData<UserMessage>>("/api/user/messages", {
-    params: { cursor },
-  })
-}
-
-export async function loadScoreLogs(cursor?: string) {
-  return apiFetch<PageData<ScoreLog>>("/api/user/score_logs", {
     params: { cursor },
   })
 }

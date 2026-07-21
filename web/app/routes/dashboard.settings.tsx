@@ -138,8 +138,6 @@ const NOTIFICATION_TYPE_KEYS = [
   "topicRecommend",
   "topicDelete",
   "articleComment",
-  "userLevelUp",
-  "userBadgeGrant",
   "qaAnswerAccepted",
 ] as const
 const DEFAULT_ATTACHMENT_TYPES = [
@@ -595,10 +593,6 @@ export default function DashboardSettingsRoute() {
                   topicListStyle: settings.topicListStyle,
                   urlRedirect: settings.urlRedirect,
                   enableHideContent: settings.enableHideContent,
-                  enableQaBounty: settings.enableQaBounty,
-                  qaBountyMin: settings.qaBountyMin,
-                  qaBountyMax: settings.qaBountyMax,
-                  qaBountyRequired: settings.qaBountyRequired,
                   modules: settings.modules,
                   attachmentConfig: settings.attachmentConfig,
                 })
@@ -1032,19 +1026,11 @@ function ContentSettings({
   const attachmentAllowedTypes = Array.isArray(attachment.allowedTypes)
     ? getStringArray(attachment.allowedTypes)
     : DEFAULT_ATTACHMENT_TYPES
-  const qaBountyMin = getNumber(settings.qaBountyMin)
-  const qaBountyMax = getNumber(settings.qaBountyMax)
   const [validationError, setValidationError] = React.useState<string | null>(
     null
   )
 
   function submit() {
-    if (qaBountyMin > 0 && qaBountyMax > 0 && qaBountyMin > qaBountyMax) {
-      const message = s("content.message.qaBountyRangeInvalid")
-      setValidationError(message)
-      onError(message)
-      return
-    }
     setValidationError(null)
     onSave()
   }
@@ -1119,38 +1105,6 @@ function ContentSettings({
           checked={Boolean(settings.enableHideContent)}
           tooltip={s("content.enableHideContentTooltip")}
           onChange={(checked) => update("enableHideContent", checked)}
-        />
-      </Field>
-
-      <SectionTitle>{s("content.sectionQaBounty")}</SectionTitle>
-      <Field label={s("content.enableQaBounty")}>
-        <SwitchWithTooltip
-          checked={settings.enableQaBounty !== false}
-          tooltip={s("content.enableQaBountyTooltip")}
-          onChange={(checked) => update("enableQaBounty", checked)}
-        />
-      </Field>
-      <Field label={s("content.qaBountyMin")}>
-        <TooltipNumberInput
-          value={qaBountyMin}
-          min={0}
-          tooltip={s("content.qaBountyMinTooltip")}
-          onChange={(value) => update("qaBountyMin", value)}
-        />
-      </Field>
-      <Field label={s("content.qaBountyMax")}>
-        <TooltipNumberInput
-          value={qaBountyMax}
-          min={0}
-          tooltip={s("content.qaBountyMaxTooltip")}
-          onChange={(value) => update("qaBountyMax", value)}
-        />
-      </Field>
-      <Field label={s("content.qaBountyRequired")}>
-        <SwitchWithTooltip
-          checked={Boolean(settings.qaBountyRequired)}
-          tooltip={s("content.qaBountyRequiredTooltip")}
-          onChange={(checked) => update("qaBountyRequired", checked)}
         />
       </Field>
 

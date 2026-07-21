@@ -5,8 +5,6 @@ Disallow: /api
 Disallow: /install
 Disallow: /redirect
 Disallow: /search
-Disallow: /tasks/create
-Disallow: /tasks/edit
 Disallow: /topic/create
 Disallow: /topic/edit
 Disallow: /article/create
@@ -17,7 +15,6 @@ Disallow: /user/profile
 Disallow: /user/profile/account
 Disallow: /user/favorites
 Disallow: /user/messages
-Disallow: /user/scores
 Disallow: /user/signin
 Disallow: /user/signup
 Disallow: /user/password

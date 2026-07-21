@@ -8,6 +8,7 @@ import (
 	"bbs-go/internal/pkg/bbsurls"
 	"bbs-go/internal/pkg/idcodec"
 	"bbs-go/internal/pkg/locales"
+	"bbs-go/internal/services"
 	"strconv"
 	"strings"
 

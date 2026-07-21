@@ -54,7 +54,6 @@ type TopicCreateFormState = {
   hideContent: string
   imageList: ImageInfo[]
   vote: TopicVoteForm | null
-  bountyScore?: number
   attachmentIds: string[]
 }
 
@@ -105,7 +104,6 @@ function createInitialForm({
     hideContent: "",
     imageList: [],
     vote: null,
-    bountyScore: undefined,
     attachmentIds: [],
   }
 }
@@ -138,7 +136,6 @@ function TopicAttachmentField({
     try {
       const body = new FormData()
       body.append("file", file, file.name)
-      body.append("downloadScore", "0")
       const attachment = await apiFetch<TopicAttachment>(
         "/api/attachment/upload",
         {
@@ -151,25 +148,6 @@ function TopicAttachmentField({
       catchError(error)
     } finally {
       onUploadingChange(false)
-    }
-  }
-
-  async function updateScore(
-    attachment: TopicAttachment,
-    downloadScore: number
-  ) {
-    onChange(
-      value.map((item) =>
-        item.id === attachment.id ? { ...item, downloadScore } : item
-      )
-    )
-    try {
-      await apiFetch<null>("/api/attachment/update_download_score", {
-        method: "POST",
-        body: { id: attachment.id, downloadScore },
-      })
-    } catch (error) {
-      catchError(error)
     }
   }
 
@@ -226,22 +204,6 @@ function TopicAttachmentField({
                   {attachment.fileSize || 0} B
                 </span>
               </div>
-              <label className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
-                {t("pages.topic.create.attachment.scorePlaceholder")}
-                <Input
-                  type="number"
-                  min="0"
-                  step="1"
-                  className="h-8 w-20"
-                  value={attachment.downloadScore ?? 0}
-                  onChange={(event) =>
-                    void updateScore(
-                      attachment,
-                      Math.max(0, Number(event.currentTarget.value) || 0)
-                    )
-                  }
-                />
-              </label>
               <Button
                 type="button"
                 variant="ghost"
@@ -816,7 +778,6 @@ export function TopicCreateForm({
         body: {
           ...form,
           categoryId: effectiveCategoryId,
-          bountyScore: Number(form.bountyScore) || 0,
           attachmentIds:
             form.type === 0 ? attachmentList.map((item) => item.id) : [],
           vote: form.vote
@@ -1008,29 +969,6 @@ export function TopicCreateForm({
             onChange={(tags) => updateForm({ tags })}
           />
         </div>
-
-        {form.type === 2 && config?.enableQaBounty ? (
-          <div className="field rounded-md border border-dashed bg-muted/20 p-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm text-muted-foreground">
-                {t("pages.topic.create.bountyLabel")}
-              </span>
-              <Input
-                value={form.bountyScore ?? ""}
-                type="number"
-                min="0"
-                step="1"
-                placeholder={t("pages.topic.create.bountyPlaceholder")}
-                className="w-38"
-                onChange={(event) =>
-                  updateForm({
-                    bountyScore: Number(event.currentTarget.value) || 0,
-                  })
-                }
-              />
-            </div>
-          </div>
-        ) : null}
 
         {form.type === 0 && config?.attachmentConfig?.enabled ? (
           <div className="field">

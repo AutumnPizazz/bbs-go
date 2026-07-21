@@ -21,17 +21,6 @@ topic:
   discussions_disabled: "Discussions are not enabled"
   qa_disabled: "Q&A is not enabled"
   shared_image: "Shared an image"
-  bounty_invalid: "Bounty points cannot be negative"
-  insufficient_score: "Insufficient points to set bounty"
-  bounty_deduct: "Q&A bounty"
-  bounty_reward: "Q&A accepted answer reward"
-  bounty_refund: "Q&A bounty refund"
-  qa_bounty_disabled: "Q&A bounty is not enabled"
-  bounty_required: "Bounty points are required for Q&A posts"
-  bounty_out_of_range: "Bounty points are out of the allowed range"
-  bounty_out_of_range_range: "Bounty points must be between %d and %d"
-  bounty_out_of_range_min: "Bounty points cannot be less than %d"
-  bounty_out_of_range_max: "Bounty points cannot exceed %d"
 
 user:
   anonymous: "Anonymous %d"
@@ -147,9 +136,6 @@ favorite:
   article_not_found: "Favorite article not found"
   topic_not_found: "Favorite topic not found"
 
-check_in:
-  already_checked_in: "You have already checked in today"
-
 sms:
   code_invalid: "Invalid verification code"
 
@@ -169,13 +155,6 @@ admin:
   tag_name_required: "Tag name is required"
   tag_empty: "Tag is required"
 
-points:
-  must_be_positive: "Points must be positive"
-  cannot_be_zero: "Points cannot be zero"
-
-xp:
-  cannot_be_zero: "XP cannot be zero"
-
 install:
   already_installed: "System already installed, no need to reinstall"
 
@@ -184,12 +163,10 @@ upload:
 
 attachment:
   not_found: "Attachment not found or unavailable"
-  insufficient_score: "Insufficient score to download"
   no_permission: "You don't have permission to access this attachment"
   already_bound: "Attachment is already bound to another topic"
   ext_not_allowed: "File type not allowed"
   file_missing: "File not found"
-  download_deduct: "Attachment download"
   disabled: "Attachment upload is disabled"
   too_large: "Single attachment cannot exceed %d MB"
   too_many: "Maximum %d attachments per topic"
@@ -200,13 +177,7 @@ message:
   topic_delete_msg_title: "Your topic has been deleted"
   topic_favorite_msg_title: "Your topic has been favorited"
   topic_like_msg_title: "Your topic has been liked"
-  user_level_up_msg_title: "Level Up"
-  user_level_up_msg_content: "Congratulations! You have reached Lv.%d"
-  user_badge_grant_msg_title: "New Badge Unlocked"
-  user_badge_grant_msg_content: "Congratulations! You earned the badge: %s"
-  user_badge_default_name: "New Badge"
   qa_answer_accepted_msg_title: "Your answer was accepted as the best answer"
-  qa_answer_accepted_msg_title_with_bounty: "Your answer was accepted as the best answer, +%d points"
   comment_topic_reply_msg_title: "Someone replied to your topic"
   comment_article_reply_msg_title: "Someone replied to your article"
   comment_reply_msg_title: "Someone replied to your comment"
@@ -220,14 +191,6 @@ email:
   topic_recommend: "Topic Featured"
   topic_delete: "Topic Deleted"
   article_comment: "Article Comment"
-  user_level_up: "Level Up"
-  user_badge_grant: "New Badge Unlocked"
   qa_answer_accepted: "Your answer was accepted as the best answer"
-  qa_answer_accepted_with_bounty: "Your answer was accepted as the best answer, +%d points"
   view_details: "View Details"
 
-task:
-  group:
-    newbie: "Getting started"
-    daily: "Daily Tasks"
-    achievement: "Achievement Journey"

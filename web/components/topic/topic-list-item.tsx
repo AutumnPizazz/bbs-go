@@ -245,13 +245,6 @@ export function TopicListItem({
                     : t("component.topicList.qaUnsolved")}
                 </span>
               ) : null}
-              {topic.type === 2 && topic.bountyScore ? (
-                <span className="inline-flex h-5 items-center rounded-full bg-amber-100 px-2 text-[11px] leading-none font-medium text-amber-800 ring-1 ring-amber-200">
-                  {t("pages.topic.detail.bountyLabel", {
-                    score: topic.bountyScore,
-                  })}
-                </span>
-              ) : null}
               {topic.title}
             </Link>
             {topic.summary ? (

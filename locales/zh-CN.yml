@@ -21,17 +21,6 @@ topic:
   discussions_disabled: "未开启帖子功能"
   qa_disabled: "未开启提问功能"
   shared_image: "分享图片"
-  bounty_invalid: "悬赏积分不能为负数"
-  insufficient_score: "积分不足，无法设置悬赏"
-  bounty_deduct: "问答悬赏"
-  bounty_reward: "问答被采纳悬赏"
-  bounty_refund: "问答悬赏退回"
-  qa_bounty_disabled: "未开启问答悬赏功能"
-  bounty_required: "当前要求问答帖必须设置悬赏积分"
-  bounty_out_of_range: "悬赏积分超出允许范围"
-  bounty_out_of_range_range: "悬赏积分需在 %d ~ %d 之间"
-  bounty_out_of_range_min: "悬赏积分不能低于 %d"
-  bounty_out_of_range_max: "悬赏积分不能高于 %d"
 
 user:
   anonymous: "匿名用户%d"
@@ -147,9 +136,6 @@ favorite:
   article_not_found: "收藏的文章不存在"
   topic_not_found: "收藏的话题不存在"
 
-check_in:
-  already_checked_in: "你已签到"
-
 sms:
   code_invalid: "验证码错误"
 
@@ -169,13 +155,6 @@ admin:
   tag_name_required: "标签名称不能为空"
   tag_empty: "标签为空"
 
-points:
-  must_be_positive: "分数必须为正数"
-  cannot_be_zero: "分数不能为0"
-
-xp:
-  cannot_be_zero: "经验不能为0"
-
 install:
   already_installed: "系统已安装，无需重复安装"
 
@@ -184,12 +163,10 @@ upload:
 
 attachment:
   not_found: "附件不存在或已下架"
-  insufficient_score: "积分不足，无法下载"
   no_permission: "无权限操作该附件"
   already_bound: "附件已绑定其他帖子"
   ext_not_allowed: "不支持该文件类型"
   file_missing: "文件不存在"
-  download_deduct: "附件下载"
   disabled: "附件上传功能未开启"
   too_large: "单个附件不能超过 %d MB"
   too_many: "每篇帖子最多上传 %d 个附件"
@@ -200,13 +177,7 @@ message:
   topic_delete_msg_title: "你的话题被删除"
   topic_favorite_msg_title: "收藏了你的话题"
   topic_like_msg_title: "点赞了你的话题"
-  user_level_up_msg_title: "等级提升"
-  user_level_up_msg_content: "恭喜你升级到 Lv.%d"
-  user_badge_grant_msg_title: "获得新勋章"
-  user_badge_grant_msg_content: "恭喜你获得勋章：%s"
-  user_badge_default_name: "新勋章"
   qa_answer_accepted_msg_title: "你的回答被采纳为最佳答案"
-  qa_answer_accepted_msg_title_with_bounty: "你的回答被采纳为最佳答案，获得 %d 积分"
   comment_topic_reply_msg_title: "回复了你的话题"
   comment_article_reply_msg_title: "回复了你的文章"
   comment_reply_msg_title: "回复了你的评论"
@@ -220,14 +191,6 @@ email:
   topic_recommend: "话题被设为推荐"
   topic_delete: "话题被删除"
   article_comment: "收到文章评论"
-  user_level_up: "等级提升"
-  user_badge_grant: "获得新勋章"
   qa_answer_accepted: "你的回答被采纳为最佳答案"
-  qa_answer_accepted_with_bounty: "你的回答被采纳为最佳答案，获得 %d 积分"
   view_details: "点击查看详情"
 
-task:
-  group:
-    newbie: "新手任务"
-    daily: "每日任务"
-    achievement: "成就任务"

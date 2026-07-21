@@ -62,13 +62,6 @@ export function TopicMeta({
                   : t("pages.topic.detail.qaUnsolved")}
               </span>
             ) : null}
-            {topic.type === 2 && topic.bountyScore ? (
-              <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] leading-none font-medium text-amber-800 ring-1 ring-amber-200">
-                {t("pages.topic.detail.bountyLabel", {
-                  score: topic.bountyScore,
-                })}
-              </span>
-            ) : null}
             {topic.ipLocation ? (
               <span className="text-xs">
                 {t("pages.topic.detail.ipLocation")}
