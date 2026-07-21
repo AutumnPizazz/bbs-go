@@ -81,7 +81,6 @@ This comparison is based on public product positioning and common use cases. The
 - User profiles and personal homepages
 - Follow and follower relationships
 - In-app notifications and interaction reminders
-- Point records and leaderboards
 
 ### Content and Engagement
 

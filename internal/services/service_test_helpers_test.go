@@ -33,6 +33,9 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	if err != nil {
 		t.Fatalf("get test db: %v", err)
 	}
+	if err := db.AutoMigrate(&models.User{}); err != nil {
+		t.Fatalf("auto migrate user model: %v", err)
+	}
 	sqlDB.SetMaxOpenConns(1)
 	sqlDB.SetMaxIdleConns(1)
 	sqls.SetDB(db)
@@ -43,9 +46,9 @@ func setupTestDB(t *testing.T) *gorm.DB {
 func mustCreateUser(t *testing.T, now int64) *models.User {
 	t.Helper()
 	user := &models.User{
-		Username:  sqls.SqlNullString(fmt.Sprintf("test-user-%d", now)),
-		Nickname:  "Test User",
-		Status:    constants.StatusOk,
+		Username:   sqls.SqlNullString(fmt.Sprintf("test-user-%d", now)),
+		Nickname:   "Test User",
+		Status:     constants.StatusOk,
 		CreateTime: now,
 		UpdateTime: now,
 	}

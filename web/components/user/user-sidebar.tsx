@@ -28,6 +28,9 @@ export function UserCountsCard({
           <br />
           <b>{user.commentCount ?? 0}</b>
         </li>
+      </ul>
+    </WidgetCard>
+  )
 }
 
 export function MyProfileCard({

@@ -1,6 +1,7 @@
 import { apiFetch, toFormData } from "@/lib/api/client"
 import type {
   Favorite,
+  PageData,
   UserMessage,
   UserSummary,
 } from "@/lib/api/types"

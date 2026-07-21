@@ -91,7 +91,7 @@ func quoteIdentifier(db *gorm.DB, value string) string {
 }
 
 func removeRetiredConfig(db *gorm.DB) error {
-	return db.Exec("DELETE FROM t_sys_config WHERE key IN (?, ?, ?, ?)",
+	return db.Exec("DELETE FROM "+quoteIdentifier(db, "t_sys_config")+" WHERE "+quoteIdentifier(db, "key")+" IN (?, ?, ?, ?)",
 		"enableQaBounty", "qaBountyMin", "qaBountyMax", "qaBountyRequired").Error
 }
 
@@ -104,17 +104,11 @@ func removeTaskNavigation(db *gorm.DB) error {
 		return err
 	}
 
-	var navs []map[string]interface{}
+	var navs []interface{}
 	if err := json.Unmarshal([]byte(config.Value), &navs); err != nil {
 		return nil
 	}
-	filtered := make([]map[string]interface{}, 0, len(navs))
-	for _, nav := range navs {
-		if url, ok := nav["url"].(string); ok && url == "/tasks" {
-			continue
-		}
-		filtered = append(filtered, nav)
-	}
+	filtered := removeTaskNavigationItems(navs)
 	data, err := json.Marshal(filtered)
 	if err != nil {
 		return err
@@ -122,6 +116,30 @@ func removeTaskNavigation(db *gorm.DB) error {
 	return db.Model(&models.SysConfig{}).Where("key = ?", siteNavsConfigKey).Updates(map[string]interface{}{
 		"value": string(data),
 	}).Error
+}
+
+func removeTaskNavigationItems(items []interface{}) []interface{} {
+	filtered := make([]interface{}, 0, len(items))
+	for _, item := range items {
+		nav, ok := item.(map[string]interface{})
+		if !ok {
+			filtered = append(filtered, item)
+			continue
+		}
+		if url, ok := nav["url"].(string); ok && url == "/tasks" {
+			continue
+		}
+		if children, ok := nav["children"].([]interface{}); ok {
+			children = removeTaskNavigationItems(children)
+			if len(children) == 0 {
+				delete(nav, "children")
+			} else {
+				nav["children"] = children
+			}
+		}
+		filtered = append(filtered, nav)
+	}
+	return filtered
 }
 
 func removeRetiredPermissions(db *gorm.DB) error {

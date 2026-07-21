@@ -226,8 +226,6 @@ export function DashboardOverview() {
       icon: SettingsIcon,
       permission: PERMISSIONS.DASHBOARD_SETTING_VIEW,
     },
-    {
-    },
   ]
 
   const recentSections: Array<{
