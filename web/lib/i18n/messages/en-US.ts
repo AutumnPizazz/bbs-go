@@ -118,7 +118,6 @@ const enUS = {
       system: "System",
       settings: "Settings",
       siteSettings: "Settings",
-      emailLogs: "Email Logs",
     },
     shortcuts: {
       title: "Management",
@@ -252,10 +251,6 @@ const enUS = {
       system: "System",
       normal: "Custom",
     },
-    emailStatus: {
-      success: "Success",
-      failed: "Failed",
-    },
     rolePermissions: {
       title: "Role Permissions",
       description: "Assign permissions for {role}",
@@ -322,18 +317,8 @@ const enUS = {
       attachmentMaxSizeMB: "Attachment max size MB",
       attachmentMaxCount: "Attachment max count",
       topicCaptcha: "Topic captcha",
-      createTopicEmailVerified: "Topic requires verified email",
-      createArticleEmailVerified: "Article requires verified email",
-      createCommentEmailVerified: "Comment requires verified email",
       articlePending: "Article review",
       userObserveSeconds: "New user observation seconds",
-      emailNoticeIntervalSeconds: "Email interval seconds",
-      emailWhitelist: "Email whitelist",
-      smtpHost: "SMTP host",
-      smtpPort: "SMTP port",
-      smtpUsername: "SMTP username",
-      smtpPassword: "SMTP password",
-      smtpSsl: "SMTP SSL",
       notificationTypes: "Notification types",
       passwordLogin: "Password login",
       weixinLogin: "WeChat login",
@@ -454,23 +439,9 @@ const enUS = {
       },
       notification: {
         title: "Notification",
-        smtpSectionTitle: "Mail Server (SMTP)",
-        smtp: {
-          host: "Host",
-          port: "Port",
-          username: "Username",
-          password: "Password",
-          ssl: "SSL",
-        },
-        emailNoticeIntervalSeconds: "Email Notice Interval (seconds)",
-        emailNoticeIntervalSecondsTooltip:
-          "Minimum interval between emails to the same address. Set to 0 for no limit.",
-        emailWhitelist: "Email Whitelist",
-        placeholder: { emailWhitelist: "Email Whitelist" },
         typesTitle: "Message Type Switches",
         typeName: "Message Type",
         siteColumn: "Site Notice",
-        emailColumn: "Email",
         types: {
           topicComment: "Topic Comment",
           commentReply: "Comment Reply",
@@ -487,15 +458,6 @@ const enUS = {
         topicCaptcha: "Topic Captcha",
         topicCaptchaTooltip:
           "Whether to enable captcha verification when posting topics",
-        createTopicEmailVerified: "Email Verified for Topic Creation",
-        createTopicEmailVerifiedTooltip:
-          "Email verification required before posting topics",
-        createArticleEmailVerified: "Email Verified for Article Creation",
-        createArticleEmailVerifiedTooltip:
-          "Email verification required before posting articles",
-        createCommentEmailVerified: "Email Verified for Comments",
-        createCommentEmailVerifiedTooltip:
-          "Email verification required before posting comments",
         articlePending: "Article Review",
         articlePendingTooltip:
           "Whether to enable review after publishing articles",
@@ -672,7 +634,6 @@ const enUS = {
       idEncode: "Public ID",
       username: "Username",
       nickname: "Nickname",
-      email: "Email",
       phone: "Phone",
       password: "Password",
       type: "Type",
@@ -708,7 +669,6 @@ const enUS = {
       forbidden: "Forbidden",
       contentAccessMode: "Content access",
       categoryIds: "Allowed categories",
-      toEmail: "To Email",
       bizType: "Content type",
       subject: "Subject",
       errorMsg: "Error",
@@ -760,10 +720,6 @@ const enUS = {
         title: "User Reports",
         description: "Inspect content reports submitted by community users.",
       },
-      emailLogs: {
-        title: "Email Logs",
-        description: "Inspect email delivery records.",
-      },
       roles: {
         title: "Role Management",
         description: "Manage roles and assign dashboard permissions.",
@@ -776,7 +732,6 @@ const enUS = {
     },
     user: {
       anonymous: "Guest",
-      noEmail: "No email",
       account: "Account",
       notifications: "Notifications",
       logout: "Log out",
@@ -804,7 +759,6 @@ const enUS = {
         pendingTopics: "Topics pending review",
         pendingArticles: "Articles pending review",
         pendingReports: "Reports to handle",
-        failedEmails: "Failed emails",
         goHandle: "Handle now",
       },
       priority: {
@@ -1074,11 +1028,6 @@ const enUS = {
       follow: "Follow",
       followed: "Followed",
     },
-    setEmailDialog: {
-      title: "Set Email",
-      emailPlaceholder: "Enter your email",
-      success: "Email set successfully",
-    },
     setPasswordDialog: {
       title: "Set Password",
       passwordPlaceholder: "Enter your password",
@@ -1139,10 +1088,6 @@ const enUS = {
     },
     comment: {
       title: "Comments",
-      emailVerifyPrompt: "Please go to",
-      accountSettingsLink: "Profile > Account Settings",
-      emailVerifyAction:
-        "page to set up email and complete email verification.",
       loginLink: "Sign in to post your comment",
       deleteConfirm: "Are you sure you want to delete this comment?",
       deleteSuccess: "Deleted successfully",
@@ -1257,9 +1202,6 @@ const enUS = {
         },
       },
       create: {
-        needEmailTitle: "Please verify your email first",
-        needEmailBody: "Before posting, please set and verify your email. ",
-        goVerify: "Verify email",
         post: "Post",
         tweet: "Update",
         qa: "Ask Question",
@@ -1341,10 +1283,6 @@ const enUS = {
         publishedAt: "Published",
       },
       create: {
-        needEmailTitle: "Please verify your email first",
-        needEmailBody:
-          "Before posting an article, please set and verify your email.",
-        goVerify: "Verify email",
         title: "Write an article",
         titlePlaceholder: "Article title",
         summaryPlaceholder: "Summary (optional)",
@@ -1555,7 +1493,7 @@ const enUS = {
       weixinLoggingIn: "Signing in with WeChat...",
       hideWeixinQR: "Hide QR Code",
       smsLogin: "SMS sign-in",
-      passwordLogin: "Email or username",
+      passwordLogin: "Username",
       googleLogin: "Google",
       googleLoginButton: "Sign in with Google",
       googleLoggingIn: "Signing in...",
@@ -1565,10 +1503,10 @@ const enUS = {
       thirdPartyLogin: "Or continue with",
       missingAuthParams: "Missing authorization details. Please sign in again.",
       password: {
-        usernamePlaceholder: "Enter your username or email",
+        usernamePlaceholder: "Enter your username",
         passwordPlaceholder: "Enter your password",
         loginBtn: "Sign in",
-        usernameRequired: "Enter your username or email",
+        usernameRequired: "Enter your username",
         passwordRequired: "Enter your password",
       },
       sms: {
@@ -1588,17 +1526,6 @@ const enUS = {
     signup: {
       title: "Sign up",
       adminOnly: "Accounts can only be created by an administrator.",
-    },
-    email: {
-      verify: {
-        title: "Verify your email",
-        success: "Email verified successfully. Your email is: {email}",
-        failed: "Email verification failed",
-        reason: "Reason: {reason}",
-        retryInstructions: "Go to",
-        accountSettings: "Profile > Account Settings",
-        retryAction: "to resend the verification email.",
-      },
     },
     favorites: {
       title: "Favorites",
@@ -1635,15 +1562,11 @@ const enUS = {
       account: {
         title: "Account Settings",
         username: "Username",
-        email: "Email",
         password: "Password",
         wechat: "WeChat",
         google: "Google",
         github: "GitHub",
-        verified: "Verified",
         set: "Set",
-        modify: "Modify",
-        verify: "Verify",
         bind: "Bind",
         unbind: "Unbind",
         passwordSet: "Set",
@@ -1651,8 +1574,6 @@ const enUS = {
         wechatNotBound: "Not bound",
         googleNotBound: "Not bound",
         githubNotBound: "Not bound",
-        emailVerifySuccess:
-          "Email has been sent to {email}. Please check your inbox.",
         unbindSuccess: "Unbound successfully",
         unbindFailed: "Unbind failed",
         confirmUnbind: "Are you sure you want to unbind?",

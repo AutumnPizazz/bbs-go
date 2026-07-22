@@ -90,10 +90,6 @@ function dashboardBreadcrumbs(
           url: "/dashboard/settings",
         },
         roles: { title: t("dashboard.nav.roles"), url: "/dashboard/roles" },
-        "email-logs": {
-          title: t("dashboard.nav.emailLogs"),
-          url: "/dashboard/email-logs",
-        },
       },
     },
   ]

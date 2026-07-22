@@ -36,16 +36,14 @@ func VerifyJWTWithGoogleAPI(ctx context.Context, idToken string) (*GoogleUserInf
 	}
 
 	var tokenInfo struct {
-		Sub           string `json:"sub"`
-		Email         string `json:"email"`
-		EmailVerified string `json:"email_verified"`
-		Name          string `json:"name"`
-		GivenName     string `json:"given_name"`
-		FamilyName    string `json:"family_name"`
-		Picture       string `json:"picture"`
-		Aud           string `json:"aud"`
-		Iss           string `json:"iss"`
-		Exp           string `json:"exp"`
+		Sub        string `json:"sub"`
+		Name       string `json:"name"`
+		GivenName  string `json:"given_name"`
+		FamilyName string `json:"family_name"`
+		Picture    string `json:"picture"`
+		Aud        string `json:"aud"`
+		Iss        string `json:"iss"`
+		Exp        string `json:"exp"`
 	}
 
 	if err := json.Unmarshal(body, &tokenInfo); err != nil {
@@ -57,20 +55,12 @@ func VerifyJWTWithGoogleAPI(ctx context.Context, idToken string) (*GoogleUserInf
 		return nil, fmt.Errorf("invalid JWT issuer: %s", tokenInfo.Iss)
 	}
 
-	// 转换为 GoogleUserInfo 格式
-	emailVerified := false
-	if tokenInfo.EmailVerified == "true" {
-		emailVerified = true
-	}
-
 	userInfo := &GoogleUserInfo{
-		ID:            tokenInfo.Sub, // sub 字段等同于 UserInfo API 的 id
-		Email:         tokenInfo.Email,
-		VerifiedEmail: emailVerified,
-		Name:          tokenInfo.Name,
-		GivenName:     tokenInfo.GivenName,
-		FamilyName:    tokenInfo.FamilyName,
-		Picture:       tokenInfo.Picture,
+		ID:         tokenInfo.Sub, // sub 字段等同于 UserInfo API 的 id
+		Name:       tokenInfo.Name,
+		GivenName:  tokenInfo.GivenName,
+		FamilyName: tokenInfo.FamilyName,
+		Picture:    tokenInfo.Picture,
 	}
 
 	return userInfo, nil

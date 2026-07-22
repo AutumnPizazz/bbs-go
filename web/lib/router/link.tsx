@@ -7,7 +7,7 @@ type LinkProps = Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, "href"> & {
 }
 
 export default function Link({ href, prefetch: _prefetch, ...props }: LinkProps) {
-  if (/^(https?:)?\/\//.test(href) || href.startsWith("mailto:")) {
+  if (/^(https?:)?\/\//.test(href)) {
     return <a href={href} {...props} />
   }
 

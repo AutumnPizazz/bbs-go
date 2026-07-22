@@ -20,14 +20,14 @@ func migrate_notification_types_defaults() error {
 			return nil
 		}
 		defaults := map[string]dto.NoticeTypeConfig{
-			"topicComment":     {Site: true, Email: true},
-			"commentReply":     {Site: true, Email: true},
-			"topicLike":        {Site: true, Email: true},
-			"topicFavorite":    {Site: true, Email: true},
-			"topicRecommend":   {Site: true, Email: true},
-			"topicDelete":      {Site: true, Email: false},
-			"articleComment":   {Site: true, Email: true},
-			"qaAnswerAccepted": {Site: true, Email: true},
+			"topicComment":     {Site: true},
+			"commentReply":     {Site: true},
+			"topicLike":        {Site: true},
+			"topicFavorite":    {Site: true},
+			"topicRecommend":   {Site: true},
+			"topicDelete":      {Site: true},
+			"articleComment":   {Site: true},
+			"qaAnswerAccepted": {Site: true},
 		}
 		value := jsons.ToJsonStr(defaults)
 		if existing == nil {
@@ -35,7 +35,7 @@ func migrate_notification_types_defaults() error {
 				Key:         constants.SysConfigNotificationTypes,
 				Value:       value,
 				Name:        "通知类型配置",
-				Description: "各消息类型的站内信与邮件开关",
+				Description: "各消息类型的站内信开关",
 				CreateTime:  now,
 				UpdateTime:  now,
 			})

@@ -196,7 +196,6 @@ func seedForLanguage() seedData {
 				{Key: constants.SysConfigSiteNotification, Value: ""},
 				{Key: constants.SysConfigRecommendTags, Value: ""},
 				{Key: constants.SysConfigModules, Value: map[string]bool{"tweet": true, "topic": true, "qa": true, "article": false}},
-				{Key: constants.SysConfigSmtpConfig, Value: dto.SmtpConfig{}},
 				{Key: constants.SysConfigUploadConfig, Value: dto.UploadConfig{
 					EnableUploadMethod: dto.Local,
 					AliyunOss:          dto.AliyunOssUploadConfig{},
@@ -219,10 +218,10 @@ func seedForLanguage() seedData {
 			{Key: constants.SysConfigSiteDescription, Value: "bbs-go，基于Go语言的开源社区系统", Name: "站点描述", Description: "站点描述"},
 			{Key: constants.SysConfigBaseURL, Value: "/", Name: "网站URL", Description: "网站URL"},
 			{Key: constants.SysConfigSiteKeywords, Value: []string{"bbs-go"}, Name: "站点关键字", Description: "站点关键字"},
-				{Key: constants.SysConfigSiteNavs, Value: []map[string]string{
-					{"title": "话题", "url": "/topics"},
-					{"title": "文章", "url": "/articles"},
-				}, Name: "站点导航", Description: "站点导航"},
+			{Key: constants.SysConfigSiteNavs, Value: []map[string]string{
+				{"title": "话题", "url": "/topics"},
+				{"title": "文章", "url": "/articles"},
+			}, Name: "站点导航", Description: "站点导航"},
 			{Key: constants.SysConfigDefaultCategoryId, Value: "1", Name: "默认节点", Description: "默认节点"},
 			{Key: constants.SysConfigTokenExpireDays, Value: "365", Name: "用户登录有效期(天)", Description: "用户登录有效期(天)"},
 			{Key: constants.SysConfigUrlRedirect, Value: "false"},
@@ -231,7 +230,6 @@ func seedForLanguage() seedData {
 			{Key: constants.SysConfigSiteNotification, Value: ""},
 			{Key: constants.SysConfigRecommendTags, Value: ""},
 			{Key: constants.SysConfigModules, Value: map[string]bool{"tweet": true, "topic": true, "qa": true, "article": true}},
-			{Key: constants.SysConfigSmtpConfig, Value: dto.SmtpConfig{}},
 			{Key: constants.SysConfigUploadConfig, Value: dto.UploadConfig{
 				EnableUploadMethod: dto.Local,
 				AliyunOss: dto.AliyunOssUploadConfig{

@@ -73,8 +73,6 @@ var (
 		{Method: "GET", Pattern: "/api/admin/seo/sitemap/status", Permissions: []PermissionDefinition{PermissionSitemapGenerate}},
 		{Method: "POST", Pattern: "/api/admin/seo/sitemap/generate", Permissions: []PermissionDefinition{PermissionSitemapGenerate}},
 
-		{Method: "GET", Pattern: "/api/admin/email-log/*", Permissions: []PermissionDefinition{PermissionEmailLogView}},
-		{Method: "POST", Pattern: "/api/admin/email-log/list", Permissions: []PermissionDefinition{PermissionEmailLogView}},
 		{Method: "GET", Pattern: "/api/admin/user-report/*", Permissions: []PermissionDefinition{PermissionUserReportView}},
 		{Method: "POST", Pattern: "/api/admin/user-report/list", Permissions: []PermissionDefinition{PermissionUserReportView}},
 		{Method: "POST", Pattern: "/api/admin/user-report/audit", Permissions: []PermissionDefinition{PermissionUserReportAudit}},

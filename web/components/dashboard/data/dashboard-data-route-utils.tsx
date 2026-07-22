@@ -54,13 +54,6 @@ export function enabledDisabledOptions(t: TFunction) {
   ]
 }
 
-export function emailStatusOptions(t: TFunction) {
-  return [
-    { label: t("dashboard.emailStatus.success"), value: 0 },
-    { label: t("dashboard.emailStatus.failed"), value: 1 },
-  ]
-}
-
 export function statusCell(t: TFunction, value: unknown) {
   return Number(value) === 0
     ? t("dashboard.status.normal")
@@ -71,12 +64,6 @@ export function disabledStatusCell(t: TFunction, value: unknown) {
   return Number(value) === 0
     ? t("dashboard.status.normal")
     : t("dashboard.status.disabled")
-}
-
-export function emailStatusCell(t: TFunction, value: unknown) {
-  return Number(value) === 0
-    ? t("dashboard.emailStatus.success")
-    : t("dashboard.emailStatus.failed")
 }
 
 export function topicStatusOptionsFor(t: TFunction) {

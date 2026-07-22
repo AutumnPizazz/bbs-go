@@ -5,8 +5,6 @@ import { useRouter } from "@/lib/router/navigation"
 import { useActionState } from "react"
 
 import {
-  requestEmailVerifyAction,
-  setEmailAction,
   setUsernameAction,
   unbindProviderAction,
   type UserActionState,
@@ -27,7 +25,7 @@ import { toast } from "@/lib/toast"
 
 const initialState: UserActionState = { ok: false }
 
-type DialogKey = "username" | "email" | null
+type DialogKey = "username" | null
 type BindDialogKey = "wx" | "google" | "github" | null
 type BindProvider = "wx" | "google" | "github"
 
@@ -102,19 +100,6 @@ export function AccountSettings({
     currentBindInfo.wx,
   ])
 
-  async function requestVerify() {
-    const result = await requestEmailVerifyAction()
-    if (result.ok) {
-      toast.success(
-        t("user.profile.account.emailVerifySuccess", {
-          email: user.email || "",
-        })
-      )
-    } else {
-      toast.error(result.message || t("composables.unknownError"))
-    }
-  }
-
   async function unbind(provider: "wx" | "google" | "github") {
     const result = await unbindProviderAction(provider)
     if (result.ok) {
@@ -150,35 +135,6 @@ export function AccountSettings({
         >
           {!user.username ? (
             <button type="button" onClick={() => setDialog("username")}>
-              {t("user.profile.account.set")}
-            </button>
-          ) : null}
-        </SettingsItem>
-        <SettingsItem
-          title={t("user.profile.account.email")}
-          value={
-            <>
-              <span>{user.email}</span>
-              {user.emailVerified ? (
-                <span className="ml-1 text-[80%]">
-                  ({t("user.profile.account.verified")})
-                </span>
-              ) : null}
-            </>
-          }
-        >
-          {user.email ? (
-            <button type="button" onClick={() => setDialog("email")}>
-              {t("user.profile.account.modify")}
-            </button>
-          ) : null}
-          {user.email && !user.emailVerified ? (
-            <button type="button" onClick={requestVerify}>
-              {t("user.profile.account.verify")}
-            </button>
-          ) : null}
-          {!user.email ? (
-            <button type="button" onClick={() => setDialog("email")}>
               {t("user.profile.account.set")}
             </button>
           ) : null}
@@ -448,8 +404,10 @@ function AccountDialog({
 }) {
   const { t } = useI18n()
   const router = useRouter()
-  const action = dialog === "username" ? setUsernameAction : setEmailAction
-  const [state, formAction, pending] = useActionState(action, initialState)
+  const [state, formAction, pending] = useActionState(
+    setUsernameAction,
+    initialState
+  )
 
   React.useEffect(() => {
     if (state.ok) {
@@ -489,15 +447,6 @@ function AccountDialog({
               </div>
             </>
           ) : null}
-          {dialog === "email" ? (
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              defaultValue={user.email || ""}
-              placeholder={t("component.setEmailDialog.emailPlaceholder")}
-            />
-          ) : null}
         </div>
         <div className="mt-5 flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={onClose}>
@@ -513,13 +462,11 @@ function AccountDialog({
 }
 
 function titleText(dialog: Exclude<DialogKey, null>, t: TFunction) {
-  if (dialog === "username") return t("component.setUsernameDialog.title")
-  return t("component.setEmailDialog.title")
+  return t("component.setUsernameDialog.title")
 }
 
 function successText(dialog: Exclude<DialogKey, null>, t: TFunction) {
-  if (dialog === "username") return t("component.setUsernameDialog.success")
-  return t("component.setEmailDialog.success")
+  return t("component.setUsernameDialog.success")
 }
 
 function bindTitle(provider: Exclude<BindDialogKey, null>, t: TFunction) {

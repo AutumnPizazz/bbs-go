@@ -2,8 +2,6 @@ package services
 
 import (
 	"bbs-go/internal/models/constants"
-	"bbs-go/internal/models/dto"
-	"bbs-go/internal/pkg/bbsurls"
 	"bbs-go/internal/pkg/errs"
 	"bbs-go/internal/pkg/locales"
 	"bbs-go/internal/pkg/search"
@@ -28,9 +26,6 @@ import (
 	"bbs-go/internal/models"
 	"bbs-go/internal/repositories"
 )
-
-// 邮箱验证邮件有效期（小时）
-const emailVerifyExpireHour = 24
 
 var UserService = newUserService()
 
@@ -173,11 +168,6 @@ func (s *userService) RemoveForbidden(operatorId, userId int64, r *http.Request)
 	}
 }
 
-// GetByEmail 根据邮箱查找
-func (s *userService) GetByEmail(email string) *models.User {
-	return repositories.UserRepository.GetByEmail(sqls.DB(), email)
-}
-
 // GetByUsername 根据用户名查找
 func (s *userService) GetByUsername(username string) *models.User {
 	return repositories.UserRepository.GetByUsername(sqls.DB(), username)
@@ -187,15 +177,10 @@ func (s *userService) GetByPhone(phone string) *models.User {
 	return repositories.UserRepository.GetByPhone(sqls.DB(), phone)
 }
 
-// SignUp is retained as a compatibility guard for callers compiled against the old service.
-func (s *userService) SignUp(username, email, nickname, password, rePassword string) (*models.User, error) {
-	return nil, errs.RegistrationClosed()
-}
-
 // SignIn 登录
 func (s *userService) SignIn(username, password string) (*models.User, error) {
 	if strs.IsBlank(username) {
-		return nil, errors.New(locales.Get("user.username_email_required"))
+		return nil, errors.New(locales.Get("user.username_required"))
 	}
 	if strs.IsBlank(password) {
 		return nil, errors.New(locales.Get("user.password_required"))
@@ -203,12 +188,7 @@ func (s *userService) SignIn(username, password string) (*models.User, error) {
 	if err := validate.IsPassword(password); err != nil {
 		return nil, err
 	}
-	var user *models.User = nil
-	if err := validate.IsEmail(username); err == nil { // 如果用户输入的是邮箱
-		user = s.GetByEmail(username)
-	} else {
-		user = s.GetByUsername(username)
-	}
+	user := s.GetByUsername(username)
 	if user == nil || user.Status != constants.StatusOk {
 		return nil, errors.New(locales.Get("user.password_login_failed"))
 	}
@@ -216,14 +196,6 @@ func (s *userService) SignIn(username, password string) (*models.User, error) {
 		return nil, errors.New(locales.Get("user.password_login_failed"))
 	}
 	return user, nil
-}
-
-// isEmailExists 邮箱是否存在
-func (s *userService) isEmailExists(email string) bool {
-	if len(email) == 0 { // 如果邮箱为空，那么就认为是不存在
-		return false
-	}
-	return s.GetByEmail(email) != nil
 }
 
 // isUsernameExists 用户名是否存在
@@ -293,29 +265,6 @@ func (s *userService) SetUsername(userId int64, username string) error {
 	return s.UpdateColumn(userId, "username", username)
 }
 
-// SetEmail 设置密码
-func (s *userService) SetEmail(userId int64, email string) error {
-	email = strings.TrimSpace(email)
-	if err := validate.IsEmail(email); err != nil {
-		return err
-	}
-	user := s.Get(userId)
-	if user == nil {
-		return errors.New(locales.Get("user.not_found"))
-	}
-	if user.Email.String == email {
-		// 用户邮箱没做变更
-		return nil
-	}
-	if s.isEmailExists(email) {
-		return errors.New(locales.Getf("user.email_occupied", email))
-	}
-	return s.Updates(userId, map[string]interface{}{
-		"email":          email,
-		"email_verified": false,
-	})
-}
-
 // IncrTopicCount topic_count + 1
 func (s *userService) IncrTopicCount(ctx *sqls.TxContext, userId int64) error {
 	if err := repositories.UserRepository.UpdateColumn(ctx.Tx, userId, "topic_count", gorm.Expr("topic_count + 1")); err != nil {
@@ -341,95 +290,6 @@ func (s *userService) IncrCommentCount(userId int64) int {
 		cache.UserCache.Invalidate(userId)
 	}
 	return commentCount
-}
-
-// SendEmailVerifyEmail 发送邮箱验证邮件
-func (s *userService) SendEmailVerifyEmail(userId int64) error {
-	user := s.Get(userId)
-	if user == nil {
-		return errors.New(locales.Get("user.not_found"))
-	}
-	if user.EmailVerified {
-		return errors.New(locales.Get("user.email_verified"))
-	}
-	if err := validate.IsEmail(user.Email.String); err != nil {
-		return err
-	}
-	// 如果设置了邮箱白名单
-	if emailWhitelist := SysConfigService.GetEmailWhitelist(); len(emailWhitelist) > 0 {
-		isInWhitelist := func() bool {
-			for _, whitelist := range emailWhitelist {
-				if strings.Contains(strings.ToLower(user.Email.String), strings.ToLower(whitelist)) {
-					return true
-				}
-			}
-			return false
-		}()
-
-		if !isInWhitelist {
-			suffix := func() string {
-				email := strings.ToLower(user.Email.String)
-				index := strings.Index(email, "@")
-				if index != -1 {
-					return email[index+1:]
-				}
-				return email
-			}()
-			return errors.New(locales.Getf("user.email_suffix_not_supported", suffix))
-		}
-	}
-	var (
-		token     = strs.UUID()
-		url       = bbsurls.AbsUrl("/user/email/verify?token=" + token)
-		link      = &dto.ActionLink{Title: locales.Get("user.email_verify_link"), Url: url}
-		siteTitle = cache.SysConfigCache.GetStr(constants.SysConfigSiteTitle)
-		subject   = locales.Getf("user.email_verify_title", siteTitle)
-		title     = locales.Getf("user.email_verify_title", siteTitle)
-		content   = locales.Getf("user.email_verify_content", siteTitle, emailVerifyExpireHour, url)
-	)
-	if err := repositories.EmailCodeRepository.Create(sqls.DB(), &models.EmailCode{
-		UserId:     userId,
-		BizType:    constants.EmailCodeBizTypeEmailVerify,
-		Email:      user.Email.String,
-		Code:       "",
-		Token:      token,
-		Title:      title,
-		Content:    content,
-		Used:       false,
-		CreateTime: dates.NowTimestamp(),
-	}); err != nil {
-		return err
-	}
-	return EmailService.SendTemplateEmail(nil, user.Email.String, subject, title, content, "", link, constants.EmailLogBizTypeEmailVerify)
-}
-
-// VerifyEmail 验证邮箱
-func (s *userService) VerifyEmail(token string) (string, error) {
-	emailCode := EmailCodeService.FindOne(sqls.NewCnd().
-		Eq("token", token).
-		Eq("biz_type", constants.EmailCodeBizTypeEmailVerify))
-	if emailCode == nil || emailCode.Used {
-		return "", errors.New(locales.Get("user.email_verify_illegal"))
-	}
-
-	user := s.Get(emailCode.UserId)
-	if user == nil || emailCode.Email != user.Email.String {
-		return "", errors.New(locales.Get("user.email_verify_expired"))
-	}
-	if dates.FromTimestamp(emailCode.CreateTime).Add(time.Hour * time.Duration(emailVerifyExpireHour)).Before(time.Now()) {
-		return "", errors.New(locales.Get("user.email_verify_expired"))
-	}
-	err := sqls.DB().Transaction(func(tx *gorm.DB) error {
-		if err := repositories.UserRepository.UpdateColumn(tx, emailCode.UserId, "email_verified", true); err != nil {
-			return err
-		}
-		cache.UserCache.Invalidate(emailCode.UserId)
-		return repositories.EmailCodeRepository.UpdateColumn(tx, emailCode.Id, "used", true)
-	})
-	if err != nil {
-		return "", err
-	}
-	return emailCode.Email, nil
 }
 
 // CheckPostStatus 用于在发表内容时检查用户状态

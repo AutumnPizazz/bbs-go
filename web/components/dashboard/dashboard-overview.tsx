@@ -8,7 +8,6 @@ import {
   ClockIcon,
   FileTextIcon,
   GaugeIcon,
-  MailWarningIcon,
   MessageSquareIcon,
   SettingsIcon,
   TagsIcon,
@@ -35,7 +34,6 @@ type PendingKey =
   | "pendingTopics"
   | "pendingArticles"
   | "pendingReports"
-  | "failedEmails"
 
 type RecentItem = {
   id?: number | string
@@ -114,7 +112,6 @@ function normalizeOverview(data: AdminRecord | null): OverviewData | null {
       pendingTopics: toNumber(pending.pendingTopics),
       pendingArticles: toNumber(pending.pendingArticles),
       pendingReports: toNumber(pending.pendingReports),
-      failedEmails: toNumber(pending.failedEmails),
     },
     recent: {
       topics: toRecentItems(recent.topics),
@@ -188,12 +185,6 @@ export function DashboardOverview() {
       icon: AlertCircleIcon,
       permission: PERMISSIONS.DASHBOARD_USER_REPORT_VIEW,
     },
-    {
-      key: "failedEmails",
-      href: "/dashboard/email-logs",
-      icon: MailWarningIcon,
-      permission: PERMISSIONS.DASHBOARD_EMAIL_LOG_VIEW,
-    },
   ]
 
   const quickLinks: Array<{
@@ -242,13 +233,8 @@ export function DashboardOverview() {
       count: toNumber(overview?.pending?.[item.key]),
     }))
     .sort((left, right) => right.count - left.count)
-  const pendingItemsForDisplay = [
-    ...visiblePendingItems.filter((item) => item.key !== "failedEmails"),
-    ...visiblePendingItems.filter((item) => item.key === "failedEmails"),
-  ]
-  const priorityPendingItems = visiblePendingItems.filter(
-    (item) => item.key !== "failedEmails"
-  )
+  const pendingItemsForDisplay = visiblePendingItems
+  const priorityPendingItems = visiblePendingItems
   const visibleQuickLinks = quickLinks.filter((item) => canUse(item.permission))
   const topPending = priorityPendingItems.find((item) => item.count > 0)
   const priorityPending = priorityPendingItems.reduce(

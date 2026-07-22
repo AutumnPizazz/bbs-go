@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import Link from "@/components/common/link"
 import { useRouter } from "@/lib/router/navigation"
 import { AlertCircle, Image as ImageIcon, Plus, Trash2, X } from "lucide-react"
 
@@ -720,9 +719,6 @@ export function TopicCreateForm({
     ? form.categoryId
     : getFirstCategoryId(availableNodes)
   const noQaCategoriesAvailable = form.type === 2 && availableNodes.length === 0
-  const isNeedEmailVerify = Boolean(
-    config?.createTopicEmailVerified && !currentUser.emailVerified
-  )
   const featureDisabledMessage = config
     ? form.type === 1 && !config.modules?.tweet
       ? t("pages.topic.create.tweetFeatureDisabled")
@@ -854,21 +850,6 @@ export function TopicCreateForm({
       <Alert>
         <AlertCircle className="h-4 w-4 shrink-0" />
         <AlertTitle>{featureDisabledMessage}</AlertTitle>
-      </Alert>
-    )
-  }
-
-  if (isNeedEmailVerify) {
-    return (
-      <Alert>
-        <AlertCircle className="h-4 w-4 shrink-0" />
-        <AlertTitle>{t("pages.topic.create.needEmailTitle")}</AlertTitle>
-        <AlertDescription>
-          {t("pages.topic.create.needEmailBody")}
-          <Link href="/user/profile/account" className="text-primary">
-            {t("pages.topic.create.goVerify")}
-          </Link>
-        </AlertDescription>
       </Alert>
     )
   }

@@ -20,7 +20,6 @@ const (
 	CodeForbiddenError      = 1001
 	CodeUserDisabled        = 1002
 	CodeInObservationPeriod = 1003
-	CodeEmailNotVerified    = 1004
 	CodeRegistrationClosed  = 1005
 	CodeContentAccessDenied = 1006
 )
@@ -39,8 +38,6 @@ func NewError(code int) *web.CodeError {
 		message = locales.Get("errors.forbidden")
 	case CodeUserDisabled:
 		message = locales.Get("errors.user_disabled")
-	case CodeEmailNotVerified:
-		message = locales.Get("errors.email_not_verified")
 	case CodeRegistrationClosed:
 		message = locales.Get("errors.registration_closed")
 	case CodeContentAccessDenied:
@@ -58,7 +55,6 @@ var (
 	CaptchaError        = func() *web.CodeError { return NewError(CodeCaptchaError) }
 	ForbiddenError      = func() *web.CodeError { return NewError(CodeForbiddenError) }
 	UserDisabled        = func() *web.CodeError { return NewError(CodeUserDisabled) }
-	EmailNotVerified    = func() *web.CodeError { return NewError(CodeEmailNotVerified) }
 	RegistrationClosed  = func() *web.CodeError { return NewError(CodeRegistrationClosed) }
 	ContentAccessDenied = func() *web.CodeError { return NewError(CodeContentAccessDenied) }
 )

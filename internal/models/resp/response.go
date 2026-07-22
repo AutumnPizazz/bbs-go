@@ -40,11 +40,9 @@ type UserDetail struct {
 // UserProfile 用户个人信息
 type UserProfile struct {
 	UserDetail
-	Roles         []string `json:"roles"`
-	Permissions   []string `json:"permissions"`
-	PasswordSet   bool     `json:"passwordSet"` // 密码已设置
-	Email         string   `json:"email"`
-	EmailVerified bool     `json:"emailVerified"`
+	Roles       []string `json:"roles"`
+	Permissions []string `json:"permissions"`
+	PasswordSet bool     `json:"passwordSet"` // 密码已设置
 }
 
 type TagResponse struct {

@@ -25,20 +25,6 @@ func IsUsername(username string) error {
 	return nil
 }
 
-// IsEmail 验证是否是合法的邮箱
-func IsEmail(email string) (err error) {
-	if strs.IsBlank(email) {
-		err = errors.New(locales.Get("user.email_invalid"))
-		return
-	}
-	pattern := `^([A-Za-z0-9_\-\.])+\@([A-Za-z0-9_\-\.])+\.([A-Za-z]{2,4})$`
-	matched, _ := regexp.MatchString(pattern, email)
-	if !matched {
-		err = errors.New(locales.Get("user.email_invalid"))
-	}
-	return
-}
-
 // IsValidPassword 是否是合法的密码
 func IsValidPassword(password, rePassword string) error {
 	if err := IsPassword(password); err != nil {

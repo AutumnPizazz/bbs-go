@@ -104,28 +104,10 @@ export async function updateUser(
   })
 }
 
-export async function requestEmailVerify(): Promise<void> {
-  await apiFetch<null>("/api/user/send_verify_email", { method: "POST" })
-}
-
-export function verifyEmail(token: string) {
-  return apiFetch<{ email: string }>("/api/user/verify_email", {
-    method: "POST",
-    params: { token },
-  })
-}
-
 export async function setUsername(username: string): Promise<void> {
   await apiFetch<null>("/api/user/set_username", {
     method: "POST",
     body: toFormData({ username }),
-  })
-}
-
-export async function setEmail(email: string): Promise<void> {
-  await apiFetch<null>("/api/user/set_email", {
-    method: "POST",
-    body: toFormData({ email }),
   })
 }
 

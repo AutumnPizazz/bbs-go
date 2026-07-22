@@ -64,7 +64,6 @@ func CommonOverview(ctx *gin.Context) {
 		"pendingTopics":   repositories.TopicRepository.Count(db, sqls.NewCnd().Eq("status", constants.StatusReview)),
 		"pendingArticles": repositories.TopicRepository.Count(db, sqls.NewCnd().Eq("status", constants.StatusReview).Eq("format", constants.TopicFormatArticle)),
 		"pendingReports":  repositories.UserReportRepository.Count(db, sqls.NewCnd().Eq("audit_status", 0)),
-		"failedEmails":    repositories.EmailLogRepository.Count(db, sqls.NewCnd().Eq("status", constants.EmailLogStatusFailed)),
 	}
 
 	recentTopics := repositories.TopicRepository.Find(db, sqls.NewCnd().Eq("status", constants.StatusOk).Desc("id").Limit(5))

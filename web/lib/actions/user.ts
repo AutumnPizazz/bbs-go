@@ -51,29 +51,6 @@ export async function loadFollowed(userId: string, cursor?: string) {
   })
 }
 
-export async function requestEmailVerifyAction(): Promise<UserActionState> {
-  try {
-    await apiFetch<null>("/api/user/send_verify_email", {
-      method: "POST",
-    })
-    return { ok: true }
-  } catch (error) {
-    return { ok: false, message: errorMessage(error, "Failed") }
-  }
-}
-
-export async function verifyEmailAction(token: string) {
-  try {
-    const data = await apiFetch<{ email: string }>("/api/user/verify_email", {
-      method: "POST",
-      params: { token },
-    })
-    return { ok: true, email: data.email }
-  } catch (error) {
-    return { ok: false, message: errorMessage(error, "") }
-  }
-}
-
 export async function saveProfileAction(
   _state: UserActionState,
   formData: FormData
@@ -111,21 +88,6 @@ export async function setUsernameAction(
     await apiFetch<null>("/api/user/set_username", {
       method: "POST",
       body: toFormData({ username: formString(formData, "username") }),
-    })
-    return { ok: true }
-  } catch (error) {
-    return { ok: false, message: errorMessage(error, "Failed") }
-  }
-}
-
-export async function setEmailAction(
-  _state: UserActionState,
-  formData: FormData
-): Promise<UserActionState> {
-  try {
-    await apiFetch<null>("/api/user/set_email", {
-      method: "POST",
-      body: toFormData({ email: formString(formData, "email") }),
     })
     return { ok: true }
   } catch (error) {

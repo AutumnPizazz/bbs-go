@@ -73,7 +73,6 @@ type Config struct {
 	IDCodec        IDCodecConfig `yaml:"idCodec"`        // ID 编解码配置
 	Logger         LoggerConfig  `yaml:"logger"`         // 日志配置
 	DB             DBConfig      `yaml:"db"`             // 数据库配置
-	Smtp           SmtpConfig    `yaml:"smtp"`           // smtp
 	Search         SearchConfig  `yaml:"search"`         // 搜索配置
 }
 
@@ -101,14 +100,6 @@ type DBConfig struct {
 	ConnMaxIdleTimeSeconds int    `yaml:"connMaxIdleTimeSeconds"`
 	ConnMaxLifetimeSeconds int    `yaml:"connMaxLifetimeSeconds"`
 	LogLevel               string `yaml:"logLevel"` // silent, error, warn, info
-}
-
-type SmtpConfig struct {
-	Host     string `yaml:"host"`
-	Port     string `yaml:"port"`
-	Username string `yaml:"username"`
-	Password string `yaml:"password"`
-	SSL      bool   `yaml:"ssl"`
 }
 
 type SearchConfig struct {

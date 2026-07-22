@@ -17,53 +17,32 @@ const (
 	NicknameMaxLengthEnUS = 20
 )
 
-const (
-	EmailCodeBizTypeEmailVerify = "emailVerify"
-)
-
-const (
-	EmailLogBizTypeUnknown       = "unknown"
-	EmailLogBizTypeEmailVerify   = "emailVerify"
-	EmailLogBizTypeMessageNotice = "messageNotice"
-)
-
-const (
-	EmailLogStatusSuccess = 0
-	EmailLogStatusFailed  = 1
-)
-
 // 系统配置
 const (
-	SysConfigSiteTitle                  = "siteTitle"                  // 站点标题
-	SysConfigSiteDescription            = "siteDescription"            // 站点描述
-	SysConfigBaseURL                    = "baseURL"                    // 网站URL
-	SysConfigSiteKeywords               = "siteKeywords"               // 站点关键字
-	SysConfigSiteLogo                   = "siteLogo"                   // 站点Logo
-	SysConfigSiteNavs                   = "siteNavs"                   // 站点导航
-	SysConfigSiteNotification           = "siteNotification"           // 站点公告
-	SysConfigAboutPageConfig            = "aboutPageConfig"            // 关于页配置
-	SysConfigFooterLinks                = "footerLinks"                // 底部链接
-	SysConfigRecommendTags              = "recommendTags"              // 推荐标签
-	SysConfigUrlRedirect                = "urlRedirect"                // 是否开启链接跳转
-	SysConfigDefaultCategoryId          = "defaultCategoryId"          // 发帖默认节点
-	SysConfigArticlePending             = "articlePending"             // 是否开启文章审核
-	SysConfigTopicCaptcha               = "topicCaptcha"               // 是否开启发帖验证码
-	SysConfigUserObserveSeconds         = "userObserveSeconds"         // 新用户观察期
-	SysConfigTokenExpireDays            = "tokenExpireDays"            // 登录Token有效天数
-	SysConfigEnableHideContent          = "enableHideContent"          // 启用回复可见功能
-	SysConfigCreateTopicEmailVerified   = "createTopicEmailVerified"   // 发话题需要邮箱认证
-	SysConfigCreateArticleEmailVerified = "createArticleEmailVerified" // 发话题需要邮箱认证
-	SysConfigCreateCommentEmailVerified = "createCommentEmailVerified" // 发话题需要邮箱认证
-	SysConfigModules                    = "modules"                    // 功能模块
-	SysConfigEmailWhitelist             = "emailWhitelist"             // 邮箱白名单
-	SysConfigEmailNoticeIntervalSeconds = "emailNoticeIntervalSeconds" // 邮件通知间隔(秒)
-	SysConfigLoginConfig                = "loginConfig"                // 登录配置
-	SysConfigSmtpConfig                 = "smtpConfig"                 // SMTP配置
-	SysConfigUploadConfig               = "uploadConfig"               // 上传配置
-	SysConfigAttachmentConfig           = "attachmentConfig"           // 附件配置（帖子附件）
-	SysConfigScriptInjections           = "scriptInjections"           // head脚本注入配置
-	SysConfigTopicListStyle             = "topicListStyle"             // 帖子列表样式
-	SysConfigNotificationTypes          = "notificationTypes"          // 通知类型配置（站内信+邮件开关）
+	SysConfigSiteTitle          = "siteTitle"          // 站点标题
+	SysConfigSiteDescription    = "siteDescription"    // 站点描述
+	SysConfigBaseURL            = "baseURL"            // 网站URL
+	SysConfigSiteKeywords       = "siteKeywords"       // 站点关键字
+	SysConfigSiteLogo           = "siteLogo"           // 站点Logo
+	SysConfigSiteNavs           = "siteNavs"           // 站点导航
+	SysConfigSiteNotification   = "siteNotification"   // 站点公告
+	SysConfigAboutPageConfig    = "aboutPageConfig"    // 关于页配置
+	SysConfigFooterLinks        = "footerLinks"        // 底部链接
+	SysConfigRecommendTags      = "recommendTags"      // 推荐标签
+	SysConfigUrlRedirect        = "urlRedirect"        // 是否开启链接跳转
+	SysConfigDefaultCategoryId  = "defaultCategoryId"  // 发帖默认节点
+	SysConfigArticlePending     = "articlePending"     // 是否开启文章审核
+	SysConfigTopicCaptcha       = "topicCaptcha"       // 是否开启发帖验证码
+	SysConfigUserObserveSeconds = "userObserveSeconds" // 新用户观察期
+	SysConfigTokenExpireDays    = "tokenExpireDays"    // 登录Token有效天数
+	SysConfigEnableHideContent  = "enableHideContent"  // 启用回复可见功能
+	SysConfigModules            = "modules"            // 功能模块
+	SysConfigLoginConfig        = "loginConfig"        // 登录配置
+	SysConfigUploadConfig       = "uploadConfig"       // 上传配置
+	SysConfigAttachmentConfig   = "attachmentConfig"   // 附件配置（帖子附件）
+	SysConfigScriptInjections   = "scriptInjections"   // head脚本注入配置
+	SysConfigTopicListStyle     = "topicListStyle"     // 帖子列表样式
+	SysConfigNotificationTypes  = "notificationTypes"  // 站内信通知类型配置
 )
 
 const (

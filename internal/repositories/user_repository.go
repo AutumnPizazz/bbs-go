@@ -91,10 +91,6 @@ func (r *userRepository) Delete(db *gorm.DB, id int64) {
 	db.Delete(&models.User{}, "id = ?", id)
 }
 
-func (r *userRepository) GetByEmail(db *gorm.DB, email string) *models.User {
-	return r.Take(db, "email = ?", email)
-}
-
 func (r *userRepository) GetByUsername(db *gorm.DB, username string) *models.User {
 	return r.Take(db, "username = ?", username)
 }

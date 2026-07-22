@@ -33,8 +33,6 @@ export interface UserSummary {
   roles?: string[]
   permissions?: string[]
   passwordSet?: boolean
-  email?: string
-  emailVerified?: boolean
 }
 
 export interface ImageInfo {
@@ -176,16 +174,13 @@ export interface SiteConfig {
   defaultCategoryId?: number
   topicListStyle?: "default" | "compact" | string
   topicCaptcha?: boolean
-  createTopicEmailVerified?: boolean
-  enableHideContent?: boolean
+	enableHideContent?: boolean
   attachmentConfig?: {
     enabled?: boolean
     allowedTypes?: string[]
     maxSizeMB?: number
     maxCount?: number
   }
-  createArticleEmailVerified?: boolean
-  createCommentEmailVerified?: boolean
   footerLinks?: Array<{
     text?: Record<string, string>
     url?: string

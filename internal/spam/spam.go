@@ -9,7 +9,6 @@ import (
 var strategies []Strategy
 
 func init() {
-	strategies = append(strategies, &EmailVerifyStrategy{})
 	strategies = append(strategies, &CaptchaStrategy{})
 	// strategies = append(strategies, &PostFrequencyStrategy{})
 }
@@ -26,7 +25,6 @@ func CheckTopic(user *models.User, form req.CreateTopicReq) error {
 	}
 	return nil
 }
-
 
 func CheckComment(user *models.User, form req.CreateCommentReq) error {
 	if len(strategies) == 0 {

@@ -97,7 +97,6 @@ func ParseImageDTO(str string) (img *ImageDTO) {
 
 type AdminUserCreateReq struct {
 	Username          string `json:"username" form:"username"`
-	Email             string `json:"email" form:"email"`
 	Phone             string `json:"phone" form:"phone"`
 	Nickname          string `json:"nickname" form:"nickname"`
 	Password          string `json:"password" form:"password"`
@@ -105,13 +104,11 @@ type AdminUserCreateReq struct {
 	ContentAccessMode string `json:"contentAccessMode" form:"contentAccessMode"`
 	CategoryIds       string `json:"categoryIds" form:"categoryIds"`
 	Status            int    `json:"status" form:"status"`
-	EmailVerified     bool   `json:"emailVerified" form:"emailVerified"`
 }
 
 type AdminUserUpdateReq struct {
 	Id                int64  `json:"id" form:"id"`
 	Username          string `json:"username" form:"username"`
-	Email             string `json:"email" form:"email"`
 	Nickname          string `json:"nickname" form:"nickname"`
 	Avatar            string `json:"avatar" form:"avatar"`
 	Gender            string `json:"gender" form:"gender"`
@@ -122,7 +119,6 @@ type AdminUserUpdateReq struct {
 	Phone             string `json:"phone" form:"phone"`
 	ContentAccessMode string `json:"contentAccessMode" form:"contentAccessMode"`
 	CategoryIds       string `json:"categoryIds" form:"categoryIds"`
-	EmailVerified     bool   `json:"emailVerified" form:"emailVerified"`
 }
 
 type AdminUserForbiddenReq struct {

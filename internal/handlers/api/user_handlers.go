@@ -152,22 +152,6 @@ func UserSetUsername(ctx *gin.Context) {
 	ginx.WriteJSON(ctx, nil)
 }
 
-func UserSetEmail(ctx *gin.Context) {
-	user := common.GetCurrentUser(ctx)
-	if user == nil {
-		ginx.WriteJSON(ctx, errs.NotLogin())
-		return
-	}
-	email := strings.TrimSpace(params.FormValue(ctx, "email"))
-	err := services.UserService.SetEmail(user.Id, email)
-	if err != nil {
-		ginx.WriteJSON(ctx, err)
-		return
-	}
-	ginx.WriteJSON(ctx, nil)
-
-}
-
 func UserSetBackgroundImage(ctx *gin.Context) {
 	user := common.GetCurrentUser(ctx)
 	if user == nil {
@@ -305,38 +289,6 @@ func UserForbidden(ctx *gin.Context) {
 		}
 	}
 	ginx.WriteJSON(ctx, nil)
-
-}
-
-func UserSendVerifyEmail(ctx *gin.Context) {
-	user := common.GetCurrentUser(ctx)
-	if user == nil {
-		ginx.WriteJSON(ctx, errs.NotLogin())
-		return
-	}
-	if err := services.UserService.SendEmailVerifyEmail(user.Id); err != nil {
-		ginx.WriteJSON(ctx, err)
-		return
-	}
-	ginx.WriteJSON(ctx, nil)
-
-}
-
-func UserVerifyEmail(ctx *gin.Context) {
-	token := params.FormValue(ctx, "token")
-	if strs.IsBlank(token) {
-		ginx.WriteJSON(ctx, ginx.ErrorMessage("Illegal request"))
-		return
-	}
-	var (
-		email string
-		err   error
-	)
-	if email, err = services.UserService.VerifyEmail(token); err != nil {
-		ginx.WriteJSON(ctx, err)
-		return
-	}
-	ginx.WriteJSON(ctx, map[string]any{"email": email})
 
 }
 

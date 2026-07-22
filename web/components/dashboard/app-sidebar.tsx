@@ -33,7 +33,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         currentUser?.nickname ||
         currentUser?.username ||
         t("dashboard.user.anonymous"),
-      email: currentUser?.email || t("dashboard.user.noEmail"),
       avatar: currentUser?.smallAvatar || currentUser?.avatar || "",
     },
     brand: {
@@ -114,11 +113,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             title: t("dashboard.nav.roles"),
             url: "/dashboard/roles",
             permission: PERMISSIONS.DASHBOARD_ROLE_VIEW,
-          },
-          {
-            title: t("dashboard.nav.emailLogs"),
-            url: "/dashboard/email-logs",
-            permission: PERMISSIONS.DASHBOARD_EMAIL_LOG_VIEW,
           },
         ],
       },

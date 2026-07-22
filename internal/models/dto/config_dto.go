@@ -4,67 +4,57 @@ package dto
 //
 //	Admin配置返回结构体
 type SysConfigAdminResponse struct {
-	SiteTitle                  string                      `json:"siteTitle"`
-	SiteDescription            string                      `json:"siteDescription"`
-	BaseURL                    string                      `json:"baseURL"`
-	SiteKeywords               []string                    `json:"siteKeywords"`
-	SiteLogo                   string                      `json:"siteLogo"`
-	SiteNavs                   []ActionLink                `json:"siteNavs"`
-	SiteNotification           string                      `json:"siteNotification"`
-	AboutPageConfig            AboutPageConfig             `json:"aboutPageConfig"`
-	FooterLinks                []FooterLink                `json:"footerLinks"`
-	RecommendTags              []string                    `json:"recommendTags"`
-	UrlRedirect                bool                        `json:"urlRedirect"`
-	DefaultCategoryId          int64                       `json:"defaultCategoryId"`
-	TopicListStyle             string                      `json:"topicListStyle"`
-	ArticlePending             bool                        `json:"articlePending"`
-	TopicCaptcha               bool                        `json:"topicCaptcha"`
-	UserObserveSeconds         int                         `json:"userObserveSeconds"`
-	TokenExpireDays            int                         `json:"tokenExpireDays"`
-	CreateTopicEmailVerified   bool                        `json:"createTopicEmailVerified"`
-	CreateArticleEmailVerified bool                        `json:"createArticleEmailVerified"`
-	CreateCommentEmailVerified bool                        `json:"createCommentEmailVerified"`
-	EnableHideContent          bool                        `json:"enableHideContent"`
-	Modules                    ModulesConfig               `json:"modules"`
-	EmailWhitelist             []string                    `json:"emailWhitelist"`             // 邮箱白名单
-	EmailNoticeIntervalSeconds int                         `json:"emailNoticeIntervalSeconds"` // 邮件通知间隔(秒)
-	NotificationTypes          map[string]NoticeTypeConfig `json:"notificationTypes"`          // 各消息类型站内信+邮件开关
-	LoginConfig                LoginConfig                 `json:"loginConfig"`                // 登录配置
-	SmtpConfig                 SmtpConfig                  `json:"smtpConfig"`                 // SMTP配置
-	UploadConfig               UploadConfig                `json:"uploadConfig"`               // 上传配置
-	AttachmentConfig           AttachmentConfig            `json:"attachmentConfig"`           // 附件配置
-	ScriptInjections           []ScriptInjection           `json:"scriptInjections"`           // head脚本注入
+	SiteTitle          string                      `json:"siteTitle"`
+	SiteDescription    string                      `json:"siteDescription"`
+	BaseURL            string                      `json:"baseURL"`
+	SiteKeywords       []string                    `json:"siteKeywords"`
+	SiteLogo           string                      `json:"siteLogo"`
+	SiteNavs           []ActionLink                `json:"siteNavs"`
+	SiteNotification   string                      `json:"siteNotification"`
+	AboutPageConfig    AboutPageConfig             `json:"aboutPageConfig"`
+	FooterLinks        []FooterLink                `json:"footerLinks"`
+	RecommendTags      []string                    `json:"recommendTags"`
+	UrlRedirect        bool                        `json:"urlRedirect"`
+	DefaultCategoryId  int64                       `json:"defaultCategoryId"`
+	TopicListStyle     string                      `json:"topicListStyle"`
+	ArticlePending     bool                        `json:"articlePending"`
+	TopicCaptcha       bool                        `json:"topicCaptcha"`
+	UserObserveSeconds int                         `json:"userObserveSeconds"`
+	TokenExpireDays    int                         `json:"tokenExpireDays"`
+	EnableHideContent  bool                        `json:"enableHideContent"`
+	Modules            ModulesConfig               `json:"modules"`
+	NotificationTypes  map[string]NoticeTypeConfig `json:"notificationTypes"` // 各消息类型站内信开关
+	LoginConfig        LoginConfig                 `json:"loginConfig"`       // 登录配置
+	UploadConfig       UploadConfig                `json:"uploadConfig"`      // 上传配置
+	AttachmentConfig   AttachmentConfig            `json:"attachmentConfig"`  // 附件配置
+	ScriptInjections   []ScriptInjection           `json:"scriptInjections"`  // head脚本注入
 }
 
 // SysConfigOpenResponse
 //
 //	Open配置返回结构体
 type SysConfigOpenResponse struct {
-	SiteTitle                  string            `json:"siteTitle"`
-	SiteDescription            string            `json:"siteDescription"`
-	BaseURL                    string            `json:"baseURL"`
-	SiteKeywords               []string          `json:"siteKeywords"`
-	SiteLogo                   string            `json:"siteLogo"`
-	SiteNavs                   []ActionLink      `json:"siteNavs"`
-	SiteNotification           string            `json:"siteNotification"`
-	FooterLinks                []FooterLink      `json:"footerLinks"`
-	RecommendTags              []string          `json:"recommendTags"`
-	UrlRedirect                bool              `json:"urlRedirect"`
-	DefaultCategoryId          int64             `json:"defaultCategoryId"`
-	TopicListStyle             string            `json:"topicListStyle"`
-	ArticlePending             bool              `json:"articlePending"`
-	TopicCaptcha               bool              `json:"topicCaptcha"`
-	UserObserveSeconds         int               `json:"userObserveSeconds"`
-	TokenExpireDays            int               `json:"tokenExpireDays"`
-	CreateTopicEmailVerified   bool              `json:"createTopicEmailVerified"`
-	CreateArticleEmailVerified bool              `json:"createArticleEmailVerified"`
-	CreateCommentEmailVerified bool              `json:"createCommentEmailVerified"`
-	EnableHideContent          bool              `json:"enableHideContent"`
-	Modules                    ModulesConfig     `json:"modules"`
-	EmailNoticeIntervalSeconds int               `json:"emailNoticeIntervalSeconds"` // 邮件通知间隔(秒)
-	AttachmentConfig           AttachmentConfig  `json:"attachmentConfig"`           // 附件配置
-	LoginConfig                OpenLoginConfig   `json:"loginConfig"`                // 登录配置
-	ScriptInjections           []ScriptInjection `json:"scriptInjections"`           // head脚本注入
+	SiteTitle          string            `json:"siteTitle"`
+	SiteDescription    string            `json:"siteDescription"`
+	BaseURL            string            `json:"baseURL"`
+	SiteKeywords       []string          `json:"siteKeywords"`
+	SiteLogo           string            `json:"siteLogo"`
+	SiteNavs           []ActionLink      `json:"siteNavs"`
+	SiteNotification   string            `json:"siteNotification"`
+	FooterLinks        []FooterLink      `json:"footerLinks"`
+	RecommendTags      []string          `json:"recommendTags"`
+	UrlRedirect        bool              `json:"urlRedirect"`
+	DefaultCategoryId  int64             `json:"defaultCategoryId"`
+	TopicListStyle     string            `json:"topicListStyle"`
+	ArticlePending     bool              `json:"articlePending"`
+	TopicCaptcha       bool              `json:"topicCaptcha"`
+	UserObserveSeconds int               `json:"userObserveSeconds"`
+	TokenExpireDays    int               `json:"tokenExpireDays"`
+	EnableHideContent  bool              `json:"enableHideContent"`
+	Modules            ModulesConfig     `json:"modules"`
+	AttachmentConfig   AttachmentConfig  `json:"attachmentConfig"` // 附件配置
+	LoginConfig        OpenLoginConfig   `json:"loginConfig"`      // 登录配置
+	ScriptInjections   []ScriptInjection `json:"scriptInjections"` // head脚本注入
 }
 
 type ScriptInjection struct {
@@ -106,10 +96,9 @@ type OAuthConfig struct {
 	ClientId string `json:"clientId,omitempty"`
 }
 
-// NoticeTypeConfig 某类消息的站内信/邮件开关
+// NoticeTypeConfig 某类消息的站内信开关
 type NoticeTypeConfig struct {
-	Site  bool `json:"site"`
-	Email bool `json:"email"`
+	Site bool `json:"site"`
 }
 
 // ModulesConfig
@@ -184,14 +173,6 @@ type UploadConfig struct {
 	AliyunOss          AliyunOssUploadConfig  `json:"aliyunOss"`
 	TencentCos         TencentCosUploadConfig `json:"tencentCos"`
 	AwsS3              AwsS3UploadConfig      `json:"awsS3"`
-}
-
-type SmtpConfig struct {
-	Host     string `json:"host"`
-	Port     string `json:"port"`
-	Username string `json:"username"`
-	Password string `json:"password"`
-	SSL      bool   `json:"ssl"`
 }
 
 type AliyunOssUploadConfig struct {

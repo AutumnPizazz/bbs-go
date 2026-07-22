@@ -159,18 +159,6 @@ func (s *sysConfigService) GetTokenExpireDays() int {
 	return tokenExpireDays
 }
 
-func (s *sysConfigService) IsCreateTopicEmailVerified() bool {
-	return cache.SysConfigCache.GetBool(constants.SysConfigCreateTopicEmailVerified)
-}
-
-func (s *sysConfigService) IsCreateArticleEmailVerified() bool {
-	return cache.SysConfigCache.GetBool(constants.SysConfigCreateArticleEmailVerified)
-}
-
-func (s *sysConfigService) IsCreateCommentEmailVerified() bool {
-	return cache.SysConfigCache.GetBool(constants.SysConfigCreateCommentEmailVerified)
-}
-
 func (s *sysConfigService) IsEnableHideContent() bool {
 	return cache.SysConfigCache.GetBool(constants.SysConfigEnableHideContent)
 }
@@ -274,37 +262,18 @@ func (s *sysConfigService) GetFooterLinks() []dto.FooterLink {
 	return cfg
 }
 
-// GetEmailWhitelist 邮箱白名单
-func (s *sysConfigService) GetEmailWhitelist() []string {
-	str := cache.SysConfigCache.GetStr(constants.SysConfigEmailWhitelist)
-	var emailWhitelist []string
-	if strs.IsNotBlank(str) {
-		_ = jsons.Parse(str, &emailWhitelist)
-	}
-	return emailWhitelist
-}
-
-// GetEmailNoticeIntervalSeconds 邮件通知间隔（秒），<=0 表示不限制
-func (s *sysConfigService) GetEmailNoticeIntervalSeconds() int {
-	return cache.SysConfigCache.GetInt(constants.SysConfigEmailNoticeIntervalSeconds)
-}
-
-// GetNotificationTypes 各消息类型的站内信/邮件开关，缺省为全部开启
+// GetNotificationTypes 各消息类型的站内信开关，缺省为全部开启
 func (s *sysConfigService) GetNotificationTypes() map[string]dto.NoticeTypeConfig {
 	str := cache.SysConfigCache.GetStr(constants.SysConfigNotificationTypes)
 	out := make(map[string]dto.NoticeTypeConfig)
 	if strs.IsNotBlank(str) {
 		_ = jsons.Parse(str, &out)
 	}
-	// 默认补全缺失类型：topicDelete 默认不发邮件（保持历史行为），其余全部开启
+	// 默认补全缺失类型
 	allKeys := []string{"topicComment", "commentReply", "topicLike", "topicFavorite", "topicRecommend", "topicDelete", "qaAnswerAccepted"}
 	for _, k := range allKeys {
 		if _, ok := out[k]; !ok {
-			if k == "topicDelete" {
-				out[k] = dto.NoticeTypeConfig{Site: true, Email: false}
-			} else {
-				out[k] = dto.NoticeTypeConfig{Site: true, Email: true}
-			}
+			out[k] = dto.NoticeTypeConfig{Site: true}
 		}
 	}
 	return out
@@ -344,20 +313,6 @@ func (s *sysConfigService) IsSiteNoticeEnabled(msgType msg.Type) bool {
 		return true
 	}
 	return c.Site
-}
-
-// IsEmailNoticeEnabled 该消息类型是否发邮件（在已发站内信前提下）
-func (s *sysConfigService) IsEmailNoticeEnabled(msgType msg.Type) bool {
-	key := msgTypeToKey(msgType)
-	if key == "" {
-		return true
-	}
-	types := s.GetNotificationTypes()
-	c, ok := types[key]
-	if !ok {
-		return true
-	}
-	return c.Email
 }
 
 func (s *sysConfigService) IsUrlRedirect() bool {
@@ -419,18 +374,6 @@ func normalizeAttachmentConfig(cfg dto.AttachmentConfig) dto.AttachmentConfig {
 		cfg.ExternalCustomerAttachment.MaxCountPerContent = 5
 	}
 	return cfg
-}
-
-func (s *sysConfigService) GetSmtpConfig() dto.SmtpConfig {
-	str := cache.SysConfigCache.GetStr(constants.SysConfigSmtpConfig)
-	var smtpConfig dto.SmtpConfig
-	if strings.TrimSpace(str) == "" {
-		return smtpConfig
-	}
-	if err := jsons.Parse(str, &smtpConfig); err != nil {
-		slog.Warn("smtp配置错误", slog.Any("err", err))
-	}
-	return smtpConfig
 }
 
 func (s *sysConfigService) GetScriptInjections() []dto.ScriptInjection {

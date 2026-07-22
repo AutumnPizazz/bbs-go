@@ -34,7 +34,7 @@ import { PERMISSIONS } from "@/lib/auth/permissions.generated"
 import { userHasPermission } from "@/lib/auth/roles"
 import { prettyDate } from "@/lib/format"
 import { useI18n } from "@/lib/i18n/provider"
-import { useAppConfig, useCurrentUser } from "@/components/app/app-provider"
+import { useCurrentUser } from "@/components/app/app-provider"
 import { buildSigninHref, toast, useToastActions } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 
@@ -889,7 +889,6 @@ export function CommentSection({
 }) {
   const { t } = useI18n()
   const pathname = usePathname()
-  const config = useAppConfig()
   const currentUser = useCurrentUser()
   const [pageData, setPageData] = React.useState<PageData<Comment>>(
     initialData || { cursor: "", hasMore: true, results: [] }
@@ -903,11 +902,6 @@ export function CommentSection({
       setPageData(initialData)
     }
   }, [initialData])
-
-  const isNeedEmailVerify =
-    Boolean(config?.createCommentEmailVerified) &&
-    Boolean(currentUser) &&
-    !currentUser?.emailVerified
 
   async function loadMore() {
     if (loading || !pageData.hasMore) {
@@ -979,26 +973,11 @@ export function CommentSection({
       </div>
 
       {currentUser ? (
-        isNeedEmailVerify ? (
-          <div className="relative my-2.5 box-border overflow-hidden rounded-[3px] border border-border p-2.5">
-            <div className="rounded-[3px] px-2.5 text-muted-foreground">
-              {t("component.comment.emailVerifyPrompt")}
-              <Link
-                href="/user/profile/account"
-                className="mx-2.5 text-foreground hover:text-primary"
-              >
-                {t("component.comment.accountSettingsLink")}
-              </Link>
-              {t("component.comment.emailVerifyAction")}
-            </div>
-          </div>
-        ) : (
-          <CommentInput
-            entityType={entityType}
-            entityId={entityId}
-            onCreated={onCommentCreated}
-          />
-        )
+        <CommentInput
+          entityType={entityType}
+          entityId={entityId}
+          onCreated={onCommentCreated}
+        />
       ) : (
         <Link
           href={buildSigninHref(pathname || "/")}

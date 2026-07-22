@@ -41,9 +41,7 @@ func userBuildUserItem(user *models.User, buildRoleIds bool) map[string]interfac
 		Put("idEncode", idcodec.Encode(user.Id)).
 		Put("roles", user.GetRoles()).
 		Put("username", user.Username.String).
-		Put("email", user.Email.String).
 		Put("phone", user.Phone.String).
-		Put("emailVerified", user.EmailVerified).
 		Put("contentAccessMode", mode).
 		Put("categoryIds", services.ContentAccessService.GetAssignedCategoryIds(user.Id)).
 		Put("forbidden", user.IsForbidden())
@@ -100,10 +98,6 @@ func UserList(ctx *gin.Context) {
 		params.QueryFilter{
 			ParamName: "nickname",
 			Op:        params.Like,
-		},
-		params.QueryFilter{
-			ParamName: "email",
-			Op:        params.Eq,
 		},
 		params.QueryFilter{
 			ParamName: "username",

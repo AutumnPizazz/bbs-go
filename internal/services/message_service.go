@@ -1,33 +1,19 @@
 package services
 
 import (
-	"bbs-go/internal/cache"
 	"bbs-go/internal/models"
-	"bbs-go/internal/models/constants"
-	"bbs-go/internal/models/dto"
-	"bbs-go/internal/pkg/bbsurls"
-	"bbs-go/internal/pkg/locales"
 	"bbs-go/internal/pkg/msg"
 	"bbs-go/internal/repositories"
 	"log/slog"
-	"strings"
-	"time"
 
 	"bbs-go/internal/pkg/params"
 
-	cachelib "github.com/goburrow/cache"
 	"github.com/mlogclub/simple/common/dates"
 	"github.com/mlogclub/simple/common/jsons"
-	"github.com/mlogclub/simple/common/strs"
 	"github.com/mlogclub/simple/sqls"
-	"github.com/tidwall/gjson"
 )
 
 var MessageService = newMessageService()
-var emailNoticeLimitCache = cachelib.New(
-	cachelib.WithMaximumSize(10000),
-	cachelib.WithExpireAfterAccess(30*time.Minute),
-)
 
 func newMessageService() *messageService {
 	return &messageService{}
@@ -92,12 +78,10 @@ func (s *messageService) MarkRead(userId int64) {
 		userId, msg.StatusUnread)
 }
 
-// SendMsg 发送消息（站内信和/或邮件由通知配置分别控制）
+// SendMsg 发送站内消息
 func (s *messageService) SendMsg(from, to int64, msgType msg.Type,
 	title, content, quoteContent string, extraData interface{}) {
-	siteOn := SysConfigService.IsSiteNoticeEnabled(msgType)
-	emailOn := SysConfigService.IsEmailNoticeEnabled(msgType)
-	if !siteOn && !emailOn {
+	if !SysConfigService.IsSiteNoticeEnabled(msgType) {
 		return
 	}
 	t := &models.Message{
@@ -111,131 +95,7 @@ func (s *messageService) SendMsg(from, to int64, msgType msg.Type,
 		Status:       msg.StatusUnread,
 		CreateTime:   dates.NowTimestamp(),
 	}
-	if siteOn {
-		if err := s.Create(t); err != nil {
-			slog.Error(err.Error(), slog.Any("err", err))
-			return
-		}
-	}
-	if emailOn {
-		s.SendEmailNotice(t)
-	}
-}
-
-// SendEmailNotice 发送邮件通知
-func (s *messageService) SendEmailNotice(t *models.Message) {
-	msgType := msg.Type(t.Type)
-	if !SysConfigService.IsEmailNoticeEnabled(msgType) {
-		return
-	}
-	user := cache.UserCache.Get(t.UserId)
-	if user == nil || strs.IsBlank(user.Email.String) {
-		return
-	}
-	emailKey := strings.ToLower(user.Email.String)
-	intervalSeconds := cache.SysConfigCache.GetInt(constants.SysConfigEmailNoticeIntervalSeconds)
-	if intervalSeconds > 0 {
-		if lastSend, found := emailNoticeLimitCache.GetIfPresent(emailKey); found {
-			if now := time.Now().Unix(); now-lastSend.(int64) < int64(intervalSeconds) {
-				return
-			}
-		}
-	}
-	var (
-		siteTitle        = cache.SysConfigCache.GetStr(constants.SysConfigSiteTitle)
-		noticeTitle      = s.buildEmailNoticeFallbackTitle(t)
-		emailSubject     string
-		emailContent     string
-		emailDetailURL   string
-		emailActionTitle = locales.Get("email.view_details")
-	)
-
-	if title := strings.TrimSpace(t.Title); title != "" {
-		noticeTitle = title
-	}
-	emailSubject = s.buildEmailNoticeSubject(siteTitle, noticeTitle)
-	emailContent = s.buildEmailNoticeContent(t.Content, noticeTitle)
-	emailDetailURL = s.buildEmailNoticeDetailURL(t)
-
-	var from *models.User
-	if t.FromId > 0 {
-		from = cache.UserCache.Get(t.FromId)
-	}
-	err := EmailService.SendTemplateEmail(from, user.Email.String, emailSubject, noticeTitle, emailContent,
-		t.QuoteContent, &dto.ActionLink{
-			Title: emailActionTitle,
-			Url:   emailDetailURL,
-		}, constants.EmailLogBizTypeMessageNotice)
-	if err != nil {
+	if err := s.Create(t); err != nil {
 		slog.Error(err.Error(), slog.Any("err", err))
-		return
 	}
-	if intervalSeconds > 0 {
-		emailNoticeLimitCache.Put(emailKey, time.Now().Unix())
-	}
-}
-
-func (s *messageService) buildEmailNoticeFallbackTitle(t *models.Message) string {
-	msgType := msg.Type(t.Type)
-	switch msgType {
-	case msg.TypeTopicComment:
-		return locales.Get("email.topic_comment")
-	case msg.TypeCommentReply:
-		return locales.Get("email.comment_reply")
-	case msg.TypeTopicLike:
-		return locales.Get("email.topic_like")
-	case msg.TypeTopicFavorite:
-		return locales.Get("email.topic_favorite")
-	case msg.TypeTopicRecommend:
-		return locales.Get("email.topic_recommend")
-	case msg.TypeTopicDelete:
-		return locales.Get("email.topic_delete")
-	case msg.TypeQaAnswerAccepted:
-		return locales.Get("email.qa_answer_accepted")
-	}
-	return locales.Get("email.new_message")
-}
-
-func (s *messageService) buildEmailNoticeSubject(siteTitle, noticeTitle string) string {
-	siteTitle = strings.TrimSpace(siteTitle)
-	noticeTitle = strings.TrimSpace(noticeTitle)
-	if siteTitle == "" {
-		return noticeTitle
-	}
-	if noticeTitle == "" {
-		return siteTitle
-	}
-	return siteTitle + " - " + noticeTitle
-}
-
-func (s *messageService) buildEmailNoticeContent(content, noticeTitle string) string {
-	content = strings.TrimSpace(content)
-	if content != "" {
-		return content
-	}
-	return strings.TrimSpace(noticeTitle)
-}
-
-func (s *messageService) buildEmailNoticeDetailURL(t *models.Message) string {
-	msgType := msg.Type(t.Type)
-	switch msgType {
-	case msg.TypeTopicComment:
-		entityType := gjson.Get(t.ExtraData, "entityType")
-		entityId := gjson.Get(t.ExtraData, "entityId")
-		if entityType.String() == constants.EntityTopic {
-			return bbsurls.TopicUrl(entityId.Int())
-		}
-	case msg.TypeCommentReply:
-		entityType := gjson.Get(t.ExtraData, "rootEntityType")
-		entityId := gjson.Get(t.ExtraData, "rootEntityId")
-		if entityType.String() == constants.EntityTopic {
-			return bbsurls.TopicUrl(entityId.Int())
-		}
-	case msg.TypeTopicLike, msg.TypeTopicFavorite, msg.TypeTopicRecommend, msg.TypeQaAnswerAccepted:
-		topicId := gjson.Get(t.ExtraData, "topicId")
-		if topicId.Exists() && topicId.Int() > 0 {
-			return bbsurls.TopicUrl(topicId.Int())
-		}
-	}
-	return bbsurls.AbsUrl("/user/messages")
 }

@@ -29,14 +29,6 @@ type GithubUserInfo struct {
 	Login     string `json:"login"`
 	Name      string `json:"name"`
 	AvatarURL string `json:"avatar_url"`
-	Email     string `json:"email"`
-}
-
-type githubEmail struct {
-	Email      string `json:"email"`
-	Primary    bool   `json:"primary"`
-	Verified   bool   `json:"verified"`
-	Visibility string `json:"visibility"`
 }
 
 func NewGithubOAuth(clientId, clientSecret, redirectURI string) *GithubOAuth {
@@ -46,7 +38,6 @@ func NewGithubOAuth(clientId, clientSecret, redirectURI string) *GithubOAuth {
 		RedirectURL:  redirectURI,
 		Scopes: []string{
 			"read:user",
-			"user:email",
 		},
 		Endpoint: githubEndpoint,
 	}
@@ -66,17 +57,7 @@ func (g *GithubOAuth) GetUserInfo(ctx context.Context, code string) (*GithubUser
 	client := g.config.Client(ctx, token)
 	client.Timeout = 10 * time.Second
 
-	user, err := g.getUser(client)
-	if err != nil {
-		return nil, err
-	}
-	// GitHub /user 可能拿不到 email（用户未公开），补查 /user/emails
-	if user.Email == "" {
-		if email, err := g.getPrimaryVerifiedEmail(client); err == nil && email != "" {
-			user.Email = email
-		}
-	}
-	return user, nil
+	return g.getUser(client)
 }
 
 func (g *GithubOAuth) getUser(client *http.Client) (*GithubUserInfo, error) {
@@ -105,42 +86,4 @@ func (g *GithubOAuth) getUser(client *http.Client) (*GithubUserInfo, error) {
 		return nil, fmt.Errorf("failed to unmarshal user info: %w", err)
 	}
 	return &out, nil
-}
-
-func (g *GithubOAuth) getPrimaryVerifiedEmail(client *http.Client) (string, error) {
-	req, err := http.NewRequest("GET", "https://api.github.com/user/emails", nil)
-	if err != nil {
-		return "", fmt.Errorf("failed to create request: %w", err)
-	}
-	req.Header.Set("Accept", "application/vnd.github+json")
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("failed to get user emails: %w", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", fmt.Errorf("failed to read response: %w", err)
-	}
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("failed to get user emails: status %d, body: %s", resp.StatusCode, string(body))
-	}
-
-	var emails []githubEmail
-	if err := json.Unmarshal(body, &emails); err != nil {
-		return "", fmt.Errorf("failed to unmarshal emails: %w", err)
-	}
-	for _, e := range emails {
-		if e.Primary && e.Verified && e.Email != "" {
-			return e.Email, nil
-		}
-	}
-	for _, e := range emails {
-		if e.Verified && e.Email != "" {
-			return e.Email, nil
-		}
-	}
-	return "", nil
 }

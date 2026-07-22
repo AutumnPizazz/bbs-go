@@ -80,7 +80,6 @@ type NotificationTypeRow = {
   key: string
   label: string
   site: boolean
-  email: boolean
 }
 
 type ScriptInjection = {
@@ -619,11 +618,6 @@ export default function DashboardSettingsRoute() {
               onSave={() =>
                 void saveSection("spam", {
                   topicCaptcha: settings.topicCaptcha,
-                  createTopicEmailVerified: settings.createTopicEmailVerified,
-                  createArticleEmailVerified:
-                    settings.createArticleEmailVerified,
-                  createCommentEmailVerified:
-                    settings.createCommentEmailVerified,
                   articlePending: settings.articlePending,
                   userObserveSeconds: settings.userObserveSeconds,
                 })
@@ -1524,9 +1518,6 @@ function SpamSettings({ settings, saving, s, update, onSave }: SettingsProps) {
     >
       {[
         ["topicCaptcha", "topicCaptcha"],
-        ["createTopicEmailVerified", "createTopicEmailVerified"],
-        ["createArticleEmailVerified", "createArticleEmailVerified"],
-        ["createCommentEmailVerified", "createCommentEmailVerified"],
         ["articlePending", "articlePending"],
       ].map(([path, key]) => (
         <Field key={path} label={s(`spam.${key}`)}>
@@ -1559,7 +1550,6 @@ function NotificationSettings({
 }: Omit<SettingsProps, "onSave"> & {
   onSave: (payload: Record<string, SettingValue>) => void
 }) {
-  const smtp = getObject(settings.smtpConfig)
   const rawTypes = getObject(settings.notificationTypes)
   const rows = NOTIFICATION_TYPE_KEYS.map((key) => {
     const config = getObject(rawTypes[key])
@@ -1567,22 +1557,17 @@ function NotificationSettings({
       key,
       label: s(`notification.types.${key}`),
       site: config.site !== false,
-      email:
-        key === "topicDelete" ? config.email === true : config.email !== false,
     }
   })
 
-  function updateType(key: string, field: "site" | "email", value: boolean) {
-    update(`notificationTypes.${key}.${field}`, value)
+  function updateType(key: string, value: boolean) {
+    update(`notificationTypes.${key}.site`, value)
   }
 
   function submit() {
     onSave({
-      emailNoticeIntervalSeconds: settings.emailNoticeIntervalSeconds,
-      emailWhitelist: settings.emailWhitelist,
-      smtpConfig: settings.smtpConfig,
       notificationTypes: Object.fromEntries(
-        rows.map((row) => [row.key, { site: row.site, email: row.email }])
+        rows.map((row) => [row.key, { site: row.site }])
       ) as SettingValue,
     })
   }
@@ -1593,22 +1578,6 @@ function NotificationSettings({
       saving={saving}
       submitLabel={s("notification.submit")}
     >
-      <Field label={s("notification.emailNoticeIntervalSeconds")}>
-        <TooltipNumberInput
-          value={getNumber(settings.emailNoticeIntervalSeconds)}
-          min={0}
-          tooltip={s("notification.emailNoticeIntervalSecondsTooltip")}
-          onChange={(value) => update("emailNoticeIntervalSeconds", value)}
-        />
-      </Field>
-      <Field label={s("notification.emailWhitelist")}>
-        <TagsInput
-          value={getStringArray(settings.emailWhitelist)}
-          placeholder={s("notification.placeholder.emailWhitelist")}
-          onChange={(value) => update("emailWhitelist", value)}
-        />
-      </Field>
-
       <SectionTitle>{s("notification.typesTitle")}</SectionTitle>
       <div className="overflow-x-auto rounded-lg border bg-[var(--dashboard-panel)] shadow-xs">
         <table className="w-full min-w-[480px] text-sm">
@@ -1619,9 +1588,6 @@ function NotificationSettings({
               </th>
               <th className="h-10 w-32 px-3 text-left text-xs font-semibold tracking-wide uppercase">
                 {s("notification.siteColumn")}
-              </th>
-              <th className="h-10 w-32 px-3 text-left text-xs font-semibold tracking-wide uppercase">
-                {s("notification.emailColumn")}
               </th>
             </tr>
           </thead>
@@ -1635,15 +1601,7 @@ function NotificationSettings({
                 <td className="h-11 px-3 py-2 align-middle">
                   <SwitchControl
                     checked={row.site}
-                    onChange={(checked) => updateType(row.key, "site", checked)}
-                  />
-                </td>
-                <td className="h-11 px-3 py-2 align-middle">
-                  <SwitchControl
-                    checked={row.email}
-                    onChange={(checked) =>
-                      updateType(row.key, "email", checked)
-                    }
+                    onChange={(checked) => updateType(row.key, checked)}
                   />
                 </td>
               </tr>
@@ -1652,32 +1610,6 @@ function NotificationSettings({
         </table>
       </div>
 
-      <SectionTitle>{s("notification.smtpSectionTitle")}</SectionTitle>
-      {(["host", "port", "username", "password"] as const).map((key) => (
-        <Field key={key} label={s(`notification.smtp.${key}`)}>
-          <Input
-            className={key === "port" ? "max-w-44" : undefined}
-            type={
-              key === "password"
-                ? "password"
-                : key === "port"
-                  ? "number"
-                  : "text"
-            }
-            min={key === "port" ? 0 : undefined}
-            value={getString(smtp[key])}
-            onChange={(event) =>
-              update(`smtpConfig.${key}`, event.target.value)
-            }
-          />
-        </Field>
-      ))}
-      <Field label={s("notification.smtp.ssl")}>
-        <SwitchControl
-          checked={Boolean(smtp.ssl)}
-          onChange={(checked) => update("smtpConfig.ssl", checked)}
-        />
-      </Field>
     </SettingsForm>
   )
 }

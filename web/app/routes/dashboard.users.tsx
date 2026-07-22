@@ -64,7 +64,6 @@ export default function DashboardUsersRoute() {
         label: dashboardData.label(t, "nickname"),
         render: (record) => dashboardData.userLinkCell(record, record.nickname),
       },
-      { key: "email", label: dashboardData.label(t, "email") },
       { key: "phone", label: dashboardData.label(t, "phone") },
       {
         key: "contentAccessMode",
@@ -93,7 +92,6 @@ export default function DashboardUsersRoute() {
         name: "username",
         label: dashboardData.label(t, "username"),
       },
-      { name: "email", label: dashboardData.label(t, "email") },
       { name: "phone", label: dashboardData.label(t, "phone") },
       {
         name: "nickname",
@@ -169,15 +167,6 @@ export default function DashboardUsersRoute() {
         type: "select",
         required: true,
         options: dashboardData.normalDeletedOptions(t),
-      },
-      {
-        name: "emailVerified",
-        label: dashboardData.label(t, "emailVerified"),
-        type: "select",
-        options: [
-          { label: t("dashboard.boolean.yes"), value: "true" },
-          { label: t("dashboard.boolean.no"), value: "false" },
-        ],
       },
     ],
     rowActions: [

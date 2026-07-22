@@ -106,10 +106,8 @@ func BuildUserProfile(user *models.User) *resp.UserProfile {
 		return nil
 	}
 	ret := &resp.UserProfile{
-		UserDetail:    *BuildUserDetail(user),
-		Email:         user.Email.String,
-		EmailVerified: user.EmailVerified,
-		PasswordSet:   len(user.Password) > 0,
+		UserDetail:  *BuildUserDetail(user),
+		PasswordSet: len(user.Password) > 0,
 	}
 
 	ret.Username = user.Username.String

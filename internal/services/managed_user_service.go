@@ -50,27 +50,16 @@ func (s *userService) CreateManagedUser(operator *models.User, form modelReq.Adm
 	}
 
 	username := strings.TrimSpace(form.Username)
-	email := strings.TrimSpace(form.Email)
 	phone := strings.TrimSpace(form.Phone)
 	nickname := strings.TrimSpace(form.Nickname)
-	if username == "" && email == "" {
-		return nil, errors.New(locales.Get("user.username_email_required"))
+	if username == "" {
+		return nil, errors.New(locales.Get("user.username_required"))
 	}
-	if username != "" {
-		if err := validateUsername(username); err != nil {
-			return nil, err
-		}
-		if s.GetByUsername(username) != nil {
-			return nil, errors.New(locales.Getf("user.username_occupied", username))
-		}
+	if err := validateUsername(username); err != nil {
+		return nil, err
 	}
-	if email != "" {
-		if err := validateEmail(email); err != nil {
-			return nil, err
-		}
-		if s.GetByEmail(email) != nil {
-			return nil, errors.New(locales.Getf("user.email_occupied", email))
-		}
+	if s.GetByUsername(username) != nil {
+		return nil, errors.New(locales.Getf("user.username_occupied", username))
 	}
 	if phone != "" && s.GetByPhone(phone) != nil {
 		return nil, errors.New(locales.Getf("user.phone_occupied", phone))
@@ -84,9 +73,7 @@ func (s *userService) CreateManagedUser(operator *models.User, form modelReq.Adm
 
 	user := &models.User{
 		Username:          sqls.SqlNullString(username),
-		Email:             sqls.SqlNullString(email),
 		Phone:             sqls.SqlNullString(phone),
-		EmailVerified:     form.EmailVerified,
 		Nickname:          nickname,
 		Password:          passwd.EncodePassword(form.Password),
 		Status:            form.Status,
@@ -138,23 +125,15 @@ func (s *userService) UpdateManagedUser(operator *models.User, form modelReq.Adm
 	}
 
 	username := strings.TrimSpace(form.Username)
-	email := strings.TrimSpace(form.Email)
 	phone := strings.TrimSpace(form.Phone)
-	if username != "" {
-		if err := validateUsername(username); err != nil {
-			return nil, err
-		}
-		if other := s.GetByUsername(username); other != nil && other.Id != target.Id {
-			return nil, errors.New(locales.Getf("user.username_occupied", username))
-		}
+	if username == "" {
+		return nil, errors.New(locales.Get("user.username_required"))
 	}
-	if email != "" {
-		if err := validateEmail(email); err != nil {
-			return nil, err
-		}
-		if other := s.GetByEmail(email); other != nil && other.Id != target.Id {
-			return nil, errors.New(locales.Getf("user.email_occupied", email))
-		}
+	if err := validateUsername(username); err != nil {
+		return nil, err
+	}
+	if other := s.GetByUsername(username); other != nil && other.Id != target.Id {
+		return nil, errors.New(locales.Getf("user.username_occupied", username))
 	}
 	if phone != "" {
 		if other := s.GetByPhone(phone); other != nil && other.Id != target.Id {
@@ -170,9 +149,7 @@ func (s *userService) UpdateManagedUser(operator *models.User, form modelReq.Adm
 	err := sqls.DB().Transaction(func(tx *gorm.DB) error {
 		updates := map[string]interface{}{
 			"username":            sqls.SqlNullString(username),
-			"email":               sqls.SqlNullString(email),
 			"phone":               sqls.SqlNullString(phone),
-			"email_verified":      form.EmailVerified,
 			"nickname":            form.Nickname,
 			"avatar":              form.Avatar,
 			"gender":              constants.Gender(form.Gender),
@@ -324,10 +301,6 @@ func validateManagedPassword(password string) error {
 
 func validateUsername(username string) error {
 	return validate.IsUsername(username)
-}
-
-func validateEmail(email string) error {
-	return validate.IsEmail(email)
 }
 
 func writeManagedUserRoles(tx *gorm.DB, userId int64, roleIds []int64) error {

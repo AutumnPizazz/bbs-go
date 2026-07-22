@@ -324,10 +324,7 @@ func (s *thirdUserService) BindGoogle(userId int64, code, state string) error {
 
 	nickname := info.Name
 	if nickname == "" {
-		nickname = info.Email
-		if nickname == "" {
-			nickname = locales.Get("auth.google_default_nickname")
-		}
+		nickname = locales.Get("auth.google_default_nickname")
 	}
 
 	return s.Create(&models.ThirdUser{
