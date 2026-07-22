@@ -13,3 +13,6 @@ res/uploads
 
 web/build
 web/node_modules
+
+deploy/.env
+dist

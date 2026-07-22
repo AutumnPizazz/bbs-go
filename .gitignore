@@ -48,3 +48,9 @@ bbs-go.db
 bbs-go.db*
 
 __debug_bin*
+
+# Deployment secrets
+deploy/.env
+
+# Local release output
+dist/

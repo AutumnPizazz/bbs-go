@@ -1,0 +1,55 @@
+name: bbs-go
+
+x-mysql-env: &mysql-env
+  MYSQL_DATABASE: ${BBSGO_MYSQL_DATABASE:-bbsgo}
+  MYSQL_USER: ${BBSGO_MYSQL_USER:-bbsgo}
+  MYSQL_PASSWORD: ${BBSGO_MYSQL_PASSWORD:?Set BBSGO_MYSQL_PASSWORD in .env}
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      <<: *mysql-env
+      MYSQL_ROOT_PASSWORD: ${BBSGO_MYSQL_ROOT_PASSWORD:?Set BBSGO_MYSQL_ROOT_PASSWORD in .env}
+      TZ: ${TZ:-Asia/Shanghai}
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'mysqladmin ping -h 127.0.0.1 -u"$${MYSQL_USER}" -p"$${MYSQL_PASSWORD}" --silent'
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  bbs-go:
+    image: ${BBSGO_IMAGE:?Set BBSGO_IMAGE in .env}
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./uploads:/app/res/uploads
+    ports:
+      - "${BBSGO_HTTP_PORT:-3000}:3000"
+    environment:
+      BBSGO_ENV: prod
+      NODE_ENV: production
+      PORT: "3000"
+      BBSGO_SERVER_URL: http://127.0.0.1:8082
+      BBSGO_INSTALL_DOCKER_BUILTIN_MYSQL: "true"
+      BBSGO_DOCKER_BUILTIN_MYSQL_HOST: mysql
+      BBSGO_DOCKER_BUILTIN_MYSQL_PORT: "3306"
+      BBSGO_DOCKER_BUILTIN_MYSQL_DATABASE: ${BBSGO_MYSQL_DATABASE:-bbsgo}
+      BBSGO_DOCKER_BUILTIN_MYSQL_USERNAME: ${BBSGO_MYSQL_USER:-bbsgo}
+      BBSGO_DOCKER_BUILTIN_MYSQL_PASSWORD: ${BBSGO_MYSQL_PASSWORD}
+      TZ: ${TZ:-Asia/Shanghai}
+
+volumes:
+  mysql-data:
