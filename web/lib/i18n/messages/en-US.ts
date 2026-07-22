@@ -373,6 +373,8 @@ const enUS = {
         title: "Content",
         sectionGeneral: "General",
         sectionAttachment: "Topic Attachments",
+        attachmentGeneral: "Global Attachment Limits",
+        externalCustomerAttachment: "External Customer Attachment Limits",
         modules: "Features",
         tweet: "Update",
         topic: "Topic",
@@ -399,6 +401,15 @@ const enUS = {
         attachmentMaxCount: "Max Attachments per Topic",
         attachmentMaxCountTooltip:
           "Maximum number of attachments per topic; enter -1 for unlimited",
+        externalCustomerAttachmentEnabled: "Enable Attachment Upload",
+        externalCustomerAttachmentEnabledTooltip:
+          "When disabled, external customer users cannot upload attachments",
+        externalCustomerAttachmentMaxSizeMB: "Max Size per File (MB)",
+        externalCustomerAttachmentMaxSizeMBTooltip:
+          "Maximum attachment size for external customer users; enter -1 for unlimited",
+        externalCustomerAttachmentMaxCount: "Max Attachments per Content",
+        externalCustomerAttachmentMaxCountTooltip:
+          "Maximum attachments per content for external customer users; enter -1 for unlimited",
         placeholder: {
           defaultCategoryId: "Default category for posting",
           recommendTags: "Featured tags",

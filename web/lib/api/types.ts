@@ -180,6 +180,11 @@ export interface SiteConfig {
     allowedTypes?: string[]
     maxSizeMB?: number
     maxCount?: number
+    externalCustomerAttachment?: {
+      enabled?: boolean
+      maxSizeMB?: number
+      maxCountPerContent?: number
+    }
   }
   footerLinks?: Array<{
     text?: Record<string, string>

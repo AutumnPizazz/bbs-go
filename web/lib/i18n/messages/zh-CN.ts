@@ -372,6 +372,8 @@ const zhCN = {
         title: "内容配置",
         sectionGeneral: "通用内容",
         sectionAttachment: "帖子附件",
+        attachmentGeneral: "全局附件限制",
+        externalCustomerAttachment: "外部客户组附件限制",
         modules: "功能模块",
         tweet: "动态",
         topic: "帖子",
@@ -395,6 +397,15 @@ const zhCN = {
         attachmentMaxCount: "每篇帖子最多附件数",
         attachmentMaxCountTooltip:
           "每篇帖子最多可上传的附件数量；输入 -1 表示不限制",
+        externalCustomerAttachmentEnabled: "启用附件上传",
+        externalCustomerAttachmentEnabledTooltip:
+          "关闭后，外部客户组用户不能上传附件",
+        externalCustomerAttachmentMaxSizeMB: "单个附件大小限制(MB)",
+        externalCustomerAttachmentMaxSizeMBTooltip:
+          "外部客户组用户的单个附件最大体积；输入 -1 表示不限制",
+        externalCustomerAttachmentMaxCount: "每篇内容最多附件数",
+        externalCustomerAttachmentMaxCountTooltip:
+          "外部客户组用户每篇内容最多可上传的附件数量；输入 -1 表示不限制",
         placeholder: {
           defaultCategoryId: "发帖默认分类",
           recommendTags: "推荐标签",
