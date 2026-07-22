@@ -2,15 +2,17 @@ package services
 
 import (
 	"errors"
+	"strings"
 
+	"bbs-go/internal/models"
 	"bbs-go/internal/models/constants"
+	"bbs-go/internal/models/dto"
 	"bbs-go/internal/pkg/locales"
 
 	"bbs-go/internal/pkg/params"
 
 	"github.com/mlogclub/simple/sqls"
 
-	"bbs-go/internal/models"
 	"bbs-go/internal/repositories"
 
 	"gorm.io/gorm"
@@ -79,6 +81,65 @@ func (s *categoryService) UpdateColumn(id int64, name string, value interface{})
 		ContentAccessService.InvalidateAll()
 	}
 	return err
+}
+
+// GetAttachmentConfig returns the effective attachment policy for a category.
+// A configured child overrides its ancestors; otherwise the global default is used.
+func (s *categoryService) GetAttachmentConfig(categoryId int64) dto.AttachmentConfig {
+	cfg := SysConfigService.GetAttachmentConfig()
+	for categoryId > 0 {
+		category := s.Get(categoryId)
+		if category == nil {
+			break
+		}
+		if category.AttachmentPolicyConfigured {
+			cfg.Enabled = category.AttachmentEnabled
+			cfg.MaxSizeMB = category.AttachmentMaxSizeMB
+			cfg.MaxCount = category.AttachmentMaxCount
+			if types := parseAttachmentAllowedTypes(category.AttachmentAllowedTypes); len(types) > 0 {
+				cfg.AllowedTypes = types
+			}
+			return cfg
+		}
+		categoryId = category.ParentId
+	}
+	return cfg
+}
+
+func (s *categoryService) ValidateAttachmentPolicy(category *models.Category) error {
+	if category == nil {
+		return errors.New("category is required")
+	}
+	if category.AttachmentMaxSizeMB < 0 {
+		return errors.New("attachment max size must be greater than or equal to 0")
+	}
+	if category.AttachmentMaxCount < 0 {
+		return errors.New("attachment max count must be greater than or equal to 0")
+	}
+	return nil
+}
+
+func parseAttachmentAllowedTypes(value string) []string {
+	parts := strings.FieldsFunc(value, func(r rune) bool {
+		return r == ',' || r == ';' || r == '\n' || r == '\r' || r == '\t' || r == ' '
+	})
+	ret := make([]string, 0, len(parts))
+	seen := make(map[string]struct{}, len(parts))
+	for _, part := range parts {
+		part = strings.ToLower(strings.TrimSpace(part))
+		if part == "" {
+			continue
+		}
+		if part != "*" && part != "*/*" && !strings.HasPrefix(part, ".") {
+			part = "." + part
+		}
+		if _, ok := seen[part]; ok {
+			continue
+		}
+		seen[part] = struct{}{}
+		ret = append(ret, part)
+	}
+	return ret
 }
 
 // DeleteWithCheck 删除节点，若为一级且有子节点则返回错误

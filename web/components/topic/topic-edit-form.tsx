@@ -19,6 +19,7 @@ import type {
 import type { TopicEditData } from "@/lib/api/topics"
 import { useI18n } from "@/lib/i18n/provider"
 import {
+  findCategory,
   filterCategoryTree,
   getFirstCategoryId,
   hasCategory,
@@ -220,6 +221,9 @@ export function TopicEditForm({
   const effectiveCategoryId = hasCategory(availableNodes, form.categoryId)
     ? form.categoryId
     : getFirstCategoryId(availableNodes)
+  const effectiveAttachmentConfig =
+    findCategory(availableNodes, effectiveCategoryId)?.attachmentConfig ??
+    config?.attachmentConfig
 
   function updateForm(next: Partial<TopicEditFormState>) {
     setForm((current) => ({ ...current, ...next }))
@@ -318,11 +322,11 @@ export function TopicEditForm({
         />
       </div>
 
-      {form.type === 0 && config?.attachmentConfig?.enabled ? (
+      {form.type === 0 && effectiveAttachmentConfig?.enabled ? (
         <div className="field">
           <TopicAttachmentField
             value={attachmentList}
-            config={config.attachmentConfig}
+            config={effectiveAttachmentConfig}
             categoryId={effectiveCategoryId}
             uploading={attachmentUploading}
             onUploadingChange={setAttachmentUploading}

@@ -243,6 +243,12 @@ const zhCN = {
       normal: "话题",
       qa: "问答",
     },
+    categoryAttachment: {
+      inherit: "继承上级或默认配置",
+      custom: "使用本节点配置",
+      enabled: "允许上传附件",
+      disabled: "禁止上传附件",
+    },
     forbiddenWordTypes: {
       word: "词条",
       regex: "正则",
@@ -372,8 +378,7 @@ const zhCN = {
         title: "内容配置",
         sectionGeneral: "通用内容",
         sectionAttachment: "帖子附件",
-        attachmentGeneral: "全局附件限制",
-        externalCustomerAttachment: "外部客户组附件限制",
+        attachmentDefault: "默认附件限制",
         modules: "功能模块",
         tweet: "动态",
         topic: "帖子",
@@ -393,19 +398,10 @@ const zhCN = {
         attachmentAllowedTypes: "允许的附件类型",
         attachmentMaxSizeMB: "单个附件大小限制(MB)",
         attachmentMaxSizeMBTooltip:
-          "单个附件最大体积，单位 MB；输入 -1 表示不限制",
+          "单个附件最大体积，单位 MB；输入 0 表示不限制",
         attachmentMaxCount: "每篇帖子最多附件数",
         attachmentMaxCountTooltip:
-          "每篇帖子最多可上传的附件数量；输入 -1 表示不限制",
-        externalCustomerAttachmentEnabled: "启用附件上传",
-        externalCustomerAttachmentEnabledTooltip:
-          "关闭后，外部客户组用户不能上传附件",
-        externalCustomerAttachmentMaxSizeMB: "单个附件大小限制(MB)",
-        externalCustomerAttachmentMaxSizeMBTooltip:
-          "外部客户组用户的单个附件最大体积；输入 -1 表示不限制",
-        externalCustomerAttachmentMaxCount: "每篇内容最多附件数",
-        externalCustomerAttachmentMaxCountTooltip:
-          "外部客户组用户每篇内容最多可上传的附件数量；输入 -1 表示不限制",
+          "每篇帖子最多可上传的附件数量；输入 0 表示不限制",
         placeholder: {
           defaultCategoryId: "发帖默认分类",
           recommendTags: "推荐标签",
@@ -650,6 +646,11 @@ const zhCN = {
       parentId: "父级分类",
       logo: "图标",
       sortNo: "排序",
+      attachmentPolicyConfigured: "附件限制配置",
+      attachmentEnabled: "附件上传",
+      attachmentAllowedTypes: "允许的附件类型",
+      attachmentMaxSizeMB: "单个附件大小(MB)",
+      attachmentMaxCount: "每帖附件数量",
       url: "URL",
       word: "词条",
       remark: "备注",

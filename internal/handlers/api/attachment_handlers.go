@@ -12,7 +12,6 @@ import (
 
 	"github.com/mlogclub/simple/common/strs"
 
-	"bbs-go/internal/models/constants"
 	"bbs-go/internal/models/resp"
 	"bbs-go/internal/pkg/common"
 	"bbs-go/internal/pkg/errs"
@@ -56,8 +55,8 @@ func AttachmentUpload(ctx *gin.Context) {
 		return
 	}
 
-	cfg := services.SysConfigService.GetAttachmentConfig()
-	if !cfg.Enabled || (user.ContentAccessMode == constants.ContentAccessModeAssignedCategories && !user.IsOwner() && !cfg.ExternalCustomerAttachment.Enabled) {
+	cfg := services.CategoryService.GetAttachmentConfig(categoryId)
+	if !cfg.Enabled {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage(locales.Get("attachment.disabled")))
 		return
 	}
@@ -70,11 +69,11 @@ func AttachmentUpload(ctx *gin.Context) {
 	defer file.Close()
 
 	maxSizeMB := cfg.MaxSizeMB
-	if user.ContentAccessMode == constants.ContentAccessModeAssignedCategories && !user.IsOwner() {
-		maxSizeMB = cfg.ExternalCustomerAttachment.MaxSizeMB
+	maxBytes := int64(0)
+	if maxSizeMB > 0 {
+		maxBytes = int64(maxSizeMB) * 1024 * 1024
 	}
-	maxBytes := int64(maxSizeMB) * 1024 * 1024
-	if maxSizeMB > 0 && header.Size > maxBytes {
+	if maxBytes > 0 && header.Size > maxBytes {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage(locales.Getf("attachment.too_large", maxSizeMB)))
 		return
 	}
@@ -99,7 +98,7 @@ func AttachmentUpload(ctx *gin.Context) {
 		size = int64(len(fileBytes))
 	}
 
-	att, err := services.AttachmentService.Upload(user.Id, header.Filename, body, size, contentType)
+	att, err := services.AttachmentService.Upload(user.Id, categoryId, header.Filename, body, size, contentType)
 	if err != nil {
 		ginx.WriteJSON(ctx, err)
 		return

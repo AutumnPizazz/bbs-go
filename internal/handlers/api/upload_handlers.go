@@ -21,13 +21,6 @@ func UploadHandle(ctx *gin.Context) {
 		ginx.WriteJSON(ctx, err)
 		return
 	}
-	cfg := services.SysConfigService.GetAttachmentConfig()
-	externalCustomer := user != nil && user.ContentAccessMode == constants.ContentAccessModeAssignedCategories && !user.IsOwner()
-	if externalCustomer && !cfg.ExternalCustomerAttachment.Enabled {
-		ginx.WriteJSON(ctx, ginx.ErrorMessage(locales.Get("attachment.disabled")))
-		return
-	}
-
 	file, header, err := ctx.Request.FormFile("image")
 	if err != nil {
 		ginx.WriteJSON(ctx, err)
@@ -37,10 +30,6 @@ func UploadHandle(ctx *gin.Context) {
 
 	maxBytes := int64(constants.UploadMaxBytes)
 	maxSizeMB := constants.UploadMaxM
-	if externalCustomer && cfg.ExternalCustomerAttachment.MaxSizeMB > 0 {
-		maxSizeMB = cfg.ExternalCustomerAttachment.MaxSizeMB
-		maxBytes = int64(maxSizeMB) * 1024 * 1024
-	}
 	if header.Size > maxBytes {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage(locales.Getf("upload.image_too_large", maxSizeMB)))
 		return

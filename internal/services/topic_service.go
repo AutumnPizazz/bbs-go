@@ -155,21 +155,16 @@ func (s *topicService) Edit(userId, topicId int64, form req.EditTopicReq) error 
 	if !ContentAccessService.CanAccessTopic(viewer, topic) || !ContentAccessService.CanWriteCategory(viewer, form.CategoryId) {
 		return errs.ContentAccessDenied()
 	}
-	// 编辑时附件数量校验（仅帖子类型）
-	if topic.Type == constants.TopicTypeTopic && form.AttachmentIds != nil {
-		attCfg := SysConfigService.GetAttachmentConfig()
-		if !attCfg.Enabled {
-			return errors.New(locales.Get("attachment.disabled"))
-		}
-		if attCfg.MaxCount > 0 && len(form.AttachmentIds) > attCfg.MaxCount {
-			return errors.New(locales.Getf("attachment.too_many", attCfg.MaxCount))
-		}
-	}
 	if !category.Type.Supports(topic.Type) || (constants.IsArticleTopicFormat(topic.Format) && category.Type != constants.CategoryTypeNormal) {
 		return errors.New(locales.Get("topic.category_type_mismatch"))
 	}
 	if constants.IsArticleTopicFormat(topic.Format) && len(form.AttachmentIds) > 0 {
 		return errors.New(locales.Get("topic.type_not_supported"))
+	}
+	if topic.Type == constants.TopicTypeTopic && form.AttachmentIds == nil && form.CategoryId != topic.CategoryId {
+		if err := AttachmentService.ValidateTopicAttachments(topicId, form.CategoryId); err != nil {
+			return err
+		}
 	}
 
 	hideContent := form.HideContent
@@ -218,7 +213,7 @@ func (s *topicService) Edit(userId, topicId int64, form req.EditTopicReq) error 
 
 		// 附件全量替换（仅当请求中带 attachmentIds 时，同一事务内执行避免 SQLite 卡住）
 		if form.AttachmentIds != nil {
-			if err := AttachmentService.ReplaceTopicAttachments(ctx, topicId, userId, form.AttachmentIds); err != nil {
+			if err := AttachmentService.ReplaceTopicAttachments(ctx, topicId, userId, form.CategoryId, form.AttachmentIds); err != nil {
 				return err
 			}
 		}

@@ -156,6 +156,10 @@ func CategoryCreate(ctx *gin.Context) {
 			t.Type = constants.CategoryTypeNormal
 		}
 	}
+	if err := services.CategoryService.ValidateAttachmentPolicy(t); err != nil {
+		ginx.WriteJSON(ctx, err)
+		return
+	}
 	t.CreateTime = dates.NowTimestamp()
 	if err := services.CategoryService.Create(t); err != nil {
 		ginx.WriteJSON(ctx, err)
@@ -216,6 +220,10 @@ func CategoryUpdate(ctx *gin.Context) {
 			ginx.WriteJSON(ctx, err)
 			return
 		}
+	}
+	if err := services.CategoryService.ValidateAttachmentPolicy(t); err != nil {
+		ginx.WriteJSON(ctx, err)
+		return
 	}
 
 	err = services.CategoryService.Update(t)

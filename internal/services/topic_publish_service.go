@@ -116,7 +116,7 @@ func (s *topicPublishService) Publish(userId int64, form req.CreateTopicReq) (*m
 
 		// 附件绑定（同一事务内校验与更新，避免 SQLite 卡住）
 		if len(form.AttachmentIds) > 0 {
-			if err = AttachmentService.CheckAttachmentsExistAndOwned(ctx, userId, form.AttachmentIds, topic.Id); err != nil {
+			if err = AttachmentService.CheckAttachmentsExistAndOwned(ctx, userId, form.CategoryId, form.AttachmentIds, topic.Id); err != nil {
 				return err
 			}
 			for _, aid := range form.AttachmentIds {
@@ -226,25 +226,6 @@ func (s topicPublishService) checkParams(userId int64, form req.CreateTopicReq) 
 	}
 	if !ContentAccessService.CanWriteCategory(UserService.Get(userId), form.CategoryId) {
 		return errs.ContentAccessDenied()
-	}
-
-	// 帖子附件校验
-	if form.Type == constants.TopicTypeTopic && len(form.AttachmentIds) > 0 {
-		attCfg := SysConfigService.GetAttachmentConfig()
-		user := UserService.Get(userId)
-		if user != nil && user.ContentAccessMode == constants.ContentAccessModeAssignedCategories && !user.IsOwner() && !attCfg.ExternalCustomerAttachment.Enabled {
-			return errors.New(locales.Get("attachment.disabled"))
-		}
-		maxCount := attCfg.MaxCount
-		if user != nil && user.ContentAccessMode == constants.ContentAccessModeAssignedCategories && !user.IsOwner() {
-			maxCount = attCfg.ExternalCustomerAttachment.MaxCountPerContent
-		}
-		if !attCfg.Enabled {
-			return errors.New(locales.Get("attachment.disabled"))
-		}
-		if maxCount > 0 && len(form.AttachmentIds) > maxCount {
-			return errors.New(locales.Getf("attachment.too_many", maxCount))
-		}
 	}
 
 	category := repositories.CategoryRepository.Get(sqls.DB(), form.CategoryId)

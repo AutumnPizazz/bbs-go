@@ -1006,7 +1006,6 @@ function ContentSettings({
 }) {
   const modules = getObject(settings.modules)
   const attachment = getObject(settings.attachmentConfig)
-  const externalAttachment = getObject(attachment.externalCustomerAttachment)
   const attachmentAllowedTypes = Array.isArray(attachment.allowedTypes)
     ? getStringArray(attachment.allowedTypes)
     : DEFAULT_ATTACHMENT_TYPES
@@ -1095,9 +1094,9 @@ function ContentSettings({
       <SectionTitle>{s("content.sectionAttachment")}</SectionTitle>
       <div className="grid gap-5 lg:grid-cols-2">
         <div className="grid gap-5">
-          <div className="text-sm font-semibold text-muted-foreground">
-            {s("content.attachmentGeneral")}
-          </div>
+            <div className="text-sm font-semibold text-muted-foreground">
+              {s("content.attachmentDefault")}
+            </div>
           <Field wide label={s("content.attachmentEnabled")}>
             <SwitchWithTooltip
               checked={attachment.enabled !== false}
@@ -1114,68 +1113,22 @@ function ContentSettings({
           </Field>
           <Field wide label={s("content.attachmentMaxSizeMB")}>
             <TooltipNumberInput
-              value={getNumber(attachment.maxSizeMB || 10)}
-              min={-1}
+              value={getNumber(attachment.maxSizeMB)}
+              min={0}
               tooltip={s("content.attachmentMaxSizeMBTooltip")}
               onChange={(value) => update("attachmentConfig.maxSizeMB", value)}
             />
           </Field>
           <Field wide label={s("content.attachmentMaxCount")}>
             <TooltipNumberInput
-              value={getNumber(attachment.maxCount || 5)}
-              min={-1}
+              value={getNumber(attachment.maxCount)}
+              min={0}
               tooltip={s("content.attachmentMaxCountTooltip")}
               onChange={(value) => update("attachmentConfig.maxCount", value)}
             />
           </Field>
         </div>
 
-        <div className="grid gap-5">
-          <div className="text-sm font-semibold text-muted-foreground">
-            {s("content.externalCustomerAttachment")}
-          </div>
-          <Field wide label={s("content.externalCustomerAttachmentEnabled")}>
-            <SwitchWithTooltip
-              checked={externalAttachment.enabled !== false}
-              tooltip={s("content.externalCustomerAttachmentEnabledTooltip")}
-              onChange={(checked) =>
-                update(
-                  "attachmentConfig.externalCustomerAttachment.enabled",
-                  checked
-                )
-              }
-            />
-          </Field>
-          <Field wide label={s("content.externalCustomerAttachmentMaxSizeMB")}>
-            <TooltipNumberInput
-              value={getNumber(externalAttachment.maxSizeMB || 20)}
-              min={-1}
-              tooltip={s("content.externalCustomerAttachmentMaxSizeMBTooltip")}
-              onChange={(value) =>
-                update(
-                  "attachmentConfig.externalCustomerAttachment.maxSizeMB",
-                  value
-                )
-              }
-            />
-          </Field>
-          <Field
-            wide
-            label={s("content.externalCustomerAttachmentMaxCount")}
-          >
-            <TooltipNumberInput
-              value={getNumber(externalAttachment.maxCountPerContent || 5)}
-              min={-1}
-              tooltip={s("content.externalCustomerAttachmentMaxCountTooltip")}
-              onChange={(value) =>
-                update(
-                  "attachmentConfig.externalCustomerAttachment.maxCountPerContent",
-                  value
-                )
-              }
-            />
-          </Field>
-        </div>
       </div>
     </SettingsForm>
   )

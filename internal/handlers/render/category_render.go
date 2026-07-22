@@ -16,12 +16,13 @@ func BuildCategory(category *models.Category) *resp.CategoryResponse {
 		category.Logo = "/res/images/category_default.svg"
 	}
 	return &resp.CategoryResponse{
-		Id:          category.Id,
-		ParentId:    category.ParentId,
-		Name:        category.Name,
-		Type:        category.Type,
-		Logo:        category.Logo,
-		Description: category.Description,
+		Id:               category.Id,
+		ParentId:         category.ParentId,
+		Name:             category.Name,
+		Type:             category.Type,
+		Logo:             category.Logo,
+		Description:      category.Description,
+		AttachmentConfig: services.CategoryService.GetAttachmentConfig(category.Id),
 	}
 }
 

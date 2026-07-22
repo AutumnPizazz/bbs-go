@@ -118,6 +118,54 @@ export default function DashboardCategoriesRoute() {
         colSpan: 2,
       },
       {
+        name: "attachmentPolicyConfigured",
+        label: dashboardData.label(t, "attachmentPolicyConfigured"),
+        type: "select",
+        options: [
+          {
+            label: t("dashboard.categoryAttachment.inherit"),
+            value: "false",
+          },
+          {
+            label: t("dashboard.categoryAttachment.custom"),
+            value: "true",
+          },
+        ],
+      },
+      {
+        name: "attachmentEnabled",
+        label: dashboardData.label(t, "attachmentEnabled"),
+        type: "select",
+        options: [
+          {
+            label: t("dashboard.categoryAttachment.enabled"),
+            value: "true",
+          },
+          {
+            label: t("dashboard.categoryAttachment.disabled"),
+            value: "false",
+          },
+        ],
+      },
+      {
+        name: "attachmentAllowedTypes",
+        label: dashboardData.label(t, "attachmentAllowedTypes"),
+        type: "textarea",
+        colSpan: 2,
+      },
+      {
+        name: "attachmentMaxSizeMB",
+        label: dashboardData.label(t, "attachmentMaxSizeMB"),
+        type: "number",
+        min: 0,
+      },
+      {
+        name: "attachmentMaxCount",
+        label: dashboardData.label(t, "attachmentMaxCount"),
+        type: "number",
+        min: 0,
+      },
+      {
         name: "status",
         label: dashboardData.label(t, "status"),
         type: "select",

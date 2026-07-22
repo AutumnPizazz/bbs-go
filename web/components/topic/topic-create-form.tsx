@@ -37,6 +37,7 @@ import type {
 import { useI18n } from "@/lib/i18n/provider"
 import { formatDate } from "@/lib/format"
 import {
+  findCategory,
   getFirstCategoryId,
   hasCategory,
   filterCategoryTree,
@@ -718,6 +719,9 @@ export function TopicCreateForm({
   const effectiveCategoryId = hasCategory(availableNodes, form.categoryId)
     ? form.categoryId
     : getFirstCategoryId(availableNodes)
+  const effectiveAttachmentConfig =
+    findCategory(availableNodes, effectiveCategoryId)?.attachmentConfig ??
+    config?.attachmentConfig
   const noQaCategoriesAvailable = form.type === 2 && availableNodes.length === 0
   const featureDisabledMessage = config
     ? form.type === 1 && !config.modules?.tweet
@@ -967,11 +971,11 @@ export function TopicCreateForm({
           />
         </div>
 
-        {form.type === 0 && config?.attachmentConfig?.enabled ? (
+        {form.type === 0 && effectiveAttachmentConfig?.enabled ? (
           <div className="field">
             <TopicAttachmentField
               value={attachmentList}
-              config={config.attachmentConfig}
+              config={effectiveAttachmentConfig}
               categoryId={effectiveCategoryId}
               uploading={attachmentUploading}
               onUploadingChange={setAttachmentUploading}

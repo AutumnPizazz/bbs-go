@@ -49,7 +49,15 @@ export interface Category {
   description?: string
   logo?: string
   parentId?: number
+  attachmentConfig?: AttachmentConfig
   children?: Category[]
+}
+
+export interface AttachmentConfig {
+  enabled?: boolean
+  allowedTypes?: string[]
+  maxSizeMB?: number
+  maxCount?: number
 }
 
 export interface Tag {
@@ -175,17 +183,7 @@ export interface SiteConfig {
   topicListStyle?: "default" | "compact" | string
   topicCaptcha?: boolean
 	enableHideContent?: boolean
-  attachmentConfig?: {
-    enabled?: boolean
-    allowedTypes?: string[]
-    maxSizeMB?: number
-    maxCount?: number
-    externalCustomerAttachment?: {
-      enabled?: boolean
-      maxSizeMB?: number
-      maxCountPerContent?: number
-    }
-  }
+  attachmentConfig?: AttachmentConfig
   footerLinks?: Array<{
     text?: Record<string, string>
     url?: string

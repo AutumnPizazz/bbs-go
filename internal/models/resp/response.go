@@ -2,6 +2,7 @@ package resp
 
 import (
 	"bbs-go/internal/models/constants"
+	"bbs-go/internal/models/dto"
 	"time"
 
 	"github.com/mlogclub/simple/web"
@@ -52,13 +53,14 @@ type TagResponse struct {
 }
 
 type CategoryResponse struct {
-	Id          int64                  `json:"id"`
-	ParentId    int64                  `json:"parentId"` // 父节点ID，0=一级
-	Name        string                 `json:"name"`
-	Type        constants.CategoryType `json:"type"`
-	Logo        string                 `json:"logo"`
-	Description string                 `json:"description"`
-	Children    []CategoryResponse     `json:"children,omitempty"` // 子节点（发帖可选时用）
+	Id               int64                  `json:"id"`
+	ParentId         int64                  `json:"parentId"` // 父节点ID，0=一级
+	Name             string                 `json:"name"`
+	Type             constants.CategoryType `json:"type"`
+	Logo             string                 `json:"logo"`
+	Description      string                 `json:"description"`
+	AttachmentConfig dto.AttachmentConfig   `json:"attachmentConfig"`
+	Children         []CategoryResponse     `json:"children,omitempty"` // 子节点（发帖可选时用）
 }
 
 // CategoryTreeItem 后台节点树形列表项（含 sortNo/status/createTime，children 始终存在以兼容 Arco Table）

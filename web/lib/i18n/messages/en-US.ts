@@ -243,6 +243,12 @@ const enUS = {
       normal: "Topic",
       qa: "Q&A",
     },
+    categoryAttachment: {
+      inherit: "Inherit parent or default policy",
+      custom: "Use this category's policy",
+      enabled: "Allow attachments",
+      disabled: "Disable attachments",
+    },
     forbiddenWordTypes: {
       word: "Word",
       regex: "Regex",
@@ -373,8 +379,7 @@ const enUS = {
         title: "Content",
         sectionGeneral: "General",
         sectionAttachment: "Topic Attachments",
-        attachmentGeneral: "Global Attachment Limits",
-        externalCustomerAttachment: "External Customer Attachment Limits",
+        attachmentDefault: "Default Attachment Limits",
         modules: "Features",
         tweet: "Update",
         topic: "Topic",
@@ -397,19 +402,10 @@ const enUS = {
         attachmentAllowedTypes: "Allowed File Types",
         attachmentMaxSizeMB: "Max Size per File (MB)",
         attachmentMaxSizeMBTooltip:
-          "Maximum size for a single attachment in MB; enter -1 for unlimited",
+          "Maximum size for a single attachment in MB; enter 0 for unlimited",
         attachmentMaxCount: "Max Attachments per Topic",
         attachmentMaxCountTooltip:
-          "Maximum number of attachments per topic; enter -1 for unlimited",
-        externalCustomerAttachmentEnabled: "Enable Attachment Upload",
-        externalCustomerAttachmentEnabledTooltip:
-          "When disabled, external customer users cannot upload attachments",
-        externalCustomerAttachmentMaxSizeMB: "Max Size per File (MB)",
-        externalCustomerAttachmentMaxSizeMBTooltip:
-          "Maximum attachment size for external customer users; enter -1 for unlimited",
-        externalCustomerAttachmentMaxCount: "Max Attachments per Content",
-        externalCustomerAttachmentMaxCountTooltip:
-          "Maximum attachments per content for external customer users; enter -1 for unlimited",
+          "Maximum number of attachments per topic; enter 0 for unlimited",
         placeholder: {
           defaultCategoryId: "Default category for posting",
           recommendTags: "Featured tags",
@@ -661,6 +657,11 @@ const enUS = {
       parentId: "Parent Category",
       logo: "Logo",
       sortNo: "Sort order",
+      attachmentPolicyConfigured: "Attachment Policy",
+      attachmentEnabled: "Attachment Upload",
+      attachmentAllowedTypes: "Allowed File Types",
+      attachmentMaxSizeMB: "Max Size per File (MB)",
+      attachmentMaxCount: "Max Attachments per Topic",
       url: "URL",
       word: "Word",
       remark: "Remark",

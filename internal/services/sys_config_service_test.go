@@ -7,18 +7,21 @@ import (
 )
 
 func TestNormalizeAttachmentConfig_PreservesUnlimitedValues(t *testing.T) {
-	cfg := normalizeAttachmentConfig(dto.AttachmentConfig{MaxSizeMB: -1, MaxCount: -1})
+	cfg := normalizeAttachmentConfig(dto.AttachmentConfig{MaxSizeMB: 0, MaxCount: 0})
 
-	if cfg.MaxSizeMB != -1 || cfg.MaxCount != -1 {
-		t.Fatalf("expected -1 attachment limits to remain unlimited, got size=%d count=%d", cfg.MaxSizeMB, cfg.MaxCount)
+	if cfg.MaxSizeMB != 0 || cfg.MaxCount != 0 {
+		t.Fatalf("expected 0 attachment limits to remain unlimited, got size=%d count=%d", cfg.MaxSizeMB, cfg.MaxCount)
 	}
 }
 
-func TestNormalizeAttachmentConfig_DefaultsZeroValues(t *testing.T) {
+func TestNormalizeAttachmentConfig_DefaultsAllowedTypes(t *testing.T) {
 	cfg := normalizeAttachmentConfig(dto.AttachmentConfig{})
 
-	if cfg.MaxSizeMB != 10 || cfg.MaxCount != 5 {
-		t.Fatalf("expected zero attachment limits to use defaults, got size=%d count=%d", cfg.MaxSizeMB, cfg.MaxCount)
+	if len(cfg.AllowedTypes) == 0 {
+		t.Fatal("expected empty allowed types to use defaults")
+	}
+	if cfg.MaxSizeMB != 0 || cfg.MaxCount != 0 {
+		t.Fatalf("expected zero attachment limits to remain unlimited, got size=%d count=%d", cfg.MaxSizeMB, cfg.MaxCount)
 	}
 }
 

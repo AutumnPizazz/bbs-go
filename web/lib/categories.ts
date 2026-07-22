@@ -39,6 +39,11 @@ export function hasCategory(categories: Category[] = [], categoryId: number | st
   return flattenCategories(categories).some((node) => Number(node.id) === targetId)
 }
 
+export function findCategory(categories: Category[] = [], categoryId: number | string) {
+  const targetId = Number(categoryId)
+  return flattenCategories(categories).find((node) => Number(node.id) === targetId)
+}
+
 export function getFirstCategoryId(categories: Category[] = []) {
   const first = flattenCategories(categories)[0]
   return first ? Number(first.id) : 0

@@ -346,34 +346,30 @@ func (s *sysConfigService) GetUploadConfig() dto.UploadConfig {
 // GetAttachmentConfig 附件配置（帖子附件）
 func (s *sysConfigService) GetAttachmentConfig() dto.AttachmentConfig {
 	str := cache.SysConfigCache.GetStr(constants.SysConfigAttachmentConfig)
-	var cfg dto.AttachmentConfig
+	cfg := defaultAttachmentConfig()
+	if strings.TrimSpace(str) == "" {
+		return cfg
+	}
 	if err := jsons.Parse(str, &cfg); err != nil {
 		slog.Warn("附件配置解析错误", slog.Any("err", err))
-	}
-	if strings.TrimSpace(str) == "" || !strings.Contains(str, "externalCustomerAttachment") {
-		cfg.ExternalCustomerAttachment.Enabled = true
 	}
 	return normalizeAttachmentConfig(cfg)
 }
 
 func normalizeAttachmentConfig(cfg dto.AttachmentConfig) dto.AttachmentConfig {
-	// 默认值
-	if cfg.MaxSizeMB == 0 {
-		cfg.MaxSizeMB = 10
-	}
-	if cfg.MaxCount == 0 {
-		cfg.MaxCount = 5
-	}
 	if len(cfg.AllowedTypes) == 0 {
-		cfg.AllowedTypes = []string{".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".txt", ".md", ".csv", ".zip", ".rar", ".7z", ".tar", ".gz"}
-	}
-	if cfg.ExternalCustomerAttachment.MaxSizeMB == 0 {
-		cfg.ExternalCustomerAttachment.MaxSizeMB = 20
-	}
-	if cfg.ExternalCustomerAttachment.MaxCountPerContent == 0 {
-		cfg.ExternalCustomerAttachment.MaxCountPerContent = 5
+		cfg.AllowedTypes = defaultAttachmentConfig().AllowedTypes
 	}
 	return cfg
+}
+
+func defaultAttachmentConfig() dto.AttachmentConfig {
+	return dto.AttachmentConfig{
+		Enabled:      true,
+		AllowedTypes: []string{".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".txt", ".md", ".csv", ".zip", ".rar", ".7z", ".tar", ".gz"},
+		MaxSizeMB:    10,
+		MaxCount:     5,
+	}
 }
 
 func (s *sysConfigService) GetScriptInjections() []dto.ScriptInjection {

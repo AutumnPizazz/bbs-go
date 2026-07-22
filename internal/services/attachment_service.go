@@ -13,6 +13,7 @@ import (
 
 	"bbs-go/internal/models"
 	"bbs-go/internal/models/constants"
+	"bbs-go/internal/models/dto"
 	"bbs-go/internal/pkg/locales"
 	"bbs-go/internal/pkg/uploader"
 	"bbs-go/internal/repositories"
@@ -37,24 +38,20 @@ func (s *attachmentService) extAllowed(ext string, allowedTypes []string) bool {
 }
 
 // Upload 流式上传附件；content 为数据流，contentLength 为文件大小（用于存储 FileSize 与上传 ContentLength）。
-func (s *attachmentService) Upload(userId int64, filename string, content io.Reader, contentLength int64, contentType string) (*models.Attachment, error) {
-	cfg := SysConfigService.GetAttachmentConfig()
+func (s *attachmentService) Upload(userId, categoryId int64, filename string, content io.Reader, contentLength int64, contentType string) (*models.Attachment, error) {
 	user := UserService.Get(userId)
 	if user == nil {
 		return nil, errors.New(locales.Get("errors.not_login"))
 	}
-	if user.ContentAccessMode == constants.ContentAccessModeAssignedCategories && !user.IsOwner() {
-		if !cfg.ExternalCustomerAttachment.Enabled {
-			return nil, errors.New(locales.Get("attachment.disabled"))
-		}
-		if cfg.ExternalCustomerAttachment.MaxSizeMB > 0 && contentLength > int64(cfg.ExternalCustomerAttachment.MaxSizeMB)*1024*1024 {
-			return nil, errors.New(locales.Getf("attachment.too_large", cfg.ExternalCustomerAttachment.MaxSizeMB))
-		}
+	category := CategoryService.Get(categoryId)
+	if category == nil || category.Status != constants.StatusOk {
+		return nil, errors.New(locales.Get("topic.category_not_found"))
+	}
+	cfg := CategoryService.GetAttachmentConfig(categoryId)
+	if err := s.validateAttachmentPolicy(cfg, filename, contentLength); err != nil {
+		return nil, err
 	}
 	ext := strings.ToLower(filepath.Ext(filename))
-	if !s.extAllowed(ext, cfg.AllowedTypes) {
-		return nil, errors.New(locales.Get("attachment.ext_not_allowed"))
-	}
 	var (
 		attId       = strs.UUID()
 		key         = uploader.GenerateAttachmentKey(attId, ext)
@@ -80,6 +77,19 @@ func (s *attachmentService) Upload(userId int64, filename string, content io.Rea
 		return nil, err
 	}
 	return att, nil
+}
+
+func (s *attachmentService) validateAttachmentPolicy(cfg dto.AttachmentConfig, filename string, size int64) error {
+	if !cfg.Enabled {
+		return errors.New(locales.Get("attachment.disabled"))
+	}
+	if cfg.MaxSizeMB > 0 && size > int64(cfg.MaxSizeMB)*1024*1024 {
+		return errors.New(locales.Getf("attachment.too_large", cfg.MaxSizeMB))
+	}
+	if !s.extAllowed(filepath.Ext(filename), cfg.AllowedTypes) {
+		return errors.New(locales.Get("attachment.ext_not_allowed"))
+	}
+	return nil
 }
 
 // Get 根据 ID 获取附件（仅返回存在且正常的）
@@ -135,21 +145,36 @@ func (s *attachmentService) SoftDeleteByTopicId(ctx *sqls.TxContext, topicId int
 }
 
 // ReplaceTopicAttachments 编辑帖时全量替换附件
-func (s *attachmentService) ReplaceTopicAttachments(ctx *sqls.TxContext, topicId, userId int64, attachmentIds []string) error {
-	newSet := make(map[string]bool)
+func (s *attachmentService) ReplaceTopicAttachments(ctx *sqls.TxContext, topicId, userId, categoryId int64, attachmentIds []string) error {
+	newSet := make(map[string]bool, len(attachmentIds))
 	for _, id := range attachmentIds {
 		if strs.IsNotBlank(id) {
 			newSet[id] = true
 		}
 	}
-	user := UserService.Get(userId)
-	cfg := SysConfigService.GetAttachmentConfig()
-	if user != nil && user.ContentAccessMode == constants.ContentAccessModeAssignedCategories && !user.IsOwner() {
-		if !cfg.ExternalCustomerAttachment.Enabled {
+	cfg := CategoryService.GetAttachmentConfig(categoryId)
+	attachments := make(map[string]*models.Attachment, len(newSet))
+	for aid := range newSet {
+		att := repositories.AttachmentRepository.Get(ctx.Tx, aid)
+		if att == nil || att.UserId != userId {
+			return errors.New(locales.Get("attachment.no_permission"))
+		}
+		if att.TopicId != 0 && att.TopicId != topicId {
+			return errors.New(locales.Get("attachment.already_bound"))
+		}
+		attachments[aid] = att
+	}
+	if len(attachments) > 0 {
+		if !cfg.Enabled {
 			return errors.New(locales.Get("attachment.disabled"))
 		}
-		if cfg.ExternalCustomerAttachment.MaxCountPerContent > 0 && len(newSet) > cfg.ExternalCustomerAttachment.MaxCountPerContent {
-			return errors.New(locales.Getf("attachment.too_many", cfg.ExternalCustomerAttachment.MaxCountPerContent))
+		if cfg.MaxCount > 0 && len(attachments) > cfg.MaxCount {
+			return errors.New(locales.Getf("attachment.too_many", cfg.MaxCount))
+		}
+		for _, att := range attachments {
+			if err := s.validateAttachmentPolicy(cfg, att.FileName, att.FileSize); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -170,13 +195,6 @@ func (s *attachmentService) ReplaceTopicAttachments(ctx *sqls.TxContext, topicId
 		if strs.IsBlank(aid) {
 			continue
 		}
-		att := repositories.AttachmentRepository.Get(ctx.Tx, aid)
-		if att == nil || att.UserId != userId {
-			return errors.New(locales.Get("attachment.no_permission"))
-		}
-		if att.TopicId != 0 && att.TopicId != topicId {
-			return errors.New(locales.Get("attachment.already_bound"))
-		}
 		if err := repositories.AttachmentRepository.Updates(ctx.Tx, aid, map[string]interface{}{
 			"topic_id": topicId, "status": constants.StatusOk, "update_time": dates.NowTimestamp(),
 		}); err != nil {
@@ -186,9 +204,10 @@ func (s *attachmentService) ReplaceTopicAttachments(ctx *sqls.TxContext, topicId
 	return nil
 }
 
-// CheckAttachmentsExistAndOwned 检查 attachmentIds 是否存在且均属于 userId，且未绑定其他帖子（或仅绑定 topicId）
-func (s *attachmentService) CheckAttachmentsExistAndOwned(ctx *sqls.TxContext, userId int64, attachmentIds []string, topicId int64) error {
+// CheckAttachmentsExistAndOwned 检查附件归属、绑定状态和目标节点策略。
+func (s *attachmentService) CheckAttachmentsExistAndOwned(ctx *sqls.TxContext, userId, categoryId int64, attachmentIds []string, topicId int64) error {
 	uniqueIds := make(map[string]struct{}, len(attachmentIds))
+	attachments := make(map[string]*models.Attachment, len(attachmentIds))
 	for _, aid := range attachmentIds {
 		if strs.IsBlank(aid) {
 			continue
@@ -201,15 +220,42 @@ func (s *attachmentService) CheckAttachmentsExistAndOwned(ctx *sqls.TxContext, u
 		if att.TopicId != 0 && att.TopicId != topicId {
 			return errors.New(locales.Get("attachment.already_bound"))
 		}
+		attachments[aid] = att
 	}
-	user := UserService.Get(userId)
-	cfg := SysConfigService.GetAttachmentConfig()
-	if user != nil && user.ContentAccessMode == constants.ContentAccessModeAssignedCategories && !user.IsOwner() {
-		if !cfg.ExternalCustomerAttachment.Enabled {
-			return errors.New(locales.Get("attachment.disabled"))
+	if len(attachments) == 0 {
+		return nil
+	}
+	cfg := CategoryService.GetAttachmentConfig(categoryId)
+	if !cfg.Enabled {
+		return errors.New(locales.Get("attachment.disabled"))
+	}
+	if cfg.MaxCount > 0 && len(uniqueIds) > cfg.MaxCount {
+		return errors.New(locales.Getf("attachment.too_many", cfg.MaxCount))
+	}
+	for _, att := range attachments {
+		if err := s.validateAttachmentPolicy(cfg, att.FileName, att.FileSize); err != nil {
+			return err
 		}
-		if cfg.ExternalCustomerAttachment.MaxCountPerContent > 0 && len(uniqueIds) > cfg.ExternalCustomerAttachment.MaxCountPerContent {
-			return errors.New(locales.Getf("attachment.too_many", cfg.ExternalCustomerAttachment.MaxCountPerContent))
+	}
+	return nil
+}
+
+// ValidateTopicAttachments checks existing attachments when a topic moves to another category.
+func (s *attachmentService) ValidateTopicAttachments(topicId, categoryId int64) error {
+	attachments := s.ListByTopicId(topicId)
+	if len(attachments) == 0 {
+		return nil
+	}
+	cfg := CategoryService.GetAttachmentConfig(categoryId)
+	if !cfg.Enabled {
+		return errors.New(locales.Get("attachment.disabled"))
+	}
+	if cfg.MaxCount > 0 && len(attachments) > cfg.MaxCount {
+		return errors.New(locales.Getf("attachment.too_many", cfg.MaxCount))
+	}
+	for _, att := range attachments {
+		if err := s.validateAttachmentPolicy(cfg, att.FileName, att.FileSize); err != nil {
+			return err
 		}
 	}
 	return nil
