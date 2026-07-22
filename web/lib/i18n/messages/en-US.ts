@@ -1163,11 +1163,13 @@ const enUS = {
         imageUploading: "Image uploading, please try again later...",
         attachmentUploading:
           "Attachment uploading, please wait before submitting",
-        noQaCategoryTitle: "No Q&A category available",
-        noQaCategoryDescription:
-          "Please ask an admin to add a Q&A category, or choose another topic type.",
-        noQaCategorySubmit:
-          "No Q&A category available or none selected. Cannot publish.",
+        noCategoryTitle: "No category available",
+        noCategoryDescription:
+          "There is no writable category for this content type, so content cannot be created.",
+        categoryRequiredTitle: "Select a category first",
+        categoryRequiredDescription:
+          "Choose a writable category before entering a title, body, or other publishing content.",
+        categoryRequiredSubmit: "Select a writable category first.",
         topicFeatureDisabled: "Discussions are not enabled",
         qaFeatureDisabled: "Q&A module is not enabled",
         attachment: {

@@ -20,7 +20,6 @@ import { useI18n } from "@/lib/i18n/provider"
 import {
   findCategory,
   filterCategoryTree,
-  getFirstCategoryId,
   hasCategory,
 } from "@/lib/categories"
 import { msg, useToastActions } from "@/lib/toast"
@@ -213,7 +212,7 @@ export function TopicEditForm({
   )
   const effectiveCategoryId = hasCategory(availableNodes, form.categoryId)
     ? form.categoryId
-    : getFirstCategoryId(availableNodes)
+    : 0
   const effectiveAttachmentConfig =
     findCategory(availableNodes, effectiveCategoryId)?.attachmentConfig ??
     config?.attachmentConfig
@@ -239,6 +238,31 @@ export function TopicEditForm({
     )
   }
 
+  if (effectiveCategoryId === 0) {
+    return (
+      <div className="publish-form">
+        <div className="form-title">
+          <div className="form-title-name">{t("pages.topic.edit.title")}</div>
+        </div>
+        <div className="field">
+          <CategoryQuickSelector
+            value={0}
+            categories={availableNodes}
+            onChange={(categoryId) => updateForm({ categoryId })}
+          />
+        </div>
+        <div className="rounded-md border border-dashed bg-muted/20 p-4">
+          <h1 className="text-sm font-semibold">
+            {t("pages.topic.create.categoryRequiredTitle")}
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {t("pages.topic.create.categoryRequiredDescription")}
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   function updateForm(next: Partial<TopicEditFormState>) {
     setForm((current) => ({ ...current, ...next }))
   }
@@ -249,6 +273,11 @@ export function TopicEditForm({
       return
     }
     lastSubmitAtRef.current = now
+
+    if (!hasCategory(availableNodes, effectiveCategoryId)) {
+      msgWarning(t("pages.topic.create.categoryRequiredSubmit"))
+      return
+    }
 
     if (attachmentUploading) {
       msgWarning(t("pages.topic.create.attachmentUploading"))

@@ -153,10 +153,7 @@ func (s topicPublishService) checkParams(userId int64, form req.CreateTopicReq) 
 	}
 
 	if form.CategoryId <= 0 {
-		form.CategoryId = SysConfigService.GetDefaultCategoryId()
-		if form.CategoryId <= 0 {
-			return errors.New(locales.Get("topic.category_required"))
-		}
+		return errors.New(locales.Get("topic.category_required"))
 	}
 	if !ContentAccessService.CanWriteCategory(UserService.Get(userId), form.CategoryId) {
 		return errs.ContentAccessDenied()

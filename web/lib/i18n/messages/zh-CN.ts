@@ -1146,10 +1146,13 @@ const zhCN = {
         switchEditorConfirm: "切换编辑器将会清空当前内容，是否继续？",
         imageUploading: "图片上传中,请稍后重试...",
         attachmentUploading: "附件上传中，请稍后再提交",
-        noQaCategoryTitle: "暂无可用问答分类",
-        noQaCategoryDescription:
-          "请在后台配置支持问答的分类，或选择其他类型发帖。",
-        noQaCategorySubmit: "当前没有可用的问答分类或未选择分类，无法发布。",
+        noCategoryTitle: "暂无可用分类",
+        noCategoryDescription:
+          "当前没有该内容类型的可写分类，无法创建内容。",
+        categoryRequiredTitle: "请先选择分类",
+        categoryRequiredDescription:
+          "选择一个可写分类后，才能填写标题、正文和其他发布内容。",
+        categoryRequiredSubmit: "请先选择一个可写分类。",
         topicFeatureDisabled: "帖子模块未开启",
         qaFeatureDisabled: "提问模块未开启",
         attachment: {

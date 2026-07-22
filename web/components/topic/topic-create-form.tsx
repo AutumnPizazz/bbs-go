@@ -36,7 +36,6 @@ import { useI18n } from "@/lib/i18n/provider"
 import { formatDate } from "@/lib/format"
 import {
   findCategory,
-  getFirstCategoryId,
   hasCategory,
   filterCategoryTree,
 } from "@/lib/categories"
@@ -501,7 +500,7 @@ export function TopicCreateForm({
   const [form, setForm] = React.useState<TopicCreateFormState>(() =>
     createInitialForm({
       type,
-      categoryId: categoryId || config?.defaultCategoryId || 0,
+      categoryId: categoryId || 0,
       contentType,
     })
   )
@@ -512,11 +511,11 @@ export function TopicCreateForm({
   )
   const effectiveCategoryId = hasCategory(availableNodes, form.categoryId)
     ? form.categoryId
-    : getFirstCategoryId(availableNodes)
+    : 0
   const effectiveAttachmentConfig =
     findCategory(availableNodes, effectiveCategoryId)?.attachmentConfig ??
     config?.attachmentConfig
-  const noQaCategoriesAvailable = form.type === 2 && availableNodes.length === 0
+  const noCategoriesAvailable = availableNodes.length === 0
   const featureDisabledMessage = config
     ? form.type === 2 && !config.modules?.qa
         ? t("pages.topic.create.qaFeatureDisabled")
@@ -563,8 +562,8 @@ export function TopicCreateForm({
       return
     }
     lastSubmitAtRef.current = now
-    if (form.type === 2 && !hasCategory(availableNodes, effectiveCategoryId)) {
-      msgWarning(t("pages.topic.create.noQaCategorySubmit"))
+    if (!hasCategory(availableNodes, effectiveCategoryId)) {
+      msgWarning(t("pages.topic.create.categoryRequiredSubmit"))
       return
     }
     if (attachmentUploading) {
@@ -646,15 +645,39 @@ export function TopicCreateForm({
     )
   }
 
-  if (noQaCategoriesAvailable) {
+  if (noCategoriesAvailable) {
     return (
       <Alert>
         <AlertCircle className="h-4 w-4 shrink-0" />
-        <AlertTitle>{t("pages.topic.create.noQaCategoryTitle")}</AlertTitle>
+        <AlertTitle>{t("pages.topic.create.noCategoryTitle")}</AlertTitle>
         <AlertDescription>
-          {t("pages.topic.create.noQaCategoryDescription")}
+          {t("pages.topic.create.noCategoryDescription")}
         </AlertDescription>
       </Alert>
+    )
+  }
+
+  if (effectiveCategoryId === 0) {
+    return (
+      <div className="publish-form">
+        <div className="form-title">
+          <div className="form-title-name">{titleForType(form.type, t)}</div>
+        </div>
+        <div className="field">
+          <CategoryQuickSelector
+            value={0}
+            categories={availableNodes}
+            onChange={(categoryId) => updateForm({ categoryId })}
+          />
+        </div>
+        <Alert>
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <AlertTitle>{t("pages.topic.create.categoryRequiredTitle")}</AlertTitle>
+          <AlertDescription>
+            {t("pages.topic.create.categoryRequiredDescription")}
+          </AlertDescription>
+        </Alert>
+      </div>
     )
   }
 
