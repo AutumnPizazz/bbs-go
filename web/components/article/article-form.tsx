@@ -6,11 +6,13 @@ import { Plus, Trash2 } from "lucide-react"
 
 import { TagInput } from "@/components/common/tag-input"
 import { ContentEditor } from "@/components/editor/content-editor"
+import { CategoryQuickSelector } from "@/components/topic/category-selector"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { apiFetch } from "@/lib/api/client"
-import type { ImageInfo, SiteConfig, Topic } from "@/lib/api/types"
+import type { Category, ImageInfo, SiteConfig, Topic } from "@/lib/api/types"
 import type { TopicEditData } from "@/lib/api/topics"
+import { filterCategoryTree, getFirstCategoryId, hasCategory } from "@/lib/categories"
 import { useI18n } from "@/lib/i18n/provider"
 import { msg, useToastActions } from "@/lib/toast"
 
@@ -110,11 +112,13 @@ export function ArticleForm({
   config,
   initialArticle,
   categoryId = 0,
+  categories,
 }: {
   mode: ArticleFormMode
   config: SiteConfig | null
   initialArticle?: TopicEditData | null
   categoryId?: number
+  categories: Category[]
 }) {
   const router = useRouter()
   const { t } = useI18n()
@@ -129,6 +133,13 @@ export function ArticleForm({
     tags: initialArticle?.tags || [],
     cover: initialArticle?.cover ? [initialArticle.cover] : [],
   })
+  const availableNodes = React.useMemo(
+    () => filterCategoryTree(categories, (category) => category.type !== "qa"),
+    [categories]
+  )
+  const effectiveCategoryId = hasCategory(availableNodes, form.categoryId)
+    ? form.categoryId
+    : getFirstCategoryId(availableNodes)
 
   function updateForm(next: Partial<ArticleFormState>) {
     setForm((current) => ({ ...current, ...next }))
@@ -144,7 +155,7 @@ export function ArticleForm({
       const body = {
         type: 0,
         format: "article",
-        categoryId: form.categoryId,
+        categoryId: effectiveCategoryId,
         title: form.title,
         summary: form.summary,
         content: form.content,
@@ -192,6 +203,13 @@ export function ArticleForm({
     <div className="publish-form rounded-lg bg-background p-4">
       <div className="mb-4 border-b pb-2">
         <div className="text-xl font-semibold">{t(titleKey)}</div>
+      </div>
+      <div className="mb-4">
+        <CategoryQuickSelector
+          value={effectiveCategoryId}
+          categories={availableNodes}
+          onChange={(categoryId) => updateForm({ categoryId })}
+        />
       </div>
       <div className="mb-4">
         <Input
@@ -244,7 +262,11 @@ export function ArticleForm({
         </div>
       ) : null}
       <div className="pt-2">
-        <Button type="button" disabled={publishing} onClick={submit}>
+        <Button
+          type="button"
+          disabled={publishing || effectiveCategoryId <= 0}
+          onClick={submit}
+        >
           {publishing && mode === "create" ? t("pages.article.create.publishing") : t(submitKey)}
         </Button>
       </div>

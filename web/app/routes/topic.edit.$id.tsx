@@ -58,7 +58,12 @@ export default function TopicEditRoute() {
     <main className="main">
       <div className="container">
         {data.topic.format === "article" ? (
-          <ArticleForm mode="edit" config={config} initialArticle={data.topic} />
+          <ArticleForm
+            mode="edit"
+            config={config}
+            initialArticle={data.topic}
+            categories={data.categories}
+          />
         ) : (
           <TopicEditForm topic={data.topic} config={config} categories={data.categories} />
         )}

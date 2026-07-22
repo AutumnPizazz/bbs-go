@@ -77,6 +77,7 @@ export default function TopicCreateRoute() {
             mode="create"
             config={config}
             categoryId={categoryId}
+            categories={categories || []}
           />
         ) : (
           <TopicCreateForm
