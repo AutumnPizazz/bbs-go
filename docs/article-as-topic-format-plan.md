@@ -209,6 +209,42 @@ updateTime
 
 删除旧的 `/api/article/*`、`/article/:id`、独立文章编辑页和独立文章详情页。由于没有存量数据，不实现 301、ID 映射或兼容响应。
 
+### 6.3 文章发布面板节点选择专项
+
+当前实现已经具备文章节点写入能力，但文章表单没有把节点选择暴露给用户：
+
+- `ArticleForm` 已有 `categoryId` 状态，并在创建和编辑请求中提交 `categoryId`。
+- 创建页已经请求 `/api/topic/categories`，但只将节点列表传给普通话题表单。
+- 编辑页已经同时请求文章和节点数据，但文章分支没有将节点列表传给 `ArticleForm`。
+- `CategoryQuickSelector` 已被普通话题创建和编辑表单使用，可直接复用搜索、最近使用、一级节点和子节点面板。
+
+本专项只补齐前端接线，不新增数据表、迁移或后端接口：
+
+1. 为 `ArticleForm` 增加 `categories` 属性，创建态接收创建页已有的节点列表，编辑态接收编辑页已有的节点列表。
+2. 在文章表单中复用 `CategoryQuickSelector`，位置与普通话题表单一致，放在标题输入框之前。
+3. 使用 `filterCategoryTree` 过滤出 `type !== "qa"` 的普通节点，避免文章选择问答节点后再由服务端拒绝。
+4. 使用 `hasCategory` 和 `getFirstCategoryId` 计算有效节点：优先保留 URL、文章原值或默认配置中的有效普通节点，否则回退到第一个普通节点。
+5. 提交创建和编辑请求时使用有效节点 ID，不直接使用未经校验的原始表单值。
+6. 当没有可用普通节点时显示空状态并阻止发布，避免将无效 `categoryId` 交给后端。
+
+涉及文件：
+
+- `web/components/article/article-form.tsx`
+- `web/app/routes/topic.create.tsx`
+- `web/app/routes/topic.edit.$id.tsx`
+- 复用 `web/components/topic/category-selector.tsx` 和 `web/lib/categories.ts`
+
+后端约束保持不变。`TopicPublishService` 和 `TopicService.Edit` 已校验文章必须是 `type=topic`、`format=article`，且只能使用启用的普通节点；文章仍然禁止问答节点、投票、隐藏内容和附件。这样前端选择器改善用户体验，服务端校验继续承担最终安全边界。
+
+专项验收：
+
+- 新建文章可以选择一级普通节点和二级普通节点，并正确提交 `categoryId`。
+- 编辑文章可以更换普通节点，保存后详情和节点列表显示一致。
+- 文章选择面板不显示问答节点。
+- 通过 `?categoryId=` 进入文章发布页时，节点正确预选。
+- 默认节点无效或没有普通节点时不会静默提交错误节点。
+- 普通话题、动态和问答现有节点选择行为不回归。
+
 ## 7. 互动、治理和运营行为
 
 ### 7.1 统一实体标识
@@ -325,6 +361,7 @@ categoryId
 ### 阶段 2：文章写入 Topic
 
 - 文章创建和编辑页面改用统一的文章格式表单。
+- 为文章创建和编辑面板接入现有普通节点选择器，完成节点过滤、默认值回退和无节点阻止发布。
 - 新文章直接写入 `Topic`，选择普通节点。
 - 在服务端实现文章格式的字段、模块、审核、邮箱和附件校验。
 - 增加文章格式的评论、点赞、收藏、推荐、置顶和审核测试。
