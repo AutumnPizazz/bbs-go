@@ -14,10 +14,8 @@ import (
 	"bbs-go/internal/pkg/params"
 
 	"github.com/mlogclub/simple/common/dates"
-	"github.com/mlogclub/simple/common/jsons"
 	"github.com/mlogclub/simple/common/strs"
 	"github.com/mlogclub/simple/sqls"
-	"strings"
 
 	"gorm.io/gorm"
 
@@ -155,11 +153,8 @@ func (s *topicService) Edit(userId, topicId int64, form req.EditTopicReq) error 
 	if !ContentAccessService.CanAccessTopic(viewer, topic) || !ContentAccessService.CanWriteCategory(viewer, form.CategoryId) {
 		return errs.ContentAccessDenied()
 	}
-	if !category.Type.Supports(topic.Type) || (constants.IsArticleTopicFormat(topic.Format) && category.Type != constants.CategoryTypeNormal) {
+	if !category.Type.Supports(topic.Type) {
 		return errors.New(locales.Get("topic.category_type_mismatch"))
-	}
-	if constants.IsArticleTopicFormat(topic.Format) && len(form.AttachmentIds) > 0 {
-		return errors.New(locales.Get("topic.type_not_supported"))
 	}
 	if topic.Type == constants.TopicTypeTopic && form.AttachmentIds == nil && form.CategoryId != topic.CategoryId {
 		if err := AttachmentService.ValidateTopicAttachments(topicId, form.CategoryId); err != nil {
@@ -168,7 +163,7 @@ func (s *topicService) Edit(userId, topicId int64, form req.EditTopicReq) error 
 	}
 
 	hideContent := form.HideContent
-	if topic.Type == constants.TopicTypeQA || constants.IsArticleTopicFormat(topic.Format) {
+	if topic.Type == constants.TopicTypeQA {
 		// QA 话题忽略隐藏内容变更。
 		hideContent = ""
 	}
@@ -180,18 +175,9 @@ func (s *topicService) Edit(userId, topicId int64, form req.EditTopicReq) error 
 		updates := map[string]interface{}{
 			"category_id":  form.CategoryId,
 			"title":        form.Title,
-			"summary":      form.Summary,
 			"content":      form.Content,
-			"source_url":   strings.TrimSpace(form.SourceUrl),
 			"hide_content": hideContent,
 			"update_time":  dates.NowTimestamp(),
-		}
-		if form.Cover != nil {
-			if strings.TrimSpace(form.Cover.Url) == "" {
-				updates["cover"] = ""
-			} else {
-				updates["cover"] = jsons.ToJsonStr(form.Cover)
-			}
 		}
 		if err = repositories.TopicRepository.Updates(ctx.Tx, topicId, updates); err != nil {
 			return err
@@ -277,29 +263,26 @@ func (s *topicService) GetTopicTags(topicId int64) []models.Tag {
 }
 
 // GetTopics 帖子列表（最新、推荐、关注、节点）
-func (s *topicService) GetTopics(user *models.User, categoryId, cursor int64, qaStatus, sort string, format constants.TopicFormat) (topics []models.Topic, nextCursor int64, hasMore bool) {
+func (s *topicService) GetTopics(user *models.User, categoryId, cursor int64, qaStatus, sort string) (topics []models.Topic, nextCursor int64, hasMore bool) {
 	limit := constants.TopicListPageSize
 	if categoryId == constants.CategoryIdFollow {
 		if user != nil {
-			return s._GetFollowTopics(user.Id, cursor, format)
+			return s._GetFollowTopics(user.Id, cursor)
 		}
 		return
 	} else {
-		return s._GetCategoryTopics(user, categoryId, cursor, limit, qaStatus, sort, format)
+		return s._GetCategoryTopics(user, categoryId, cursor, limit, qaStatus, sort)
 	}
 }
 
 // _GetCategoryTopics 帖子列表（最新、推荐、节点）
-func (s *topicService) _GetCategoryTopics(user *models.User, categoryId, cursor int64, limit int, qaStatus, sort string, format constants.TopicFormat) (topics []models.Topic, nextCursor int64, hasMore bool) {
+func (s *topicService) _GetCategoryTopics(user *models.User, categoryId, cursor int64, limit int, qaStatus, sort string) (topics []models.Topic, nextCursor int64, hasMore bool) {
 	cnd := sqls.NewCnd()
 	allowedCategoryIds := ContentAccessService.GetAllowedCategoryIds(user)
 	if len(allowedCategoryIds) == 0 {
 		cnd.Eq("id", -1)
 	} else {
 		cnd.In("category_id", allowedCategoryIds)
-	}
-	if format != "" {
-		cnd.Eq("format", format)
 	}
 	if categoryId > 0 {
 		categoryIds := CategoryService.GetCategoryIdsForList(categoryId)
@@ -342,7 +325,7 @@ func (s *topicService) _GetCategoryTopics(user *models.User, categoryId, cursor 
 }
 
 // _GetFollowTopics 关注帖子列表
-func (s *topicService) _GetFollowTopics(userId int64, cursor int64, format constants.TopicFormat) (topics []models.Topic, nextCursor int64, hasMore bool) {
+func (s *topicService) _GetFollowTopics(userId int64, cursor int64) (topics []models.Topic, nextCursor int64, hasMore bool) {
 	limit := constants.TopicListPageSize
 	allowedCategoryIds := ContentAccessService.GetAllowedCategoryIds(UserService.Get(userId))
 	if len(allowedCategoryIds) == 0 {
@@ -352,9 +335,6 @@ func (s *topicService) _GetFollowTopics(userId int64, cursor int64, format const
 		Select("f.*").
 		Joins("JOIN t_topic AS t ON t.id = f.data_id").
 		Where("f.user_id = ? AND f.data_type = ? AND t.status = ? AND t.category_id IN ?", userId, constants.EntityTopic, constants.StatusOk, allowedCategoryIds)
-	if format != "" {
-		query = query.Where("t.format = ?", format)
-	}
 	if cursor > 0 {
 		query = query.Where("f.create_time < ?", cursor)
 	}
@@ -380,7 +360,7 @@ func (s *topicService) _GetFollowTopics(userId int64, cursor int64, format const
 }
 
 // 指定标签下话题列表
-func (s *topicService) GetTagTopics(user *models.User, tagId, cursor int64, format constants.TopicFormat) (topics []models.Topic, nextCursor int64, hasMore bool) {
+func (s *topicService) GetTagTopics(user *models.User, tagId, cursor int64) (topics []models.Topic, nextCursor int64, hasMore bool) {
 	limit := constants.TopicListPageSize
 	allowedCategoryIds := ContentAccessService.GetAllowedCategoryIds(user)
 	if len(allowedCategoryIds) == 0 {
@@ -392,9 +372,6 @@ func (s *topicService) GetTagTopics(user *models.User, tagId, cursor int64, form
 		Joins("JOIN t_topic AS t ON t.id = tt.topic_id").
 		Where("tt.tag_id = ? AND tt.status = ? AND t.status = ? AND t.category_id IN ?", tagId, constants.StatusOk, constants.StatusOk, allowedCategoryIds).
 		Order("tt.last_comment_time DESC").Limit(limit)
-	if format != "" {
-		query = query.Where("t.format = ?", format)
-	}
 	if cursor > 0 {
 		query = query.Where("tt.last_comment_time < ?", cursor)
 	}
@@ -524,7 +501,7 @@ func (s *topicService) ScanDescWithDate(dateFrom, dateTo int64, callback func(to
 	}
 }
 
-func (s *topicService) GetUserTopics(viewer *models.User, userId, cursor int64, format constants.TopicFormat) (topics []models.Topic, nextCursor int64, hasMore bool) {
+func (s *topicService) GetUserTopics(viewer *models.User, userId, cursor int64) (topics []models.Topic, nextCursor int64, hasMore bool) {
 	limit := constants.TopicListPageSize
 	cnd := sqls.NewCnd()
 	allowedCategoryIds := ContentAccessService.GetAllowedCategoryIds(viewer)
@@ -540,9 +517,6 @@ func (s *topicService) GetUserTopics(viewer *models.User, userId, cursor int64, 
 		cnd.Lt("id", cursor)
 	}
 	cnd.Eq("status", constants.StatusOk).Desc("id").Limit(limit)
-	if format != "" {
-		cnd.Eq("format", format)
-	}
 	topics = repositories.TopicRepository.Find(sqls.DB(), cnd)
 	if len(topics) > 0 {
 		nextCursor = topics[len(topics)-1].Id
@@ -553,16 +527,13 @@ func (s *topicService) GetUserTopics(viewer *models.User, userId, cursor int64, 
 	return
 }
 
-func (s *topicService) GetStickyTopics(user *models.User, categoryId int64, limit int, qaStatus string, format constants.TopicFormat) []models.Topic {
+func (s *topicService) GetStickyTopics(user *models.User, categoryId int64, limit int, qaStatus string) []models.Topic {
 	cnd := sqls.NewCnd().Eq("sticky", true).Eq("status", constants.StatusOk).Desc("sticky_time").Limit(limit)
 	allowedCategoryIds := ContentAccessService.GetAllowedCategoryIds(user)
 	if len(allowedCategoryIds) == 0 {
 		cnd.Eq("id", -1)
 	} else {
 		cnd.In("category_id", allowedCategoryIds)
-	}
-	if format != "" {
-		cnd.Eq("format", format)
 	}
 	if categoryId > 0 {
 		categoryIds := CategoryService.GetCategoryIdsForList(categoryId)

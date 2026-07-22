@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { apiFetch } from "@/lib/api/client"
 import type {
-  ImageInfo,
   SiteConfig,
   TopicAttachment,
   Category,
@@ -31,10 +30,7 @@ type TopicEditFormState = {
   type: number
   categoryId: number
   title: string
-  summary: string
   content: string
-  cover: ImageInfo | null
-  sourceUrl: string
   contentType: "html" | "markdown"
   hideContent: string
   tags: string[]
@@ -51,10 +47,7 @@ function normalizeEditData(topic: TopicEditData): TopicEditFormState {
     type: Number(topic.type) || 0,
     categoryId: Number(topic.categoryId) || 0,
     title: topic.title || "",
-    summary: topic.summary || "",
     content: topic.content || "",
-    cover: topic.cover || null,
-    sourceUrl: topic.sourceUrl || "",
     contentType: topic.contentType === "markdown" ? "markdown" : "html",
     hideContent: topic.hideContent || "",
     tags: Array.isArray(topic.tags) ? topic.tags : [],
@@ -248,10 +241,7 @@ export function TopicEditForm({
         body: {
           categoryId: effectiveCategoryId,
           title: form.title,
-          summary: form.summary,
           content: form.content,
-          cover: form.cover,
-          sourceUrl: form.sourceUrl,
           hideContent: form.hideContent,
           tags: form.tags,
           attachmentIds:

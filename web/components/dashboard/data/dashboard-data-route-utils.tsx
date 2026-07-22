@@ -70,14 +70,12 @@ export function topicStatusOptionsFor(t: TFunction) {
   return [
     { label: t("dashboard.topicFeed.statusNormal"), value: 0 },
     { label: t("dashboard.topicFeed.statusDeleted"), value: 1 },
-    { label: t("dashboard.topicFeed.statusReview"), value: 2 },
   ]
 }
 
 export function topicTypeOptionsFor(t: TFunction) {
   return [
     { label: t("dashboard.topicFeed.typeTopic"), value: 0 },
-    { label: t("dashboard.topicFeed.typeTweet"), value: 1 },
     { label: t("dashboard.topicFeed.typeQa"), value: 2 },
   ]
 }
@@ -92,35 +90,33 @@ export function booleanOptionsFor(t: TFunction) {
 export function reportDataTypeOptionsFor(t: TFunction) {
   return [
     { label: t("dashboard.reportDataTypes.topic"), value: "topic" },
-    { label: t("dashboard.reportDataTypes.article"), value: "article" },
     { label: t("dashboard.reportDataTypes.comment"), value: "comment" },
     { label: t("dashboard.reportDataTypes.user"), value: "user" },
   ]
 }
 
-export function reportAuditStatusOptionsFor(t: TFunction) {
+export function reportProcessStatusOptionsFor(t: TFunction) {
   return [
-    { label: t("dashboard.reportAuditStatus.pending"), value: 0 },
-    { label: t("dashboard.reportAuditStatus.processed"), value: 1 },
-    { label: t("dashboard.reportAuditStatus.ignored"), value: 2 },
+    { label: t("dashboard.reportProcessStatus.pending"), value: 0 },
+    { label: t("dashboard.reportProcessStatus.processed"), value: 1 },
+    { label: t("dashboard.reportProcessStatus.ignored"), value: 2 },
   ]
 }
 
 export function reportDataTypeCell(t: TFunction, value: unknown) {
   const key = String(value || "")
   if (key === "topic") return t("dashboard.reportDataTypes.topic")
-  if (key === "article") return t("dashboard.reportDataTypes.article")
   if (key === "comment") return t("dashboard.reportDataTypes.comment")
   if (key === "user") return t("dashboard.reportDataTypes.user")
   return key || "-"
 }
 
-export function reportAuditStatusCell(t: TFunction, value: unknown) {
+export function reportProcessStatusCell(t: TFunction, value: unknown) {
   const status = Number(value || 0)
-  if (status === 0) return t("dashboard.reportAuditStatus.pending")
-  if (status === 1) return t("dashboard.reportAuditStatus.processed")
-  if (status === 2) return t("dashboard.reportAuditStatus.ignored")
-  return t("dashboard.reportAuditStatus.unknown", { status })
+  if (status === 0) return t("dashboard.reportProcessStatus.pending")
+  if (status === 1) return t("dashboard.reportProcessStatus.processed")
+  if (status === 2) return t("dashboard.reportProcessStatus.ignored")
+  return t("dashboard.reportProcessStatus.unknown", { status })
 }
 
 export function reportTargetUrl(record: Record<string, unknown>) {
@@ -129,7 +125,6 @@ export function reportTargetUrl(record: Record<string, unknown>) {
   if (dataId === undefined || dataId === null || dataId === "") return undefined
 
   if (dataType === "topic") return `/topic/${String(dataId)}`
-  if (dataType === "article") return `/topic/${String(dataId)}`
   if (dataType === "user") return `/user/${String(dataId)}`
   return undefined
 }

@@ -2,7 +2,6 @@ package models
 
 import (
 	"bbs-go/internal/models/constants"
-	"bbs-go/internal/pkg/locales"
 	"slices"
 	"strings"
 	"time"
@@ -77,13 +76,5 @@ func (u *User) InObservationPeriod(observeSeconds int) bool {
 
 // GetTitle 获取帖子的标题
 func (t *Topic) GetTitle() string {
-	if constants.IsTweetTopicType(t.Type) {
-		if strs.IsNotBlank(t.Content) {
-			return t.Content
-		} else {
-			return locales.Get("topic.shared_image")
-		}
-	} else {
-		return t.Title
-	}
+	return t.Title
 }

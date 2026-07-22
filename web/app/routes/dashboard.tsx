@@ -62,16 +62,8 @@ function dashboardBreadcrumbs(
       url: "/dashboard/topics",
       items: {
         topics: { title: t("dashboard.nav.topics"), url: "/dashboard/topics" },
-        articles: {
-          title: t("dashboard.nav.articles"),
-          url: "/dashboard/articles",
-        },
         categories: { title: t("dashboard.nav.categories"), url: "/dashboard/categories" },
         links: { title: t("dashboard.nav.links"), url: "/dashboard/links" },
-        "forbidden-words": {
-          title: t("dashboard.nav.forbiddenWords"),
-          url: "/dashboard/forbidden-words",
-        },
       },
     },
     {

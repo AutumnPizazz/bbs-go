@@ -21,7 +21,6 @@ type TopicDocument struct {
 	UserId     int64    `json:"userId"`
 	Nickname   string   `json:"nickname"`
 	Title      string   `json:"title"`
-	Format     string   `json:"format"`
 	Summary    string   `json:"summary"`
 	Content    string   `json:"content"`
 	Tags       []string `json:"tags"`

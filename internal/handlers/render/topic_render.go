@@ -5,16 +5,12 @@ import (
 	"bbs-go/internal/models/constants"
 	"bbs-go/internal/models/resp"
 	"bbs-go/internal/pkg/common"
-	html2 "bbs-go/internal/pkg/html"
 	"bbs-go/internal/pkg/idcodec"
 	"bbs-go/internal/pkg/markdown"
-	"bbs-go/internal/pkg/text"
 	"bbs-go/internal/services"
-	"html"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mlogclub/simple/common/arrays"
-	"github.com/mlogclub/simple/common/strs"
 )
 
 func BuildTopic(ctx *gin.Context, topic *models.Topic) *resp.TopicResponse {
@@ -59,8 +55,7 @@ func BuildAttachmentResponses(list []models.Attachment) []resp.AttachmentRespons
 }
 
 func BuildSimpleTopic(topic *models.Topic) *resp.TopicResponse {
-	buildContent := constants.IsTweetTopicType(topic.Type) // 动态时渲染内容
-	return _buildTopic(topic, buildContent)
+	return _buildTopic(topic, false)
 }
 
 func BuildSimpleTopics(ctx *gin.Context, topics []models.Topic) []resp.TopicResponse {
@@ -98,14 +93,10 @@ func _buildTopic(topic *models.Topic, buildContent bool) *resp.TopicResponse {
 
 	rsp.Id = idcodec.Encode(topic.Id)
 	rsp.Type = topic.Type
-	rsp.Format = topic.Format
 	rsp.QaStatus = topic.QaStatus
 	rsp.AcceptedCommentId = topic.AcceptedCommentId
 	rsp.SolvedAt = topic.SolvedAt
 	rsp.Title = topic.Title
-	rsp.Summary = topic.Summary
-	rsp.Cover = BuildImage(topic.Cover)
-	rsp.SourceUrl = topic.SourceUrl
 	rsp.User = BuildUserInfoDefaultIfNull(topic.UserId)
 	rsp.LastCommentTime = topic.LastCommentTime
 	rsp.CreateTime = topic.CreateTime
@@ -122,37 +113,17 @@ func _buildTopic(topic *models.Topic, buildContent bool) *resp.TopicResponse {
 
 	// 构建内容
 	if buildContent {
-		if !constants.IsTweetTopicType(topic.Type) {
-			contentHtml := topic.Content
-			if topic.ContentType == constants.ContentTypeMarkdown {
-				contentHtml = markdown.ToHTML(topic.Content)
-			}
-			rsp.Content, rsp.Toc = handleTopicHtmlContent(contentHtml)
-		} else {
-			rsp.Content = html.EscapeString(topic.Content)
+		contentHtml := topic.Content
+		if topic.ContentType == constants.ContentTypeMarkdown {
+			contentHtml = markdown.ToHTML(topic.Content)
 		}
+		rsp.Content, rsp.Toc = handleTopicHtmlContent(contentHtml)
 	} else {
-		if !constants.IsTweetTopicType(topic.Type) {
-			contentHtml := topic.Content
-			if topic.ContentType == constants.ContentTypeMarkdown {
-				contentHtml = markdown.ToHTML(topic.Content)
-			}
-			rsp.Summary = html2.GetSummary(contentHtml, 128)
-			if topic.Summary != "" {
-				rsp.Summary = topic.Summary
-			}
-		} else {
-			rsp.Summary = text.GetSummary(topic.Content, 128)
+		contentHtml := topic.Content
+		if topic.ContentType == constants.ContentTypeMarkdown {
+			contentHtml = markdown.ToHTML(topic.Content)
 		}
-	}
-
-	if constants.IsTweetTopicType(topic.Type) {
-		if strs.IsBlank(topic.Content) {
-			rsp.Content = "分享图片"
-		} else {
-			rsp.Content = html.EscapeString(topic.Content)
-		}
-		rsp.ImageList = BuildImageList(topic.ImageList)
+		rsp.Summary = common.GetSummary(constants.ContentTypeHtml, contentHtml)
 	}
 
 	if topic.CategoryId > 0 {

@@ -44,7 +44,6 @@ var (
 	PermissionTopicView      = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.topic.view", GroupName: GroupContent, SortNo: 100, NameEn: "View Topics", NameZh: "查看话题"}
 	PermissionTopicRecommend = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.topic.recommend", GroupName: GroupContent, SortNo: 110, NameEn: "Recommend Topics", NameZh: "推荐话题"}
 	PermissionTopicSticky    = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.topic.sticky", GroupName: GroupContent, SortNo: 115, NameEn: "Sticky Topics", NameZh: "置顶话题"}
-	PermissionTopicAudit     = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.topic.audit", GroupName: GroupContent, SortNo: 120, NameEn: "Audit Topics", NameZh: "审核话题"}
 	PermissionTopicDelete    = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.topic.delete", GroupName: GroupContent, SortNo: 130, NameEn: "Delete Topics", NameZh: "删除话题"}
 	PermissionTopicSolve     = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.topic.solve", GroupName: GroupContent, SortNo: 140, NameEn: "Solve Topics", NameZh: "标记问答解决"}
 
@@ -61,10 +60,6 @@ var (
 	PermissionLinkUpdate = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.link.update", GroupName: GroupContent, SortNo: 520, NameEn: "Update Links", NameZh: "编辑链接"}
 	PermissionLinkDelete = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.link.delete", GroupName: GroupContent, SortNo: 530, NameEn: "Delete Links", NameZh: "删除链接"}
 
-	PermissionForbiddenWordView   = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.forbiddenWord.view", GroupName: GroupContent, SortNo: 600, NameEn: "View Forbidden Words", NameZh: "查看敏感词"}
-	PermissionForbiddenWordCreate = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.forbiddenWord.create", GroupName: GroupContent, SortNo: 610, NameEn: "Create Forbidden Words", NameZh: "创建敏感词"}
-	PermissionForbiddenWordUpdate = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.forbiddenWord.update", GroupName: GroupContent, SortNo: 620, NameEn: "Update Forbidden Words", NameZh: "编辑敏感词"}
-	PermissionForbiddenWordDelete = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.forbiddenWord.delete", GroupName: GroupContent, SortNo: 630, NameEn: "Delete Forbidden Words", NameZh: "删除敏感词"}
 
 	PermissionUserView             = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.user.view", GroupName: GroupCommunity, SortNo: 700, NameEn: "View Users", NameZh: "查看用户"}
 	PermissionUserCreate           = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.user.create", GroupName: GroupCommunity, SortNo: 710, NameEn: "Create Users", NameZh: "创建用户"}
@@ -88,7 +83,7 @@ var (
 	PermissionRolePermissionUpdate = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.role.permission.update", GroupName: GroupSystem, SortNo: 1250, NameEn: "Update Role Permissions", NameZh: "编辑角色权限"}
 
 	PermissionUserReportView  = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.userReport.view", GroupName: GroupCommunity, SortNo: 790, NameEn: "View User Reports", NameZh: "查看用户举报"}
-	PermissionUserReportAudit = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.userReport.audit", GroupName: GroupCommunity, SortNo: 795, NameEn: "Audit User Reports", NameZh: "处理用户举报"}
+	PermissionUserReportProcess = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.userReport.process", GroupName: GroupCommunity, SortNo: 795, NameEn: "Process User Reports", NameZh: "处理用户举报"}
 
 	PermissionOperateLogView = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.operateLog.view", GroupName: GroupSystem, SortNo: 1310, NameEn: "View Operation Logs", NameZh: "查看操作日志"}
 )
@@ -98,7 +93,6 @@ var Permissions = []PermissionDefinition{
 	PermissionTopicView,
 	PermissionTopicRecommend,
 	PermissionTopicSticky,
-	PermissionTopicAudit,
 	PermissionTopicDelete,
 	PermissionTopicSolve,
 	PermissionCommentDelete,
@@ -111,10 +105,6 @@ var Permissions = []PermissionDefinition{
 	PermissionLinkCreate,
 	PermissionLinkUpdate,
 	PermissionLinkDelete,
-	PermissionForbiddenWordView,
-	PermissionForbiddenWordCreate,
-	PermissionForbiddenWordUpdate,
-	PermissionForbiddenWordDelete,
 	PermissionUserView,
 	PermissionUserCreate,
 	PermissionUserUpdate,
@@ -134,7 +124,7 @@ var Permissions = []PermissionDefinition{
 	PermissionSearchReindex,
 	PermissionSitemapGenerate,
 	PermissionUserReportView,
-	PermissionUserReportAudit,
+	PermissionUserReportProcess,
 	PermissionOperateLogView,
 }
 

@@ -21,11 +21,6 @@ const dedicatedRoutes = {
     expectedDefaultExport: "DashboardTopicsRoute",
     forbiddenImport: "admin-topic-feed-page",
   },
-  "dashboard.articles.tsx": {
-    removedComponent: "admin-article-feed-page.tsx",
-    expectedDefaultExport: "DashboardArticlesRoute",
-    forbiddenImport: "admin-article-feed-page",
-  },
   "dashboard.user-reports.tsx": {
     expectedDefaultExport: "DashboardUserReportsRoute",
   },
@@ -34,9 +29,6 @@ const dedicatedRoutes = {
   },
   "dashboard.links.tsx": {
     expectedDefaultExport: "DashboardLinksRoute",
-  },
-  "dashboard.forbidden-words.tsx": {
-    expectedDefaultExport: "DashboardForbiddenWordsRoute",
   },
   "dashboard.roles.tsx": {
     expectedDefaultExport: "DashboardRolesRoute",

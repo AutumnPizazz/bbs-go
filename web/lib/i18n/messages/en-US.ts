@@ -20,8 +20,6 @@ const enUS = {
       create: "Create",
       topic: "Topic",
       qa: "Q&A",
-      tweet: "Update",
-      article: "Article",
     },
     header: {
       profile: "Profile",
@@ -106,10 +104,8 @@ const enUS = {
       workspace: "Overview",
       content: "Content",
       topics: "Topics",
-      articles: "Articles",
       categories: "Categories",
       links: "Links",
-      forbiddenWords: "Moderation Rules",
       community: "Community",
       users: "Users",
       userList: "User List",
@@ -140,7 +136,6 @@ const enUS = {
       save: "Save",
       title: "Actions",
       view: "View",
-      audit: "Audit",
       resetPassword: "Reset password",
       recommend: "Feature",
       unrecommend: "Unfeature",
@@ -157,7 +152,6 @@ const enUS = {
       saved: "Saved",
       deleted: "Deleted",
       actionDone: "Action completed",
-      audited: "Audited",
       recommended: "Featured",
       unrecommended: "Removed from featured",
       restored: "Restored",
@@ -187,11 +181,10 @@ const enUS = {
     },
     reportDataTypes: {
       topic: "Topic",
-      article: "Article",
       comment: "Comment",
       user: "User",
     },
-    reportAuditStatus: {
+    reportProcessStatus: {
       pending: "Pending",
       processed: "Processed",
       ignored: "Ignored",
@@ -218,11 +211,9 @@ const enUS = {
     topicFeed: {
       untitled: "Untitled topic",
       typeTopic: "Topic",
-      typeTweet: "Update",
       typeQa: "Q&A",
       statusNormal: "Normal",
       statusDeleted: "Deleted",
-      statusReview: "Pending review",
       qaSolved: "Solved",
       qaUnsolved: "Unsolved",
       voteMeta: "{optionCount} options, choose up to {voteNum}",
@@ -248,10 +239,6 @@ const enUS = {
       custom: "Use this category's policy",
       enabled: "Allow attachments",
       disabled: "Disable attachments",
-    },
-    forbiddenWordTypes: {
-      word: "Word",
-      regex: "Regex",
     },
     roleTypes: {
       system: "System",
@@ -310,9 +297,7 @@ const enUS = {
       siteKeywords: "Site keywords",
       siteNotification: "Site notice",
       tokenExpireDays: "Token expiry days",
-      moduleTweet: "Updates",
       moduleTopic: "Topic module",
-      moduleArticle: "Article module",
       defaultCategoryId: "Default category ID",
       topicListStyle: "Topic list style",
       recommendTags: "Featured tags",
@@ -323,7 +308,6 @@ const enUS = {
       attachmentMaxSizeMB: "Attachment max size MB",
       attachmentMaxCount: "Attachment max count",
       topicCaptcha: "Topic captcha",
-      articlePending: "Article review",
       userObserveSeconds: "New user observation seconds",
       notificationTypes: "Notification types",
       passwordLogin: "Password login",
@@ -381,10 +365,8 @@ const enUS = {
         sectionAttachment: "Topic Attachments",
         attachmentDefault: "Default Attachment Limits",
         modules: "Features",
-        tweet: "Update",
         topic: "Topic",
         qa: "Q&A",
-        article: "Article",
         defaultCategoryId: "Default Category",
         topicListStyle: "Topic list style",
         topicListStyleDefault: "Standard",
@@ -460,12 +442,9 @@ const enUS = {
         topicCaptcha: "Topic Captcha",
         topicCaptchaTooltip:
           "Whether to enable captcha verification when posting topics",
-        articlePending: "Article Review",
-        articlePendingTooltip:
-          "Whether to enable review after publishing articles",
         userObserveSeconds: "User Observation Period (seconds)",
         userObserveSecondsTooltip:
-          "During the observation period, users cannot post topics, tweets, etc. Set to 0 for no observation period.",
+          "During the observation period, users cannot post topics. Set to 0 for no observation period.",
         submit: "Submit",
       },
       login: {
@@ -582,10 +561,10 @@ const enUS = {
       search: {
         title: "Search Index",
         description:
-          "Rebuild topic, article, and user indexes when search results are missing, stale, or after bulk content changes.",
+          "Rebuild topic and user indexes when search results are missing, stale, or after bulk content changes.",
         indexedContent: "Indexed Content",
         indexedContentTopics: "Topics",
-        indexedContentAll: "Topics (including article format), users",
+        indexedContentAll: "Topics, users",
         status: "Status",
         statusIdle: "Not Started",
         statusRunning: "Rebuilding",
@@ -599,7 +578,7 @@ const enUS = {
         rebuilding: "Rebuilding",
         confirmTitle: "Rebuild search index?",
         confirmDescription:
-          "This will scan existing topics, articles, and users to rebuild the search index in the background. Search results may be temporarily incomplete during the rebuild.",
+          "This will scan existing topics and users to rebuild the search index in the background. Search results may be temporarily incomplete during the rebuild.",
         confirmAction: "Start Rebuild",
         started: "Search index rebuild has started.",
       },
@@ -608,7 +587,7 @@ const enUS = {
         description:
           "Regenerate sitemap XML files and the sitemap index after content, category, tag, or site URL changes.",
         content: "Sitemap Content",
-        contentAll: "Static pages, categories, tags, topics, articles",
+        contentAll: "Static pages, categories, tags, topics",
         status: "Status",
         statusIdle: "Not Started",
         statusRunning: "Generating",
@@ -686,9 +665,6 @@ const enUS = {
       dataId: "Data ID",
       entityType: "Entity Type",
       entityId: "Entity ID",
-      auditStatus: "Audit Status",
-      auditTime: "Audit Time",
-      auditUserId: "Auditor ID",
       reason: "Reason",
       reportTarget: "Reported Target",
     },
@@ -699,11 +675,7 @@ const enUS = {
       },
       topics: {
         title: "Topics",
-        description: "Review topics and perform audit or delete actions.",
-      },
-      articles: {
-        title: "Articles",
-        description: "Review articles and perform audit or delete actions.",
+        description: "Manage topics and perform delete actions.",
       },
       categories: {
         title: "Topic Categories",
@@ -712,10 +684,6 @@ const enUS = {
       links: {
         title: "Community Links",
         description: "Manage external links shown on the site.",
-      },
-      forbiddenWords: {
-        title: "Moderation Rules",
-        description: "Manage blocked words and regex-based moderation rules.",
       },
       userReports: {
         title: "User Reports",
@@ -749,24 +717,21 @@ const enUS = {
       metrics: {
         totalUsers: "Total users",
         totalTopics: "Total topics",
-        totalArticles: "Total articles",
         todayUsers: "New users today",
         todayTopics: "New topics today",
       },
       pending: {
         title: "Pending work",
         description:
-          "Prioritize reviews, reports, and exceptions to keep the community healthy.",
-        pendingTopics: "Topics pending review",
-        pendingArticles: "Articles pending review",
+          "Prioritize reports and exceptions to keep the community healthy.",
         pendingReports: "Reports to handle",
         goHandle: "Handle now",
       },
       priority: {
         title: "Today's priority",
-        description: "Sorted by reviews and reports this account can access.",
+        description: "Sorted by reports this account can access.",
         emptyTitle: "Nothing pending",
-        emptyDescription: "No reviews, reports, or exceptions need attention.",
+        emptyDescription: "No reports or exceptions need attention.",
       },
       quick: {
         title: "Quick access",
@@ -801,7 +766,7 @@ const enUS = {
   },
   component: {
     searchInput: {
-      placeholder: "Search topics, articles, users",
+      placeholder: "Search topics and users",
       searchBtn: "Search",
     },
     search: {
@@ -820,9 +785,6 @@ const enUS = {
     friendLinks: {
       title: "Community Links",
       more: "More",
-    },
-    articleList: {
-      publishedAt: "Published",
     },
     userInfo: {
       topicCount: "Topics",
@@ -869,18 +831,6 @@ const enUS = {
         pornographic: "Adult or explicit content",
         other: "Other",
       },
-    },
-    articleManageMenu: {
-      edit: "Edit",
-      delete: "Delete",
-      forbidden7Days: "Ban 7 days",
-      forbiddenForever: "Ban forever",
-      forbiddenSuccess: "User banned successfully",
-      forbiddenFailed: "Failed to ban user",
-      confirmDelete: "Are you sure you want to delete this article?",
-      deleteSuccess: "Article deleted successfully",
-      deleteFailed: "Failed to delete article: ",
-      report: "Report",
     },
     topicManageMenu: {
       edit: "Edit",
@@ -1159,7 +1109,6 @@ const enUS = {
         empty: "No matching categories",
       },
       detail: {
-        pending: "This topic is under review",
         publishedAt: "Published at",
         qaSolved: "Solved",
         qaUnsolved: "Unsolved",
@@ -1204,12 +1153,10 @@ const enUS = {
       },
       create: {
         post: "Post",
-        tweet: "Update",
         qa: "Ask Question",
         titlePlaceholder: "Enter a post title",
         contentPlaceholder: "Write your post...",
         postBtn: "Publish",
-        tweetBtn: "Publish",
         qaBtn: "Publish Question",
         switchEditorConfirm:
           "Switching the editor will clear the current content, continue?",
@@ -1221,7 +1168,6 @@ const enUS = {
           "Please ask an admin to add a Q&A category, or choose another topic type.",
         noQaCategorySubmit:
           "No Q&A category available or none selected. Cannot publish.",
-        tweetFeatureDisabled: "Updates are not enabled",
         topicFeatureDisabled: "Discussions are not enabled",
         qaFeatureDisabled: "Q&A module is not enabled",
         attachment: {
@@ -1275,43 +1221,11 @@ const enUS = {
       filterUnsolved: "Unsolved",
       filterSolved: "Solved",
     },
-    articles: {
-      title: "Articles",
-    },
-    article: {
-      detail: {
-        pending: "This article is pending review.",
-        publishedAt: "Published",
-      },
-      create: {
-        title: "Write an article",
-        titlePlaceholder: "Article title",
-        summaryPlaceholder: "Summary (optional)",
-        contentPlaceholder: "Write your article...",
-        sourceUrlPlaceholder: "Source URL (optional)",
-        tagsPlaceholder: "Add tags",
-        cover: "Cover",
-        publishBtn: "Publish",
-        publishing: "Publishing...",
-        success: "Article submitted",
-        error: "Submission failed",
-        featureClosed: "Article feature is not enabled",
-        featureForbidden: "Article feature is disabled",
-      },
-      edit: {
-        title: "Edit Article",
-        titlePlaceholder: "Enter the article title",
-        contentPlaceholder: "Write the article content",
-        submitBtn: "Save changes",
-        editSuccess: "Changes saved",
-        editFailed: "Submit failed: ",
-      },
-    },
     search: {
       title: "Search",
       heading: "Search the community",
-      description: "Find discussions, articles, and members across the site.",
-      placeholder: "Search discussions, articles, or members",
+      description: "Find discussions and members across the site.",
+      placeholder: "Search discussions or members",
       submit: "Search",
       empty: {
         title: "No results found",
@@ -1319,7 +1233,7 @@ const enUS = {
           "Try a different keyword, or adjust the content type and filters.",
         promptTitle: "Start searching",
         promptDescription:
-          "Enter a keyword to find discussions, articles, and members.",
+          "Enter a keyword to find discussions and members.",
       },
       viewMore: "View more",
       userTopics: "{count} topics",
@@ -1327,7 +1241,6 @@ const enUS = {
       tabs: {
         all: "All",
         topic: "Topics",
-        article: "Articles",
         user: "Users",
       },
       node: "Category",
@@ -1481,7 +1394,6 @@ const enUS = {
       profile: "Profile",
       personalCenter: "Personal Center",
       topics: "Topics",
-      articles: "Articles",
       fans: "Fans",
       followed: "Following",
     },

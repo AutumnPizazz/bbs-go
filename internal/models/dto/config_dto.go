@@ -17,7 +17,6 @@ type SysConfigAdminResponse struct {
 	UrlRedirect        bool                        `json:"urlRedirect"`
 	DefaultCategoryId  int64                       `json:"defaultCategoryId"`
 	TopicListStyle     string                      `json:"topicListStyle"`
-	ArticlePending     bool                        `json:"articlePending"`
 	TopicCaptcha       bool                        `json:"topicCaptcha"`
 	UserObserveSeconds int                         `json:"userObserveSeconds"`
 	TokenExpireDays    int                         `json:"tokenExpireDays"`
@@ -46,7 +45,6 @@ type SysConfigOpenResponse struct {
 	UrlRedirect        bool              `json:"urlRedirect"`
 	DefaultCategoryId  int64             `json:"defaultCategoryId"`
 	TopicListStyle     string            `json:"topicListStyle"`
-	ArticlePending     bool              `json:"articlePending"`
 	TopicCaptcha       bool              `json:"topicCaptcha"`
 	UserObserveSeconds int               `json:"userObserveSeconds"`
 	TokenExpireDays    int               `json:"tokenExpireDays"`
@@ -104,10 +102,8 @@ type NoticeTypeConfig struct {
 //
 //	模块配置
 type ModulesConfig struct {
-	Tweet   bool `json:"tweet"`
 	Topic   bool `json:"topic"`
 	QA      bool `json:"qa"`
-	Article bool `json:"article"`
 }
 
 // LoginConfig 登录配置

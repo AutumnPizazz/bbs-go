@@ -31,7 +31,6 @@ const (
 	SysConfigRecommendTags      = "recommendTags"      // 推荐标签
 	SysConfigUrlRedirect        = "urlRedirect"        // 是否开启链接跳转
 	SysConfigDefaultCategoryId  = "defaultCategoryId"  // 发帖默认节点
-	SysConfigArticlePending     = "articlePending"     // 是否开启文章审核
 	SysConfigTopicCaptcha       = "topicCaptcha"       // 是否开启发帖验证码
 	SysConfigUserObserveSeconds = "userObserveSeconds" // 新用户观察期
 	SysConfigTokenExpireDays    = "tokenExpireDays"    // 登录Token有效天数
@@ -88,7 +87,6 @@ const (
 const (
 	StatusOk      = 0 // 正常
 	StatusDeleted = 1 // 删除
-	StatusReview  = 2 // 待审核
 )
 
 // 角色类型
@@ -110,24 +108,8 @@ type TopicType int
 
 const (
 	TopicTypeTopic TopicType = 0 // 帖子
-	TopicTypeTweet TopicType = 1 // 动态
 	TopicTypeQA    TopicType = 2 // 问答
 )
-
-type TopicFormat string
-
-const (
-	TopicFormatPost    TopicFormat = "post"
-	TopicFormatArticle TopicFormat = "article"
-)
-
-func IsArticleTopicFormat(format TopicFormat) bool {
-	return format == TopicFormatArticle
-}
-
-func IsTopicFormatValid(format TopicFormat) bool {
-	return format == TopicFormatPost || format == TopicFormatArticle
-}
 
 type CategoryType string
 
@@ -143,10 +125,6 @@ const (
 	QaStatusSolved   QaStatus = "solved"
 )
 
-func IsTweetTopicType(topicType TopicType) bool {
-	return topicType == TopicTypeTweet
-}
-
 func IsPostTopicType(topicType TopicType) bool {
 	return topicType == TopicTypeTopic || topicType == TopicTypeQA
 }
@@ -160,7 +138,7 @@ func (t CategoryType) Supports(topicType TopicType) bool {
 	case CategoryTypeQA:
 		return topicType == TopicTypeQA
 	default:
-		return topicType == TopicTypeTopic || topicType == TopicTypeTweet
+		return topicType == TopicTypeTopic
 	}
 }
 
@@ -200,12 +178,5 @@ const (
 
 // 模块
 const (
-	ModuleTweet   = "tweet"
 	ModuleTopic   = "topic"
-	ModuleArticle = "article"
-)
-
-const (
-	ForbiddenWordTypeWord  = "word"
-	ForbiddenWordTypeRegex = "regex"
 )

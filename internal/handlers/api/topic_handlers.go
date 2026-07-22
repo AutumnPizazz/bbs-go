@@ -121,9 +121,6 @@ func TopicCreate(ctx *gin.Context) {
 	form.Title = strings.TrimSpace(form.Title)
 	form.Content = strings.TrimSpace(form.Content)
 	form.HideContent = strings.TrimSpace(form.HideContent)
-	if constants.IsTweetTopicType(form.Type) {
-		form.ContentType = constants.ContentTypeText
-	}
 	form.Ip = web.GetRequestIP(ctx.Request)
 	form.UserAgent = web.GetUserAgent(ctx.Request)
 
@@ -156,11 +153,6 @@ func TopicEditForm(ctx *gin.Context) {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage(locales.Get("common.not_found")))
 		return
 	}
-	if constants.IsTweetTopicType(topic.Type) {
-		ginx.WriteJSON(ctx, ginx.ErrorMessage(locales.Get("topic.type_not_supported")))
-		return
-	}
-
 	// 非作者、且非站长
 	if topic.UserId != user.Id && !user.HasRole(constants.RoleOwner) {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage(locales.Get("topic.no_permission")))
@@ -180,14 +172,10 @@ func TopicEditForm(ctx *gin.Context) {
 	ginx.WriteJSON(ctx, map[string]any{
 		"id":          idcodec.Encode(topic.Id),
 		"type":        topic.Type,
-		"format":      topic.Format,
 		"categoryId":  topic.CategoryId,
 		"title":       topic.Title,
-		"summary":     topic.Summary,
 		"content":     topic.Content,
 		"contentType": topic.ContentType,
-		"cover":       render.BuildImage(topic.Cover),
-		"sourceUrl":   topic.SourceUrl,
 		"hideContent": topic.HideContent,
 		"tags":        tagNames,
 		"attachments": attachments,
@@ -308,19 +296,6 @@ func TopicDetail(ctx *gin.Context) {
 		return
 	}
 
-	// 审核中文章控制展示
-	if topic.Status == constants.StatusReview {
-		if user != nil {
-			if topic.UserId != user.Id && !user.IsOwner() {
-				ginx.WriteJSON(ctx, ginx.ErrorCode(403, locales.Get("topic.under_review")))
-				return
-			}
-		} else {
-			ginx.WriteJSON(ctx, ginx.ErrorCode(403, locales.Get("topic.under_review")))
-			return
-		}
-	}
-
 	services.TopicService.IncrViewCount(topicId) // 增加浏览量
 	ginx.WriteJSON(ctx, render.BuildTopic(ctx, topic))
 
@@ -365,8 +340,7 @@ func TopicUserTopics(ctx *gin.Context) {
 		return
 	}
 	cursor := params.FormValueInt64Default(ctx, "cursor", 0)
-	format := constants.TopicFormat(strings.TrimSpace(params.FormValue(ctx, "format")))
-	topics, cursor, hasMore := services.TopicService.GetUserTopics(common.GetCurrentUser(ctx), userId, cursor, format)
+	topics, cursor, hasMore := services.TopicService.GetUserTopics(common.GetCurrentUser(ctx), userId, cursor)
 	ginx.WriteJSON(ctx, ginx.CursorData(render.BuildSimpleTopics(ctx, topics), strconv.FormatInt(cursor, 10), hasMore))
 
 }
@@ -377,7 +351,6 @@ func TopicTopics(ctx *gin.Context) {
 		categoryId = params.FormValueInt64Default(ctx, "categoryId", 0)
 		qaStatus   = strings.TrimSpace(params.FormValue(ctx, "qaStatus"))
 		sort       = strings.TrimSpace(params.FormValue(ctx, "sort"))
-		format     = constants.TopicFormat(strings.TrimSpace(params.FormValue(ctx, "format")))
 		user       = common.GetCurrentUser(ctx)
 	)
 	if categoryId == constants.CategoryIdFollow && user == nil {
@@ -387,10 +360,10 @@ func TopicTopics(ctx *gin.Context) {
 
 	var temp []models.Topic
 	if cursor <= 0 {
-		stickyTopics := services.TopicService.GetStickyTopics(user, categoryId, 3, qaStatus, format)
+		stickyTopics := services.TopicService.GetStickyTopics(user, categoryId, 3, qaStatus)
 		temp = append(temp, stickyTopics...)
 	}
-	topics, cursor, hasMore := services.TopicService.GetTopics(user, categoryId, cursor, qaStatus, sort, format)
+	topics, cursor, hasMore := services.TopicService.GetTopics(user, categoryId, cursor, qaStatus, sort)
 	for _, topic := range topics {
 		topic.Sticky = false // 正常列表不要渲染置顶
 		temp = append(temp, topic)
@@ -450,8 +423,7 @@ func TopicTagTopics(ctx *gin.Context) {
 		ginx.WriteJSON(ctx, err)
 		return
 	}
-	format := constants.TopicFormat(strings.TrimSpace(params.FormValue(ctx, "format")))
-	topics, cursor, hasMore := services.TopicService.GetTagTopics(common.GetCurrentUser(ctx), tagId, cursor, format)
+	topics, cursor, hasMore := services.TopicService.GetTagTopics(common.GetCurrentUser(ctx), tagId, cursor)
 	ginx.WriteJSON(ctx, ginx.CursorData(render.BuildSimpleTopics(ctx, topics), strconv.FormatInt(cursor, 10), hasMore))
 
 }

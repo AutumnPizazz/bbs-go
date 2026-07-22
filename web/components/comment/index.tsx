@@ -38,7 +38,7 @@ import { useCurrentUser } from "@/components/app/app-provider"
 import { buildSigninHref, toast, useToastActions } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 
-type EntityType = "topic" | "article" | "comment" | string
+type EntityType = "topic" | "comment" | string
 
 type ReplyValue = {
   content: string

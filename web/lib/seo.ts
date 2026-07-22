@@ -21,7 +21,7 @@ type ContentMetaInput = {
   image?: string
   canonicalPath?: string
   structuredData?: Record<string, unknown>
-  ogType?: "article" | "profile" | "website"
+  ogType?: "profile" | "website"
   noindex?: boolean
 }
 
@@ -224,7 +224,7 @@ export function pageMeta(
     image?: string
     canonicalPath?: string
     structuredData?: Record<string, unknown>
-    ogType?: "article" | "profile" | "website"
+    ogType?: "profile" | "website"
     noindex?: boolean
   } = {}
 ) {
@@ -264,31 +264,25 @@ export function topicMeta(
   topic: Topic | null | undefined,
   canonicalPath?: string
 ) {
-  const title = topic?.type === 1 ? topic?.content : topic?.title
-  const isArticle = topic?.format === "article"
-  const image = isArticle
-    ? topic?.cover?.url || topic?.cover?.preview
-    : topic?.imageList?.[0]?.url || topic?.imageList?.[0]?.preview
+  const title = topic?.title
   return contentMeta(config, {
     title,
     description: topic?.summary,
     keywords: tagKeywords(topic?.tags),
-    image,
     canonicalPath,
     structuredData: topic
       ? compactObject({
           "@context": "https://schema.org",
-          "@type": isArticle ? "Article" : "DiscussionForumPosting",
+          "@type": "DiscussionForumPosting",
           headline: title,
-          ...(isArticle ? { description: topic.summary } : { text: topic.summary }),
-          image: imageURL(config, image),
+          text: topic.summary,
           url: canonicalURL(config, canonicalPath),
           datePublished: timestampToIso(topic.createTime),
           dateModified: timestampToIso(topic.updateTime || topic.createTime),
           author: personStructuredData(config, topic.user),
         })
       : undefined,
-    ogType: "article",
+    ogType: "website",
   })
 }
 
@@ -392,7 +386,7 @@ function socialMeta({
   description?: string
   url?: string
   image?: string
-  type: "article" | "profile" | "website"
+  type: "profile" | "website"
 }): MetaDescriptor[] {
   return compactMeta([
     title ? { property: "og:title", content: title } : undefined,

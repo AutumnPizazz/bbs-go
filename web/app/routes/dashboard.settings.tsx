@@ -618,7 +618,6 @@ export default function DashboardSettingsRoute() {
               onSave={() =>
                 void saveSection("spam", {
                   topicCaptcha: settings.topicCaptcha,
-                  articlePending: settings.articlePending,
                   userObserveSeconds: settings.userObserveSeconds,
                 })
               }
@@ -1028,7 +1027,7 @@ function ContentSettings({
       <SectionTitle>{s("content.sectionGeneral")}</SectionTitle>
       <Field label={s("content.modules")}>
         <div className="flex flex-wrap gap-2">
-          {(["tweet", "topic", "qa", "article"] as const).map((key) => (
+          {(["topic", "qa"] as const).map((key) => (
             <ToggleBox
               key={key}
               checked={Boolean(modules[key])}
@@ -1526,7 +1525,6 @@ function SpamSettings({ settings, saving, s, update, onSave }: SettingsProps) {
     >
       {[
         ["topicCaptcha", "topicCaptcha"],
-        ["articlePending", "articlePending"],
       ].map(([path, key]) => (
         <Field key={path} label={s(`spam.${key}`)}>
           <SwitchWithTooltip

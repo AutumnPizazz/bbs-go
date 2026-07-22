@@ -1,7 +1,6 @@
 import { Navigate, useLocation, useSearchParams } from "react-router"
 
 import { useAppState, useAuthChecked } from "@/components/app/app-provider"
-import { ArticleForm } from "@/components/article/article-form"
 import { TopicCreateForm } from "@/components/topic/topic-create-form"
 import { apiFetch } from "@/lib/api/client"
 import type { Category } from "@/lib/api/types"
@@ -40,17 +39,14 @@ export default function TopicCreateRoute() {
     apiFetch<Category[]>("/api/topic/categories").catch(() => [])
   )
   const contentType =
-    searchParams.get("contentType") === "markdown" ||
-    searchParams.get("contentType") === "text"
+    searchParams.get("contentType") === "markdown"
       ? searchParams.get("contentType")!
       : "html"
   const categoryId = Number(searchParams.get("categoryId") || 0)
-  const type = Number(searchParams.get("type") || 0)
-  const format = searchParams.get("format") || "post"
+  const requestedType = Number(searchParams.get("type") || 0)
+  const type = requestedType === 2 ? 2 : 0
   const title =
-    type === 1
-      ? t("pages.topic.create.tweet")
-      : type === 2
+    type === 2
         ? t("pages.topic.create.qa")
         : t("pages.topic.create.post")
   useDocumentTitle(title)
@@ -72,24 +68,15 @@ export default function TopicCreateRoute() {
   return (
     <main className="main">
       <div className="container">
-        {format === "article" ? (
-          <ArticleForm
-            mode="create"
-            config={config}
-            categoryId={categoryId}
-            categories={categories || []}
-          />
-        ) : (
-          <TopicCreateForm
-            key={`${type}:${contentType}:${categoryId}`}
-            contentType={contentType as "html" | "markdown" | "text"}
-            currentUser={currentUser}
-            config={config}
-            categoryId={categoryId}
-            categories={categories || []}
-            type={type}
-          />
-        )}
+        <TopicCreateForm
+          key={`${type}:${contentType}:${categoryId}`}
+          contentType={contentType as "html" | "markdown"}
+          currentUser={currentUser}
+          config={config}
+          categoryId={categoryId}
+          categories={categories || []}
+          type={type}
+        />
       </div>
     </main>
   )

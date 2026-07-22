@@ -80,17 +80,17 @@ func TestPermissionService_UserPermissionCodesAggregatesEnabledRoles(t *testing.
 	now := dates.NowTimestamp()
 	user := mustCreateUser(t, now)
 	role := mustCreateRole(t, "moderator", constants.StatusOk)
-	permission := mustCreatePermission(t, "dashboard.topic.audit", constants.StatusOk)
+	permission := mustCreatePermission(t, "dashboard.topic.view", constants.StatusOk)
 	mustAssignRole(t, user, role)
 	mustGrantPermission(t, role, permission)
 
 	codes := PermissionService.GetUserPermissionCodes(user)
 
-	if len(codes) != 1 || codes[0] != "dashboard.topic.audit" {
-		t.Fatalf("expected dashboard.topic.audit, got %#v", codes)
+	if len(codes) != 1 || codes[0] != "dashboard.topic.view" {
+		t.Fatalf("expected dashboard.topic.view, got %#v", codes)
 	}
-	if !PermissionService.HasPermission(user, "dashboard.topic.audit") {
-		t.Fatalf("expected user to have dashboard.topic.audit")
+	if !PermissionService.HasPermission(user, "dashboard.topic.view") {
+		t.Fatalf("expected user to have dashboard.topic.view")
 	}
 }
 

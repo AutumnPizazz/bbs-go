@@ -20,7 +20,6 @@ func SearchTopic(ctx *gin.Context) {
 		keyword    = params.FormValue(ctx, "keyword")
 		categoryId = params.FormValueInt64Default(ctx, "categoryId", 0)
 		timeRange  = params.FormValueIntDefault(ctx, "timeRange", 0)
-		format     = params.FormValue(ctx, "format")
 		limit      = 20
 	)
 	var categoryIds []int64
@@ -47,7 +46,7 @@ func SearchTopic(ctx *gin.Context) {
 	} else {
 		categoryIds = allowedCategoryIds
 	}
-	list, _, err := search.SearchTopic(keyword, categoryId, categoryIds, timeRange, format, cursor, limit)
+	list, _, err := search.SearchTopic(keyword, categoryId, categoryIds, timeRange, cursor, limit)
 	if err != nil {
 		ginx.WriteJSON(ctx, err)
 		return

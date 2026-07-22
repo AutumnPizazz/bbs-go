@@ -53,9 +53,7 @@ func NewTopicDoc(topic *models.Topic) *TopicDocument {
 		Id:         topic.Id,
 		CategoryId: topic.CategoryId,
 		UserId:     topic.UserId,
-		Format:     string(topic.Format),
 		Title:      html.EscapeString(topic.Title),
-		Summary:    html.EscapeString(topic.Summary),
 		Status:     topic.Status,
 		Recommend:  topic.Recommend,
 		CreateTime: topic.CreateTime,
@@ -151,7 +149,7 @@ func DeleteUserIndex(id int64) error {
 	return index.Delete(searchDocID(EntityTypeUser, id))
 }
 
-func SearchTopic(keyword string, categoryId int64, categoryIds []int64, timeRange int, format string, page, limit int) (docs []TopicDocument, paging *sqls.Paging, err error) {
+func SearchTopic(keyword string, categoryId int64, categoryIds []int64, timeRange int, page, limit int) (docs []TopicDocument, paging *sqls.Paging, err error) {
 	paging = &sqls.Paging{Page: page, Limit: limit}
 	query := bleve.NewBooleanQuery()
 	query.AddMust(bleve.NewMatchAllQuery())
@@ -162,11 +160,6 @@ func SearchTopic(keyword string, categoryId int64, categoryIds []int64, timeRang
 	statusQuery.SetField("status")
 	query.AddMust(statusQuery)
 
-	if strs.IsNotBlank(format) {
-		formatQuery := bleve.NewTermQuery(format)
-		formatQuery.SetField("format")
-		query.AddMust(formatQuery)
-	}
 	if strs.IsNotBlank(keyword) {
 		query.AddMust(keywordQuery(keyword, []string{"title", "summary", "content", "tags", "nickname"}))
 	}
@@ -248,7 +241,7 @@ func SearchAll(keyword string, limit int) (AllResult, error) {
 	if limit <= 0 {
 		limit = 5
 	}
-	topics, _, err := SearchTopic(keyword, 0, nil, 0, "", 1, limit)
+	topics, _, err := SearchTopic(keyword, 0, nil, 0, 1, limit)
 	if err != nil {
 		return AllResult{}, err
 	}

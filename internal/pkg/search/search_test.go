@@ -14,7 +14,7 @@ func setupTestIndex(t *testing.T) {
 	})
 }
 
-func TestSearchTopicCanFilterArticleFormat(t *testing.T) {
+func TestSearchTopicMatchesTopicContent(t *testing.T) {
 	setupTestIndex(t)
 
 	mustIndex(t, searchDocID(EntityTypeTopic, 1), &TopicDocument{
@@ -28,32 +28,19 @@ func TestSearchTopicCanFilterArticleFormat(t *testing.T) {
 		Status:     0,
 		CreateTime: 1000,
 	})
-	mustIndex(t, searchDocID(EntityTypeTopic, 2), &TopicDocument{
-		Type:       EntityTypeTopic,
-		Id:         2,
-		UserId:     100,
-		Nickname:   "Ada",
-		Format:     "article",
-		Title:      "Golang search article",
-		Summary:    "Article summary about bleve search.",
-		Content:    "Article body.",
-		Status:     0,
-		CreateTime: 1000,
-	})
-
-	docs, _, err := SearchTopic("Golang", 0, nil, 0, "article", 1, 20)
+	docs, _, err := SearchTopic("Golang", 0, nil, 0, 1, 20)
 	if err != nil {
 		t.Fatalf("SearchTopic returned error: %v", err)
 	}
 	if len(docs) != 1 {
 		t.Fatalf("expected one topic result, got %d", len(docs))
 	}
-	if docs[0].Id != 2 || docs[0].Format != "article" {
-		t.Fatalf("expected article topic id 2, got id=%d format=%s", docs[0].Id, docs[0].Format)
+	if docs[0].Id != 1 {
+		t.Fatalf("expected topic id 1, got id=%d", docs[0].Id)
 	}
 }
 
-func TestSearchTopicFindsArticleFields(t *testing.T) {
+func TestSearchTopicFindsGeneratedSummary(t *testing.T) {
 	setupTestIndex(t)
 
 	mustIndex(t, searchDocID(EntityTypeTopic, 11), &TopicDocument{
@@ -61,26 +48,25 @@ func TestSearchTopicFindsArticleFields(t *testing.T) {
 		Id:         11,
 		UserId:     101,
 		Nickname:   "Grace",
-		Format:     "article",
-		Title:      "React router article",
+		Title:      "React router topic",
 		Summary:    "A compact guide for framework mode.",
-		Content:    "Article content about loaders and actions.",
+		Content:    "Topic content about loaders and actions.",
 		Status:     0,
 		CreateTime: 1000,
 	})
 
-	docs, _, err := SearchTopic("framework", 0, nil, 0, "article", 1, 20)
+	docs, _, err := SearchTopic("framework", 0, nil, 0, 1, 20)
 	if err != nil {
 		t.Fatalf("SearchTopic returned error: %v", err)
 	}
 	if len(docs) != 1 {
-		t.Fatalf("expected one article topic result, got %d", len(docs))
+		t.Fatalf("expected one topic result, got %d", len(docs))
 	}
 	if docs[0].Id != 11 {
-		t.Fatalf("expected article topic id 11, got %d", docs[0].Id)
+		t.Fatalf("expected topic id 11, got %d", docs[0].Id)
 	}
 	if docs[0].Summary == "" {
-		t.Fatal("expected article summary to be returned")
+		t.Fatal("expected topic summary to be returned")
 	}
 }
 
@@ -124,10 +110,9 @@ func TestSearchAllReturnsGroupedPreview(t *testing.T) {
 	mustIndex(t, searchDocID(EntityTypeTopic, 2), &TopicDocument{
 		Type:       EntityTypeTopic,
 		Id:         2,
-		Format:     "article",
-		Title:      "Unified search article",
-		Summary:    "Article summary.",
-		Content:    "Article content.",
+		Title:      "Unified search question",
+		Summary:    "Question summary.",
+		Content:    "Question content.",
 		CreateTime: 1000,
 	})
 	mustIndex(t, searchDocID(EntityTypeUser, 3), &UserDocument{

@@ -59,11 +59,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             permission: PERMISSIONS.DASHBOARD_TOPIC_VIEW,
           },
           {
-            title: t("dashboard.nav.articles"),
-            url: "/dashboard/articles",
-            permission: PERMISSIONS.DASHBOARD_TOPIC_VIEW,
-          },
-          {
             title: t("dashboard.nav.categories"),
             url: "/dashboard/categories",
             permission: PERMISSIONS.DASHBOARD_CATEGORY_VIEW,
@@ -72,11 +67,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             title: t("dashboard.nav.links"),
             url: "/dashboard/links",
             permission: PERMISSIONS.DASHBOARD_LINK_VIEW,
-          },
-          {
-            title: t("dashboard.nav.forbiddenWords"),
-            url: "/dashboard/forbidden-words",
-            permission: PERMISSIONS.DASHBOARD_FORBIDDEN_WORD_VIEW,
           },
         ],
       },

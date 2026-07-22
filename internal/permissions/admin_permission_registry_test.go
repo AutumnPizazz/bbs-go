@@ -44,16 +44,6 @@ func TestAdminPermissionRegistryAllowsEitherUserForbiddenPermission(t *testing.T
 	}
 }
 
-func TestAdminPermissionRegistryProtectsForbiddenWordDelete(t *testing.T) {
-	code, ok := GetAdminPermissionCode("POST", "/api/admin/forbidden-word/delete")
-	if !ok {
-		t.Fatalf("expected forbidden word delete permission to be registered")
-	}
-	if code != PermissionForbiddenWordDelete.Code {
-		t.Fatalf("expected %s, got %s", PermissionForbiddenWordDelete.Code, code)
-	}
-}
-
 func TestAdminPermissionRegistryProtectsLinkDelete(t *testing.T) {
 	code, ok := GetAdminPermissionCode("POST", "/api/admin/link/delete")
 	if !ok {
@@ -74,13 +64,13 @@ func TestAdminPermissionRegistryProtectsLinkUpdateSort(t *testing.T) {
 	}
 }
 
-func TestAdminPermissionRegistryProtectsUserReportAudit(t *testing.T) {
-	code, ok := GetAdminPermissionCode("POST", "/api/admin/user-report/audit")
+func TestAdminPermissionRegistryProtectsUserReportProcess(t *testing.T) {
+	code, ok := GetAdminPermissionCode("POST", "/api/admin/user-report/process")
 	if !ok {
-		t.Fatalf("expected user report audit permission to be registered")
+		t.Fatalf("expected user report process permission to be registered")
 	}
-	if code != PermissionUserReportAudit.Code {
-		t.Fatalf("expected %s, got %s", PermissionUserReportAudit.Code, code)
+	if code != PermissionUserReportProcess.Code {
+		t.Fatalf("expected %s, got %s", PermissionUserReportProcess.Code, code)
 	}
 }
 

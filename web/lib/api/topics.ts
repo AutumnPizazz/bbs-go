@@ -42,12 +42,8 @@ export type TopicEditData = Pick<
   Topic,
   | "id"
   | "type"
-  | "format"
   | "title"
-  | "summary"
   | "content"
-  | "cover"
-  | "sourceUrl"
   | "attachments"
 > & {
   categoryId: number

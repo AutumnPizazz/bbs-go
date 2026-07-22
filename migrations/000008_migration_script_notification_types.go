@@ -26,7 +26,6 @@ func migrate_notification_types_defaults() error {
 			"topicFavorite":    {Site: true},
 			"topicRecommend":   {Site: true},
 			"topicDelete":      {Site: true},
-			"articleComment":   {Site: true},
 			"qaAnswerAccepted": {Site: true},
 		}
 		value := jsons.ToJsonStr(defaults)

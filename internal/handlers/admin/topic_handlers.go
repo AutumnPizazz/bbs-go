@@ -191,25 +191,6 @@ func TopicUndelete(ctx *gin.Context) {
 
 }
 
-func TopicAudit(ctx *gin.Context) {
-	id, _ := params.GetInt64(ctx, "id")
-	if id <= 0 {
-		ginx.WriteJSON(ctx, ginx.ErrorMessage("id is required"))
-		return
-	}
-	if !services.ContentAccessService.CanAccessTopicCategory(common.GetCurrentUser(ctx), services.TopicService.Get(id)) {
-		ginx.WriteJSON(ctx, errs.ContentAccessDenied())
-		return
-	}
-	err := services.TopicService.UpdateColumn(id, "status", constants.StatusOk)
-	if err != nil {
-		ginx.WriteJSON(ctx, err)
-		return
-	}
-	ginx.WriteJSON(ctx, nil)
-
-}
-
 func TopicAcceptAnswer(ctx *gin.Context) {
 	var req modelReq.TopicAcceptAnswerReq
 	if err := ginx.Bind(ctx, &req); err != nil {

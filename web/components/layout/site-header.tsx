@@ -12,12 +12,10 @@ import {
   BellRing,
   ChevronDown,
   CircleHelp,
-  FileText,
   Heart,
   LayoutDashboard,
   LogOut,
   Menu,
-  MessageCircle,
   MessageSquare,
   Plus,
   Settings,
@@ -96,14 +94,6 @@ function moduleItems(config: SiteConfig | null, t: TFunction) {
     icon: React.ComponentType<{ className?: string }>
   }> = []
 
-  if (enabledModules?.tweet) {
-    items.push({
-      command: "tweet",
-      name: t("common.createBtn.tweet"),
-      href: "/topic/create?type=1",
-      icon: MessageCircle,
-    })
-  }
   if (enabledModules?.topic) {
     items.push({
       command: "topic",
@@ -118,14 +108,6 @@ function moduleItems(config: SiteConfig | null, t: TFunction) {
       name: t("common.createBtn.qa"),
       href: "/topic/create?type=2",
       icon: CircleHelp,
-    })
-  }
-  if (enabledModules?.article) {
-    items.push({
-      command: "article",
-      name: t("common.createBtn.article"),
-      href: "/topic/create?format=article",
-      icon: FileText,
     })
   }
 

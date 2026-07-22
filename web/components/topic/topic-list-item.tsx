@@ -3,7 +3,6 @@
 import {
   CheckCircle2,
   CircleHelp,
-  ImageIcon,
   ListChecks,
   MessageCircle,
 } from "lucide-react"
@@ -19,16 +18,6 @@ import type { TFunction } from "@/lib/i18n"
 
 type TopicListVariant = "default" | "compact"
 
-function getTopicImageSizeClass(count: number) {
-  if (count <= 1) {
-    return "h-[160px] w-[160px] sm:h-[210px] sm:w-[210px]"
-  }
-  if (count === 2) {
-    return "h-[128px] w-[128px] sm:h-[180px] sm:w-[180px]"
-  }
-  return "h-[94px] w-[94px] sm:h-[120px] sm:w-[120px]"
-}
-
 function formatCompactTopicViewCount(viewCount?: number) {
   if (!viewCount || viewCount <= 0) {
     return "0"
@@ -37,30 +26,14 @@ function formatCompactTopicViewCount(viewCount?: number) {
 }
 
 function TopicContentMarks({ topic, t }: { topic: Topic; t: TFunction }) {
-  const imageCount = topic.type === 1 ? topic.imageList?.length || 0 : 0
   const hasVote = Boolean(topic.vote)
 
-  if (!imageCount && !hasVote) {
+  if (!hasVote) {
     return null
   }
 
   return (
     <>
-      {imageCount ? (
-        <span
-          className="inline-flex h-[18px] shrink-0 items-center gap-1 rounded-sm bg-muted px-1.5 text-[11px] leading-none text-muted-foreground"
-          title={t("component.topicList.hasImages")}
-        >
-          <ImageIcon className="h-3 w-3" />
-          <span>
-            {imageCount > 1
-              ? t("component.topicList.imageMarkWithCount", {
-                  count: imageCount,
-                })
-              : t("component.topicList.imageMark")}
-          </span>
-        </span>
-      ) : null}
       {hasVote ? (
         <span
           className="inline-flex h-[18px] shrink-0 items-center gap-1 rounded-sm bg-muted px-1.5 text-[11px] leading-none text-muted-foreground"
@@ -91,13 +64,9 @@ export function TopicListItem({
   const displayName =
     topic.user.nickname || topic.user.username || topic.user.id
   const topicHref = `/topic/${topic.id}`
-  const imageSizeClass = getTopicImageSizeClass(topic.imageList?.length || 0)
 
   if (resolvedVariant === "compact") {
-    const compactTitle =
-      topic.type === 1
-        ? topic.content || topic.summary || topic.title || "-"
-        : topic.title || topic.summary || "-"
+    const compactTitle = topic.title || topic.summary || "-"
     const replyTime =
       topic.updateTime && topic.updateTime !== topic.createTime
         ? prettyDate(topic.updateTime, t)
@@ -219,8 +188,7 @@ export function TopicListItem({
       </div>
 
       <div className="mt-2 space-y-2">
-        {topic.type !== 1 ? (
-          <>
+        <>
             <Link
               href={topicHref}
               target="_blank"
@@ -257,44 +225,7 @@ export function TopicListItem({
                 {topic.summary}
               </Link>
             ) : null}
-          </>
-        ) : (
-          <>
-            {topic.content ? (
-              <Link
-                href={topicHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="line-clamp-3 block text-[15px] leading-6 break-all whitespace-pre-line text-foreground sm:text-sm sm:leading-normal"
-              >
-                {topic.content}
-              </Link>
-            ) : null}
-            {topic.imageList?.length ? (
-              <ul className="mt-1 flex flex-wrap gap-2">
-                {topic.imageList.slice(0, 9).map((image, index) => (
-                  <li
-                    key={`${image.preview || image.url || "image"}-${index}`}
-                    className={imageSizeClass}
-                  >
-                    <Link
-                      href={topicHref}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block h-full w-full overflow-hidden rounded-sm bg-muted"
-                    >
-                      <img
-                        src={image.preview || image.url}
-                        alt=""
-                        className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
-                      />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </>
-        )}
+        </>
       </div>
 
       {topic.vote ? (

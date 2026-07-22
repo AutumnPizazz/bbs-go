@@ -22,11 +22,7 @@ func BuildFavorite(favorite *models.Favorite) *resp.FavoriteResponse {
 		rsp.Url = bbsurls.TopicUrl(topic.Id)
 		rsp.User = BuildUserInfoDefaultIfNull(topic.UserId)
 		rsp.Title = topic.Title
-	if topic.Summary != "" {
-		rsp.Content = topic.Summary
-	} else {
-		rsp.Content = common.GetMarkdownSummary(topic.Content)
-	}
+	rsp.Content = common.GetSummary(topic.ContentType, topic.Content)
 	}
 	return rsp
 }

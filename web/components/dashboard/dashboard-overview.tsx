@@ -6,7 +6,6 @@ import {
   ArrowUpRightIcon,
   CheckCircle2Icon,
   ClockIcon,
-  FileTextIcon,
   GaugeIcon,
   MessageSquareIcon,
   SettingsIcon,
@@ -26,13 +25,10 @@ import { useI18n } from "@/lib/i18n/provider"
 type OverviewMetricKey =
   | "totalUsers"
   | "totalTopics"
-  | "totalArticles"
   | "todayUsers"
   | "todayTopics"
 
 type PendingKey =
-  | "pendingTopics"
-  | "pendingArticles"
   | "pendingReports"
 
 type RecentItem = {
@@ -104,13 +100,10 @@ function normalizeOverview(data: AdminRecord | null): OverviewData | null {
     metrics: {
       totalUsers: toNumber(metrics.totalUsers),
       totalTopics: toNumber(metrics.totalTopics),
-      totalArticles: toNumber(metrics.totalArticles),
       todayUsers: toNumber(metrics.todayUsers),
       todayTopics: toNumber(metrics.todayTopics),
     },
     pending: {
-      pendingTopics: toNumber(pending.pendingTopics),
-      pendingArticles: toNumber(pending.pendingArticles),
       pendingReports: toNumber(pending.pendingReports),
     },
     recent: {
@@ -156,7 +149,6 @@ export function DashboardOverview() {
   }> = [
     { key: "totalUsers", icon: UsersIcon },
     { key: "totalTopics", icon: MessageSquareIcon },
-    { key: "totalArticles", icon: FileTextIcon },
     { key: "todayUsers", icon: UsersIcon },
     { key: "todayTopics", icon: GaugeIcon },
   ]
@@ -167,18 +159,6 @@ export function DashboardOverview() {
     icon: React.ComponentType<React.SVGProps<SVGSVGElement>>
     permission: PermissionCode
   }> = [
-    {
-      key: "pendingTopics",
-      href: "/dashboard/topics",
-      icon: MessageSquareIcon,
-      permission: PERMISSIONS.DASHBOARD_TOPIC_VIEW,
-    },
-    {
-      key: "pendingArticles",
-      href: "/dashboard/articles",
-      icon: FileTextIcon,
-      permission: PERMISSIONS.DASHBOARD_TOPIC_VIEW,
-    },
     {
       key: "pendingReports",
       href: "/dashboard/user-reports",

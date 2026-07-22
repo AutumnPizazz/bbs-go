@@ -36,11 +36,6 @@ export function getUserTopics(userId: string, cursor?: string) {
   })
 }
 
-export function getUserArticles(userId: string, cursor?: string) {
-  return apiFetch<PageData<Topic>>("/api/topic/user_topics", {
-    params: { userId, cursor, format: "article" },
-  })
-}
 
 export function getUserFavorites(cursor?: string) {
   return apiFetch<PageData<Favorite>>("/api/user/favorites", {

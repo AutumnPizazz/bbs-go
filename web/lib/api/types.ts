@@ -109,12 +109,9 @@ export interface TopicVote {
 export interface Topic {
   id: EntityId
   type?: number
-  format?: "post" | "article" | string
   title?: string
   content?: string
   summary?: string
-  cover?: ImageInfo | null
-  sourceUrl?: string
   createTime?: number
   updateTime?: number
   user: UserSummary
@@ -126,7 +123,6 @@ export interface Topic {
   likeCount?: number
   commentCount?: number
   viewCount?: number
-  imageList?: ImageInfo[]
   qaStatus?: "solved" | "unsolved" | string
   attachments?: Attachment[]
   toc?: TopicTocItem[]
@@ -191,10 +187,8 @@ export interface SiteConfig {
     openInNewWindow?: boolean
   }>
   modules?: {
-    tweet?: boolean
     topic?: boolean
     qa?: boolean
-    article?: boolean
     [key: string]: boolean | undefined
   }
   loginConfig?: {
@@ -223,7 +217,6 @@ export interface LoginResult {
 
 export interface SearchTopic {
   id: number
-  format?: "post" | "article" | string
   user?: UserSummary
   category?: Category
   tags?: Tag[]

@@ -27,8 +27,8 @@ func TestUserForbiddenForeverPermissionIsRegistered(t *testing.T) {
 	}
 }
 
-func TestUserReportAuditPermissionIsRegistered(t *testing.T) {
-	if _, ok := FindByCode("dashboard.userReport.audit"); !ok {
-		t.Fatalf("expected dashboard.userReport.audit permission to be registered")
+func TestUserReportProcessPermissionIsRegistered(t *testing.T) {
+	if _, ok := FindByCode("dashboard.userReport.process"); !ok {
+		t.Fatalf("expected dashboard.userReport.process permission to be registered")
 	}
 }

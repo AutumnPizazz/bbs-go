@@ -16,7 +16,7 @@ func TestRemoveTaskNavigationItems(t *testing.T) {
 			"title": "More",
 			"children": []interface{}{
 				map[string]interface{}{"title": "Tasks", "url": "/tasks"},
-				map[string]interface{}{"title": "Articles", "url": "/articles"},
+				map[string]interface{}{"title": "Links", "url": "/links"},
 			},
 		},
 		map[string]interface{}{
@@ -33,7 +33,7 @@ func TestRemoveTaskNavigationItems(t *testing.T) {
 		map[string]interface{}{
 			"title": "More",
 			"children": []interface{}{
-				map[string]interface{}{"title": "Articles", "url": "/articles"},
+				map[string]interface{}{"title": "Links", "url": "/links"},
 			},
 		},
 		map[string]interface{}{"title": "Retired"},

@@ -168,49 +168,7 @@ export async function loader({
   if (pathname.startsWith("/topics/tag/")) {
     return loadTopicTagRouteData({ request, id: params?.id })
   }
-  if (pathname === "/articles") {
-    return loadArticles({ request })
-  }
-  if (pathname.startsWith("/articles/tag/")) {
-    return loadArticleListRouteData({ request, tagId: params?.id })
-  }
-
   return null
-}
-
-export async function loadArticles(params: {
-  request?: Request
-  cursor?: string
-  tagId?: string | number
-}) {
-  const path = params.tagId
-    ? "/api/topic/tag/topics"
-    : "/api/topic/topics"
-
-  return apiFetch<PageData<Topic>>(path, {
-    request: params.request,
-    params: {
-      cursor: params.cursor || "",
-      tagId: params.tagId,
-      format: "article",
-    },
-  })
-}
-
-export type ArticleListRouteData = PageData<Topic> & {
-  tag?: Tag | null
-}
-
-export async function loadArticleListRouteData(params: {
-  request?: Request
-  cursor?: string
-  tagId?: string | number
-}): Promise<ArticleListRouteData> {
-  const [articles, tag] = await Promise.all([
-    loadArticles(params),
-    params.tagId ? loadTag(params.request, params.tagId) : Promise.resolve(null),
-  ])
-  return Object.assign(articles, { tag })
 }
 
 export async function loadTopicDetail(params: {

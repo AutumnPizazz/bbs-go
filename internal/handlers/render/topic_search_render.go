@@ -17,7 +17,6 @@ func BuildSearchTopics(docs []search.TopicDocument) []resp.SearchTopicResponse {
 func BuildSearchTopic(doc search.TopicDocument) resp.SearchTopicResponse {
 	rsp := resp.SearchTopicResponse{
 		Id:         doc.Id,
-		Format:     doc.Format,
 		Title:      doc.Title,
 		Summary:    doc.Summary,
 		CreateTime: doc.CreateTime,

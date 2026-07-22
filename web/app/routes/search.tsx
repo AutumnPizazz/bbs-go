@@ -6,7 +6,6 @@ import { EmptyState } from "@/components/common/empty-state"
 import { LoadMore } from "@/components/common/load-more"
 import { HomeAside } from "@/components/layout/home-aside"
 import { MainShell } from "@/components/layout/main-shell"
-import { SearchArticleList } from "@/components/search/search-article-list"
 import { SearchFilters } from "@/components/search/search-filters"
 import { SearchTopicList } from "@/components/search/search-topic-list"
 import { SearchUserList } from "@/components/search/search-user-list"
@@ -14,7 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { apiFetch } from "@/lib/api/client"
-import type { PageData, SearchTopic, SearchUser, Topic, Category } from "@/lib/api/types"
+import type { PageData, SearchUser, Topic, Category } from "@/lib/api/types"
 import { useI18n } from "@/lib/i18n/provider"
 import { localizedTitle, noindexMeta, rootDataFromMatches } from "@/lib/seo"
 import { useDocumentTitle } from "@/lib/use-document-title"
@@ -26,13 +25,13 @@ type SearchNodeOption = {
   label: string
 }
 
-type SearchType = "topic" | "article" | "user"
+type SearchType = "topic" | "user"
 
 type MetaLocation = {
   search?: string
 }
 
-const searchTypes: SearchType[] = ["topic", "article", "user"]
+const searchTypes: SearchType[] = ["topic", "user"]
 
 function flattenSearchNodes(
   categories: Category[] = [],
@@ -112,9 +111,6 @@ export default function SearchRoute() {
         nextParams.delete("categoryId")
         nextParams.delete("timeRange")
       }
-      if (nextType === "article") {
-        nextParams.delete("categoryId")
-      }
     }
     setSearchParams(nextParams)
   }
@@ -168,7 +164,7 @@ export default function SearchRoute() {
         <div className="border-b border-border/70 px-4 py-3 sm:px-5">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <Tabs value={type} onValueChange={setType} className="w-full md:w-auto">
-              <TabsList className="grid w-full grid-cols-3 sm:inline-flex sm:w-fit">
+              <TabsList className="grid w-full grid-cols-2 sm:inline-flex sm:w-fit">
               {searchTypes.map((item) => (
                 <TabsTrigger key={item} value={item} className="min-w-0 px-3">
                   {t(`pages.search.tabs.${item}`)}
@@ -176,7 +172,7 @@ export default function SearchRoute() {
               ))}
               </TabsList>
             </Tabs>
-            {type === "topic" || type === "article" ? (
+            {type === "topic" ? (
               <SearchFilters
                 categories={flattenSearchNodes(categories || [])}
                 showNode={type === "topic"}
@@ -199,27 +195,6 @@ export default function SearchRoute() {
               })
             }
             renderItems={(items) => <SearchTopicList results={items} />}
-            renderEmpty={() => (
-              <EmptyState
-                title={emptyTitle}
-                description={emptyDescription}
-                className="py-12"
-              />
-            )}
-          />
-        ) : type === "article" ? (
-          <LoadMore<SearchTopic>
-            initialCursor=""
-            initialHasMore
-            initialLoad
-            resetKey={`search-article:${keyword}:${timeRange}`}
-            labels={labels}
-            loadPage={({ cursor }) =>
-              apiFetch<PageData<SearchTopic>>("/api/search/topic", {
-                params: { keyword, timeRange, cursor, format: "article" },
-              })
-            }
-            renderItems={(items) => <SearchArticleList results={items} />}
             renderEmpty={() => (
               <EmptyState
                 title={emptyTitle}

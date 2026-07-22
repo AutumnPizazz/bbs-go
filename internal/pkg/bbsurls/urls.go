@@ -5,7 +5,6 @@ import (
 	"bbs-go/internal/models/constants"
 	"log/slog"
 	"net/url"
-	"strconv"
 	"strings"
 
 	"bbs-go/internal/pkg/idcodec"
@@ -57,9 +56,6 @@ func UserUrl(userId int64) string {
 }
 
 // 标签文章列表
-func TagArticlesUrl(tagId int64) string {
-	return AbsUrl("/articles/" + strconv.FormatInt(tagId, 10))
-}
 
 // 话题详情
 func TopicUrl(topicId int64) string {

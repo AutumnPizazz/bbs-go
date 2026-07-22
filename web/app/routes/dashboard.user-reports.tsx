@@ -38,9 +38,9 @@ export default function DashboardUserReportsRoute() {
     null
   )
   const [reloadKey, setReloadKey] = React.useState(0)
-  const canAudit = userHasPermission(
+  const canProcess = userHasPermission(
     currentUser,
-    PERMISSIONS.DASHBOARD_USER_REPORT_AUDIT
+    PERMISSIONS.DASHBOARD_USER_REPORT_PROCESS
   )
 
   async function openProcessReport(record: AdminRecord) {
@@ -59,16 +59,16 @@ export default function DashboardUserReportsRoute() {
     }
   }
 
-  async function submitReportStatus(auditStatus: 1 | 2) {
+  async function submitReportStatus(processStatus: 1 | 2) {
     if (!processingReport?.id) return
-    setSubmittingStatus(auditStatus)
+    setSubmittingStatus(processStatus)
     try {
-      await adminPostForm("/api/admin/user-report/audit", {
+      await adminPostForm("/api/admin/user-report/process", {
         id: processingReport.id as number,
-        auditStatus,
+        processStatus,
       })
       msgSuccess(
-        auditStatus === 1
+        processStatus === 1
           ? t("dashboard.messages.reportProcessed")
           : t("dashboard.messages.reportIgnored")
       )
@@ -98,10 +98,10 @@ export default function DashboardUserReportsRoute() {
         options: dashboardData.reportDataTypeOptionsFor(t),
       },
       {
-        name: "auditStatus",
-        label: dashboardData.label(t, "auditStatus"),
+        name: "processStatus",
+        label: dashboardData.label(t, "processStatus"),
         type: "select",
-        options: dashboardData.reportAuditStatusOptionsFor(t),
+        options: dashboardData.reportProcessStatusOptionsFor(t),
       },
     ],
     columns: [
@@ -125,10 +125,10 @@ export default function DashboardUserReportsRoute() {
         className: "min-w-72",
       },
       {
-        key: "auditStatus",
-        label: dashboardData.label(t, "auditStatus"),
+        key: "processStatus",
+        label: dashboardData.label(t, "processStatus"),
         render: (record) =>
-          dashboardData.reportAuditStatusCell(t, record.auditStatus),
+          dashboardData.reportProcessStatusCell(t, record.processStatus),
       },
       {
         key: "createTime",
@@ -137,7 +137,7 @@ export default function DashboardUserReportsRoute() {
       },
     ],
     renderRowActions: (record) =>
-      canAudit && Number(record.auditStatus || 0) === 0 ? (
+      canProcess && Number(record.processStatus || 0) === 0 ? (
         <Button
           type="button"
           size="sm"

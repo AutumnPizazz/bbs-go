@@ -79,7 +79,6 @@ type CategoryTreeItem struct {
 
 type SearchTopicResponse struct {
 	Id         int64             `json:"id"`
-	Format     string            `json:"format"`
 	User       *UserInfo         `json:"user"`
 	Category   *CategoryResponse `json:"category"`
 	Tags       *[]TagResponse    `json:"tags"`
@@ -106,7 +105,6 @@ type TopicTocItem struct {
 type TopicResponse struct {
 	Id                string                `json:"id"`
 	Type              constants.TopicType   `json:"type"`
-	Format            constants.TopicFormat `json:"format"`
 	QaStatus          constants.QaStatus    `json:"qaStatus"`
 	AcceptedCommentId int64                 `json:"acceptedCommentId"`
 	SolvedAt          int64                 `json:"solvedAt"`
@@ -116,10 +114,7 @@ type TopicResponse struct {
 	Title             string                `json:"title"`
 	Summary           string                `json:"summary"`
 	Content           string                `json:"content"`
-	Cover             *ImageInfo            `json:"cover"`
-	SourceUrl         string                `json:"sourceUrl"`
 	Toc               []TopicTocItem        `json:"toc,omitempty"`
-	ImageList         []ImageInfo           `json:"imageList"`
 	LastCommentTime   int64                 `json:"lastCommentTime"`
 	ViewCount         int64                 `json:"viewCount"`
 	CommentCount      int64                 `json:"commentCount"`

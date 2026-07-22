@@ -24,8 +24,8 @@ assert.match(
 
 assert.match(
   routeSource,
-  /name:\s*"auditStatus"[\s\S]*?type:\s*"select"/,
-  "user reports dashboard should provide an auditStatus select filter"
+  /name:\s*"processStatus"[\s\S]*?type:\s*"select"/,
+  "user reports dashboard should provide a processStatus select filter"
 )
 
 assert.match(
@@ -42,20 +42,20 @@ assert.doesNotMatch(
 
 assert.match(
   routeSource,
-  /reportAuditStatusCell\(t,\s*record\.auditStatus\)/,
-  "user reports dashboard should render auditStatus with a localized label"
+  /reportProcessStatusCell\(t,\s*record\.processStatus\)/,
+  "user reports dashboard should render processStatus with a localized label"
 )
 
 assert.match(
   routeSource,
-  /DASHBOARD_USER_REPORT_AUDIT/,
-  "user reports dashboard process action should require the user report audit permission"
+  /DASHBOARD_USER_REPORT_PROCESS/,
+  "user reports dashboard process action should require the user report process permission"
 )
 
 assert.match(
   routeSource,
-  /\/api\/admin\/user-report\/audit/,
-  "user reports dashboard modal should post audit actions to the audit endpoint"
+  /\/api\/admin\/user-report\/process/,
+  "user reports dashboard modal should post process actions to the process endpoint"
 )
 
 assert.match(
@@ -126,13 +126,13 @@ for (const source of [zhMessages, enMessages]) {
   )
   assert.match(
     source,
-    /reportAuditStatus:\s*{/,
-    "dashboard translations should include report audit status labels"
+    /reportProcessStatus:\s*{/,
+    "dashboard translations should include report process status labels"
   )
   assert.match(
     source,
     /ignored:/,
-    "dashboard translations should include ignored report audit status labels"
+    "dashboard translations should include ignored report process status labels"
   )
   assert.match(
     source,

@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import {
-  CheckCircleIcon,
   EyeIcon,
   ExternalLinkIcon,
   LightbulbIcon,
@@ -24,7 +23,6 @@ import {
 } from "@/components/dashboard/confirm-dialog"
 import { useCurrentUser } from "@/components/app/app-provider"
 import { ErrorPage } from "@/components/common/error-page"
-import { PreviewableImage } from "@/components/common/image-preview"
 import { DashboardPagination } from "@/components/dashboard/pagination-controls"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -72,10 +70,6 @@ type TopicRecord = AdminRecord & {
     id?: number
     name?: string
   }>
-  imageList?: Array<{
-    preview?: string
-    url?: string
-  }>
   vote?: {
     title?: string
     optionCount?: number
@@ -95,21 +89,18 @@ type TopicRecord = AdminRecord & {
 type TopicAction =
   | "recommend"
   | "unrecommend"
-  | "audit"
   | "undelete"
   | "delete"
   | "solved"
   | "unsolved"
 
 function topicTypeLabel(t: ReturnType<typeof useI18n>["t"], type?: number) {
-  if (type === 1) return t("dashboard.topicFeed.typeTweet")
   if (type === 2) return t("dashboard.topicFeed.typeQa")
   return t("dashboard.topicFeed.typeTopic")
 }
 
 function topicStatusLabel(t: ReturnType<typeof useI18n>["t"], status?: number) {
   if (status === 1) return t("dashboard.topicFeed.statusDeleted")
-  if (status === 2) return t("dashboard.topicFeed.statusReview")
   return t("dashboard.topicFeed.statusNormal")
 }
 
@@ -120,7 +111,6 @@ function topicActionSuccessMessage(
   const messageKeys: Record<TopicAction, string> = {
     recommend: "dashboard.messages.recommended",
     unrecommend: "dashboard.messages.unrecommended",
-    audit: "dashboard.messages.audited",
     undelete: "dashboard.messages.restored",
     delete: "dashboard.messages.deleted",
     solved: "dashboard.messages.markedSolved",
@@ -170,7 +160,6 @@ export default function DashboardTopicsRoute() {
     currentUser,
     PERMISSIONS.DASHBOARD_TOPIC_RECOMMEND
   )
-  const canAudit = userHasPermission(currentUser, PERMISSIONS.DASHBOARD_TOPIC_AUDIT)
   const canDelete = userHasPermission(currentUser, PERMISSIONS.DASHBOARD_TOPIC_DELETE)
   const canSolve = userHasPermission(currentUser, PERMISSIONS.DASHBOARD_TOPIC_SOLVE)
 
@@ -209,7 +198,6 @@ export default function DashboardTopicsRoute() {
     const allowed = {
       recommend: canRecommend,
       unrecommend: canRecommend,
-      audit: canAudit,
       undelete: canDelete,
       delete: canDelete,
       solved: canSolve,
@@ -238,7 +226,6 @@ export default function DashboardTopicsRoute() {
     const endpoints = {
       recommend: "/api/admin/topic/recommend",
       unrecommend: "/api/admin/topic/recommend",
-      audit: "/api/admin/topic/audit",
       undelete: "/api/admin/topic/undelete",
       delete: "/api/admin/topic/delete",
       solved: "/api/admin/topic/mark_solved",
@@ -290,7 +277,6 @@ export default function DashboardTopicsRoute() {
             options={[
               { label: t("dashboard.topicFeed.statusNormal"), value: 0 },
               { label: t("dashboard.topicFeed.statusDeleted"), value: 1 },
-              { label: t("dashboard.topicFeed.statusReview"), value: 2 },
             ]}
             onChange={(value) => updateFilter("status", value)}
           />
@@ -299,7 +285,6 @@ export default function DashboardTopicsRoute() {
             value={filters.type}
             options={[
               { label: t("dashboard.topicFeed.typeTopic"), value: 0 },
-              { label: t("dashboard.topicFeed.typeTweet"), value: 1 },
               { label: t("dashboard.topicFeed.typeQa"), value: 2 },
             ]}
             onChange={(value) => updateFilter("type", value)}
@@ -360,7 +345,6 @@ export default function DashboardTopicsRoute() {
                 topic={topic}
                 permissions={{
                   recommend: canRecommend,
-                  audit: canAudit,
                   delete: canDelete,
                   solve: canSolve,
                 }}
@@ -408,14 +392,13 @@ function TopicFeedItem({
   topic: TopicRecord
   permissions: {
     recommend: boolean
-    audit: boolean
     delete: boolean
     solve: boolean
   }
   onAction: (action: TopicAction) => void
 }) {
   const { t } = useI18n()
-  const body = compactText(topic.type === 1 ? topic.content : topic.summary)
+  const body = compactText(topic.summary)
   const userName =
     topic.user?.nickname ||
     topic.user?.username ||
@@ -427,10 +410,6 @@ function TopicFeedItem({
       ? `/user/${topic.user.id}`
       : undefined
   const voteOptions = topic.vote?.options || []
-  const previewSrcList =
-    topic.imageList
-      ?.map((image) => image.url || image.preview || "")
-      .filter(Boolean) || []
   const voteTotal = voteOptions.reduce(
     (total, option) => total + (option.voteCount || 0),
     0
@@ -490,8 +469,7 @@ function TopicFeedItem({
           <TopicTag>{topicTypeLabel(t, topic.type)}</TopicTag>
           <TopicTag
             className={cn(
-              topic.status === 1 && "border-destructive/30 text-destructive",
-              topic.status === 2 && "border-amber-400/40 text-amber-700"
+              topic.status === 1 && "border-destructive/30 text-destructive"
             )}
           >
             {topicStatusLabel(t, topic.status)}
@@ -515,25 +493,6 @@ function TopicFeedItem({
         <p className="line-clamp-3 w-full text-sm leading-6 text-muted-foreground">
           {body}
         </p>
-      ) : null}
-
-      {topic.imageList?.length ? (
-        <div className="flex flex-wrap gap-2">
-          {topic.imageList.slice(0, 6).map((image, index) => {
-            const src = image.url || image.preview || ""
-            return src ? (
-              <PreviewableImage
-                key={`${src}-${index}`}
-                src={src}
-                previewSrcList={previewSrcList}
-                initialIndex={index}
-                alt=""
-                className="size-24 cursor-zoom-in rounded-md border object-cover"
-                loading="lazy"
-              />
-            ) : null
-          })}
-        </div>
       ) : null}
 
       {topic.vote ? (
@@ -639,16 +598,6 @@ function TopicFeedItem({
               {t("dashboard.actions.recommend")}
             </Button>
           ) : null}
-          {permissions.audit && topic.status === 2 ? (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => onAction("audit")}
-            >
-              <CheckCircleIcon />
-              {t("dashboard.actions.audit")}
-            </Button>
-          ) : null}
           {permissions.delete && topic.status === 1 ? (
             <Button
               size="sm"
@@ -685,7 +634,7 @@ function TopicFeedItem({
               {t("dashboard.actions.markUnsolved")}
             </Button>
           ) : null}
-          {permissions.delete && (topic.status === 0 || topic.status === 2) ? (
+          {permissions.delete && topic.status === 0 ? (
             <Button
               size="sm"
               variant="destructive"

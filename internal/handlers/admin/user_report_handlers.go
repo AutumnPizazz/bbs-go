@@ -44,7 +44,7 @@ func UserReportList(ctx *gin.Context) {
 			Op:        params.Eq,
 		},
 		params.QueryFilter{
-			ParamName: "auditStatus",
+			ParamName: "processStatus",
 			Op:        params.Eq,
 		},
 	).Desc("id"))
@@ -68,16 +68,16 @@ func UserReportCreate(ctx *gin.Context) {
 
 }
 
-func UserReportAudit(ctx *gin.Context) {
+func UserReportProcess(ctx *gin.Context) {
 	id, _ := params.GetInt64(ctx, "id")
 	if id <= 0 {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage("id is required"))
 		return
 	}
 
-	auditStatus, _ := params.GetInt64(ctx, "auditStatus")
-	if auditStatus != 1 && auditStatus != 2 {
-		ginx.WriteJSON(ctx, ginx.ErrorMessage("auditStatus must be 1 or 2"))
+	processStatus, _ := params.GetInt64(ctx, "processStatus")
+	if processStatus != 1 && processStatus != 2 {
+		ginx.WriteJSON(ctx, ginx.ErrorMessage("processStatus must be 1 or 2"))
 		return
 	}
 
@@ -93,9 +93,9 @@ func UserReportAudit(ctx *gin.Context) {
 		return
 	}
 
-	t.AuditStatus = auditStatus
-	t.AuditTime = dates.NowTimestamp()
-	t.AuditUserId = user.Id
+	t.ProcessStatus = processStatus
+	t.ProcessTime = dates.NowTimestamp()
+	t.ProcessUserId = user.Id
 	if err := services.UserReportService.Update(t); err != nil {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage(err.Error()))
 		return

@@ -20,7 +20,6 @@ var (
 		{Method: "GET", Pattern: "/api/admin/topic/*", Permissions: []PermissionDefinition{PermissionTopicView}},
 		{Method: "POST", Pattern: "/api/admin/topic/list", Permissions: []PermissionDefinition{PermissionTopicView}},
 		{Method: "POST", Pattern: "/api/admin/topic/recommend", Permissions: []PermissionDefinition{PermissionTopicRecommend}},
-		{Method: "POST", Pattern: "/api/admin/topic/audit", Permissions: []PermissionDefinition{PermissionTopicAudit}},
 		{Method: "POST", Pattern: "/api/admin/topic/delete", Permissions: []PermissionDefinition{PermissionTopicDelete}},
 		{Method: "POST", Pattern: "/api/admin/topic/undelete", Permissions: []PermissionDefinition{PermissionTopicDelete}},
 		{Method: "POST", Pattern: "/api/admin/topic/mark_solved", Permissions: []PermissionDefinition{PermissionTopicSolve}},
@@ -41,11 +40,6 @@ var (
 		{Method: "POST", Pattern: "/api/admin/link/delete", Permissions: []PermissionDefinition{PermissionLinkDelete}},
 		{Method: "POST", Pattern: "/api/admin/link/update_sort", Permissions: []PermissionDefinition{PermissionLinkUpdate}},
 
-		{Method: "GET", Pattern: "/api/admin/forbidden-word/*", Permissions: []PermissionDefinition{PermissionForbiddenWordView}},
-		{Method: "POST", Pattern: "/api/admin/forbidden-word/list", Permissions: []PermissionDefinition{PermissionForbiddenWordView}},
-		{Method: "POST", Pattern: "/api/admin/forbidden-word/create", Permissions: []PermissionDefinition{PermissionForbiddenWordCreate}},
-		{Method: "POST", Pattern: "/api/admin/forbidden-word/update", Permissions: []PermissionDefinition{PermissionForbiddenWordUpdate}},
-		{Method: "POST", Pattern: "/api/admin/forbidden-word/delete", Permissions: []PermissionDefinition{PermissionForbiddenWordDelete}},
 
 		{Method: "GET", Pattern: "/api/admin/user/*", Permissions: []PermissionDefinition{PermissionUserView}},
 		{Method: "GET", Pattern: "/api/admin/user/synccount", Permissions: []PermissionDefinition{PermissionUserUpdate}},
@@ -75,7 +69,7 @@ var (
 
 		{Method: "GET", Pattern: "/api/admin/user-report/*", Permissions: []PermissionDefinition{PermissionUserReportView}},
 		{Method: "POST", Pattern: "/api/admin/user-report/list", Permissions: []PermissionDefinition{PermissionUserReportView}},
-		{Method: "POST", Pattern: "/api/admin/user-report/audit", Permissions: []PermissionDefinition{PermissionUserReportAudit}},
+		{Method: "POST", Pattern: "/api/admin/user-report/process", Permissions: []PermissionDefinition{PermissionUserReportProcess}},
 		{Method: "GET", Pattern: "/api/admin/operate-log/*", Permissions: []PermissionDefinition{PermissionOperateLogView}},
 		{Method: "POST", Pattern: "/api/admin/operate-log/list", Permissions: []PermissionDefinition{PermissionOperateLogView}},
 	}

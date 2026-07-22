@@ -163,10 +163,6 @@ func (s *sysConfigService) IsEnableHideContent() bool {
 	return cache.SysConfigCache.GetBool(constants.SysConfigEnableHideContent)
 }
 
-func (s *sysConfigService) IsArticlePending() bool {
-	return cache.SysConfigCache.GetBool(constants.SysConfigArticlePending)
-}
-
 func (s *sysConfigService) IsTopicCaptcha() bool {
 	return cache.SysConfigCache.GetBool(constants.SysConfigTopicCaptcha)
 }
@@ -205,10 +201,8 @@ func (s *sysConfigService) GetModules() dto.ModulesConfig {
 
 func defaultModulesConfig() dto.ModulesConfig {
 	return dto.ModulesConfig{
-		Tweet:   true,
-		Topic:   true,
-		QA:      true,
-		Article: true,
+		Topic: true,
+		QA:    true,
 	}
 }
 
