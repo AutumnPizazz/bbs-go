@@ -17,7 +17,6 @@ import {
   LogOut,
   Menu,
   MessageSquare,
-  Plus,
   Settings,
   User,
 } from "lucide-react"
@@ -63,6 +62,53 @@ function getUserName(user: UserSummary, t: TFunction) {
 
 function hasChildren(nav: SiteNav) {
   return Array.isArray(nav.children) && nav.children.length > 0
+}
+
+const retiredNavTitles = new Set([
+  "article",
+  "articles",
+  "tweet",
+  "tweets",
+  "update",
+  "updates",
+  "文章",
+  "动态",
+])
+
+function isRetiredNav(nav: SiteNav) {
+  const title = nav.title.trim().toLowerCase()
+  const path = nav.url.trim().toLowerCase().split(/[?#]/, 1)[0]
+  return (
+    retiredNavTitles.has(title) ||
+    path === "/article" ||
+    path.startsWith("/article/") ||
+    path === "/articles" ||
+    path.startsWith("/articles/") ||
+    path === "/tweet" ||
+    path.startsWith("/tweet/") ||
+    path === "/tweets" ||
+    path.startsWith("/tweets/")
+  )
+}
+
+function isDisabledModuleNav(nav: SiteNav, config: SiteConfig | null) {
+  const [path, query = ""] = nav.url.trim().split("?", 2)
+  if (path !== "/topic/create") return false
+  const type = new URLSearchParams(query).get("type")
+  return type === "2" ? !config?.modules?.qa : !config?.modules?.topic
+}
+
+function visibleSiteNavs(
+  navs: SiteNav[],
+  config: SiteConfig | null
+): SiteNav[] {
+  return navs.flatMap((nav) => {
+    if (isRetiredNav(nav) || isDisabledModuleNav(nav, config)) return []
+    const children = nav.children
+      ? visibleSiteNavs(nav.children, config)
+      : undefined
+    return [{ ...nav, children }]
+  })
 }
 
 function targetFor(openInNewWindow?: boolean) {
@@ -114,7 +160,7 @@ function moduleItems(config: SiteConfig | null, t: TFunction) {
   return items
 }
 
-function CreateTopicButton({
+function CreateActions({
   config,
   t,
   className,
@@ -127,27 +173,25 @@ function CreateTopicButton({
   if (!items.length) return null
 
   return (
-    <DropdownMenu modal={false}>
-      <DropdownMenuTrigger asChild>
-        <Button className={cn("h-8", className)}>
-          <Plus />
-          {t("common.createBtn.create")}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        {items.map((item) => {
-          const Icon = item.icon
-          return (
-            <DropdownMenuItem key={item.command} asChild>
-              <Link href={item.href}>
-                <Icon className="h-4 w-4" />
-                <span>{item.name}</span>
-              </Link>
-            </DropdownMenuItem>
-          )
-        })}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <div className={cn("flex items-center gap-1.5", className)}>
+      {items.map((item) => {
+        const Icon = item.icon
+        return (
+          <Button
+            key={item.command}
+            variant={item.command === "topic" ? "default" : "outline"}
+            size="sm"
+            className="h-8"
+            asChild
+          >
+            <Link href={item.href}>
+              <Icon className="h-4 w-4" />
+              <span>{item.name}</span>
+            </Link>
+          </Button>
+        )
+      })}
+    </div>
   )
 }
 
@@ -167,13 +211,19 @@ function MsgNotice({ count }: { count: number }) {
 }
 
 function DesktopNav({ navs, t }: { navs: SiteNav[]; t: TFunction }) {
+  const pathname = usePathname()
+  const isActive = (url: string) => {
+    const path = url.split(/[?#]/, 1)[0]
+    return path === "/" ? pathname === "/" : pathname.startsWith(path)
+  }
+
   return (
     <nav
       className="hidden items-center md:flex"
       aria-label={t("common.accessibility.mainNavigation")}
     >
-      <div className="group/navigation-menu relative flex max-w-max flex-1 items-center justify-center">
-        <div className="group flex flex-1 list-none items-center justify-center gap-1">
+      <div className="relative flex max-w-max items-center rounded-md border border-border/60 bg-muted/45 p-1">
+        <div className="flex list-none items-center gap-0.5">
           {navs.map((nav, index) =>
             hasChildren(nav) ? (
               <DropdownMenu key={`${nav.title}-${index}`} modal={false}>
@@ -181,8 +231,10 @@ function DesktopNav({ navs, t }: { navs: SiteNav[]; t: TFunction }) {
                   <button
                     type="button"
                     className={cn(
-                      buttonVariants({ variant: "ghost", size: "default" }),
-                      "bg-transparent"
+                      buttonVariants({ variant: "ghost", size: "sm" }),
+                      "h-7 bg-transparent px-3",
+                      nav.children?.some((child) => isActive(child.url)) &&
+                        "bg-background text-foreground shadow-sm"
                     )}
                   >
                     {nav.title}
@@ -216,8 +268,10 @@ function DesktopNav({ navs, t }: { navs: SiteNav[]; t: TFunction }) {
                 target={targetFor(nav.openInNewWindow)}
                 rel={relFor(nav.openInNewWindow)}
                 className={cn(
-                  buttonVariants({ variant: "ghost", size: "default" }),
-                  "bg-transparent"
+                  buttonVariants({ variant: "ghost", size: "sm" }),
+                  "h-7 bg-transparent px-3",
+                  isActive(nav.url) &&
+                    "bg-background text-foreground shadow-sm"
                 )}
               >
                 {nav.title}
@@ -484,7 +538,11 @@ function MobileMenu({
           </div>
 
           <div className="px-3">
-            <CreateTopicButton config={config} t={t} />
+            <CreateActions
+              config={config}
+              t={t}
+              className="grid grid-cols-2 [&_a]:w-full"
+            />
           </div>
 
           {user ? (
@@ -566,16 +624,16 @@ export function SiteHeader() {
   const unreadMessageCount = useUnreadMessageCount()
   const { t } = useI18n()
   const fullPath = useCurrentFullPath()
-  const navs = config?.siteNavs ?? []
+  const navs = visibleSiteNavs(config?.siteNavs ?? [], config)
   const title = config?.siteTitle || "BBS-GO"
   const logo = config?.siteLogo
   const showColorModeToggle = true
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/95 shadow-[0_1px_0_rgba(0,0,0,0.02)] backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="container mx-auto px-4">
-        <div className="flex h-14 items-center justify-between">
-          <div className="flex items-center space-x-8">
+        <div className="flex h-16 items-center justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-6">
             <Link href="/" className="flex items-center space-x-2">
               {logo ? (
                 <img src={logo} alt={title} className="h-8 w-auto" />
@@ -587,12 +645,12 @@ export function SiteHeader() {
             <DesktopNav navs={navs} t={t} />
           </div>
 
-          <div className="hidden items-center space-x-4 md:flex">
+          <div className="hidden shrink-0 items-center gap-2 md:flex">
             <SearchInput
-              className="hidden xl:block"
+              className="hidden lg:block"
               placeholder={t("component.searchInput.placeholder")}
             />
-            <CreateTopicButton config={config} t={t} />
+            <CreateActions config={config} t={t} />
             {user ? <MsgNotice count={unreadMessageCount} /> : null}
             {user ? (
               <UserMenu

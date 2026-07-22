@@ -218,6 +218,27 @@ export function TopicEditForm({
     findCategory(availableNodes, effectiveCategoryId)?.attachmentConfig ??
     config?.attachmentConfig
 
+  if (availableNodes.length === 0) {
+    return (
+      <div className="mx-auto max-w-xl rounded-md border border-dashed bg-muted/20 p-6 text-center">
+        <h1 className="text-base font-semibold">
+          {t("pages.topic.edit.noWritableCategoryTitle")}
+        </h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {t("pages.topic.edit.noWritableCategoryDescription")}
+        </p>
+        <Button
+          type="button"
+          variant="outline"
+          className="mt-4"
+          onClick={() => router.back()}
+        >
+          {t("pages.error.goBack")}
+        </Button>
+      </div>
+    )
+  }
+
   function updateForm(next: Partial<TopicEditFormState>) {
     setForm((current) => ({ ...current, ...next }))
   }

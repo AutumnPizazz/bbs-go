@@ -18,8 +18,8 @@ const zhCN = {
     },
     createBtn: {
       create: "发表",
-      topic: "话题",
-      qa: "问答",
+      topic: "发帖",
+      qa: "提问",
     },
     header: {
       profile: "个人中心",
@@ -436,7 +436,7 @@ const zhCN = {
         topicCaptchaTooltip: "发帖时是否开启验证码校验",
         userObserveSeconds: "用户观察期(秒)",
         userObserveSecondsTooltip:
-          "观察期内用户无法发表话题、动态等内容，设置为 0 表示无观察期。",
+          "观察期内用户无法发帖或提问，设置为 0 表示无观察期。",
         submit: "提交",
       },
       login: {
@@ -551,10 +551,10 @@ const zhCN = {
       search: {
         title: "搜索索引",
         description:
-          "当搜索结果缺失、过期，或批量调整内容后，可以手动重建帖子、文章、用户索引。",
+          "当搜索结果缺失、过期，或批量调整内容后，可以手动重建帖子、问答、用户索引。",
         indexedContent: "索引内容",
         indexedContentTopics: "帖子",
-        indexedContentAll: "话题（含文章格式）、用户",
+        indexedContentAll: "帖子、问答、用户",
         status: "状态",
         statusIdle: "未开始",
         statusRunning: "重建中",
@@ -568,7 +568,7 @@ const zhCN = {
         rebuilding: "重建中",
         confirmTitle: "确认重建搜索索引？",
         confirmDescription:
-          "系统会在后台扫描现有帖子、文章、用户并重建搜索索引。重建期间搜索结果可能短暂不完整。",
+          "系统会在后台扫描现有帖子、问答、用户并重建搜索索引。重建期间搜索结果可能短暂不完整。",
         confirmAction: "开始重建",
         started: "搜索索引重建已开始。",
       },
@@ -577,7 +577,7 @@ const zhCN = {
         description:
           "当内容、分类、标签或站点地址调整后，可以手动重新生成 sitemap XML 文件和索引。",
         content: "Sitemap 内容",
-        contentAll: "静态页面、话题分类、标签、帖子、文章",
+        contentAll: "静态页面、话题分类、标签、帖子、问答",
         status: "状态",
         statusIdle: "未开始",
         statusRunning: "生成中",
@@ -730,7 +730,7 @@ const zhCN = {
         settings: "站点设置",
       },
       recent: {
-        title: "最近动态",
+        title: "最近活动",
         topics: "最近话题",
         users: "最近注册用户",
       },
@@ -754,7 +754,7 @@ const zhCN = {
   },
   component: {
     searchInput: {
-      placeholder: "搜索帖子、文章、用户",
+      placeholder: "搜索帖子、问答、用户",
       searchBtn: "搜索",
     },
     search: {
@@ -1064,7 +1064,7 @@ const zhCN = {
   pages: {
     home: {
       asideTitle: "BBS-GO",
-      asideDescription: "发现最新讨论、问答和社区动态。",
+      asideDescription: "发现最新帖子、问答和社区内容。",
     },
     nav: {
       home: "首页",
@@ -1189,6 +1189,9 @@ const zhCN = {
         pageTitle: "修改话题",
         titlePlaceholder: "请输入帖子标题",
         contentPlaceholder: "请输入你要发表的内容...",
+        noWritableCategoryTitle: "当前没有可编辑的分类",
+        noWritableCategoryDescription:
+          "你没有该类型帖子的可写分类权限，因此无法修改此内容。",
         submitBtn: "提交更改",
         switchEditorConfirm: "切换编辑器将会清空当前内容，是否继续？",
         success: "修改成功",
@@ -1204,14 +1207,14 @@ const zhCN = {
     search: {
       title: "搜索",
       heading: "搜索内容",
-      description: "快速查找社区里的帖子和用户。",
-      placeholder: "搜索帖子、用户",
+      description: "快速查找社区里的帖子、问答和用户。",
+      placeholder: "搜索帖子、问答、用户",
       submit: "搜索",
       empty: {
         title: "没有找到相关结果",
         description: "换个关键词，或调整内容类型和筛选条件再试试。",
         promptTitle: "开始搜索",
-        promptDescription: "输入关键词后会展示帖子、文章和用户结果。",
+        promptDescription: "输入关键词后会展示帖子、问答和用户结果。",
       },
       viewMore: "查看更多",
       userTopics: "{count} 个帖子",

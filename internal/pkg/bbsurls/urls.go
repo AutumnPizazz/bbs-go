@@ -55,8 +55,6 @@ func UserUrl(userId int64) string {
 	return AbsUrl("/user/" + idcodec.Encode(userId))
 }
 
-// 标签文章列表
-
 // 话题详情
 func TopicUrl(topicId int64) string {
 	return AbsUrl("/topic/" + idcodec.Encode(topicId))

@@ -65,6 +65,11 @@ export default function TopicCreateRoute() {
     )
   }
 
+  const moduleEnabled = type === 2 ? config?.modules?.qa : config?.modules?.topic
+  if (config && !moduleEnabled) {
+    return <Navigate to="/" replace />
+  }
+
   return (
     <main className="main">
       <div className="container">

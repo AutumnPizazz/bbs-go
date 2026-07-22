@@ -18,8 +18,8 @@ const enUS = {
     },
     createBtn: {
       create: "Create",
-      topic: "Topic",
-      qa: "Q&A",
+      topic: "Post",
+      qa: "Ask",
     },
     header: {
       profile: "Profile",
@@ -561,10 +561,10 @@ const enUS = {
       search: {
         title: "Search Index",
         description:
-          "Rebuild topic and user indexes when search results are missing, stale, or after bulk content changes.",
+          "Rebuild post, Q&A, and user indexes when search results are missing, stale, or after bulk content changes.",
         indexedContent: "Indexed Content",
         indexedContentTopics: "Topics",
-        indexedContentAll: "Topics, users",
+        indexedContentAll: "Posts, Q&A, users",
         status: "Status",
         statusIdle: "Not Started",
         statusRunning: "Rebuilding",
@@ -578,7 +578,7 @@ const enUS = {
         rebuilding: "Rebuilding",
         confirmTitle: "Rebuild search index?",
         confirmDescription:
-          "This will scan existing topics and users to rebuild the search index in the background. Search results may be temporarily incomplete during the rebuild.",
+          "This will scan existing posts, Q&A, and users to rebuild the search index in the background. Search results may be temporarily incomplete during the rebuild.",
         confirmAction: "Start Rebuild",
         started: "Search index rebuild has started.",
       },
@@ -587,7 +587,7 @@ const enUS = {
         description:
           "Regenerate sitemap XML files and the sitemap index after content, category, tag, or site URL changes.",
         content: "Sitemap Content",
-        contentAll: "Static pages, categories, tags, topics",
+        contentAll: "Static pages, categories, tags, posts, Q&A",
         status: "Status",
         statusIdle: "Not Started",
         statusRunning: "Generating",
@@ -766,7 +766,7 @@ const enUS = {
   },
   component: {
     searchInput: {
-      placeholder: "Search topics and users",
+      placeholder: "Search posts, Q&A, and users",
       searchBtn: "Search",
     },
     search: {
@@ -1208,6 +1208,9 @@ const enUS = {
         pageTitle: "Edit",
         titlePlaceholder: "Enter a post title",
         contentPlaceholder: "Write your post...",
+        noWritableCategoryTitle: "No editable category available",
+        noWritableCategoryDescription:
+          "You do not have write access to a category for this content type, so it cannot be edited.",
         submitBtn: "Submit",
         switchEditorConfirm:
           "Switching the editor will clear the current content, continue?",
@@ -1224,8 +1227,8 @@ const enUS = {
     search: {
       title: "Search",
       heading: "Search the community",
-      description: "Find discussions and members across the site.",
-      placeholder: "Search discussions or members",
+      description: "Find posts, Q&A, and users across the site.",
+      placeholder: "Search posts, Q&A, and users",
       submit: "Search",
       empty: {
         title: "No results found",
@@ -1233,7 +1236,7 @@ const enUS = {
           "Try a different keyword, or adjust the content type and filters.",
         promptTitle: "Start searching",
         promptDescription:
-          "Enter a keyword to find discussions and members.",
+          "Enter a keyword to find posts, Q&A, and users.",
       },
       viewMore: "View more",
       userTopics: "{count} topics",
