@@ -40,9 +40,6 @@ func IsPassword(password string) error {
 	if strs.IsBlank(password) {
 		return errors.New(locales.Get("user.password_required"))
 	}
-	if strs.RuneLen(password) < 6 {
-		return errors.New(locales.Get("user.password_invalid"))
-	}
 	if strs.RuneLen(password) > 1024 {
 		return errors.New(locales.Get("user.password_too_long"))
 	}

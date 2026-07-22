@@ -42,7 +42,6 @@ user:
   username_occupied: "Username: %s is already taken"
   username_already_set: "Username is already set and cannot be changed"
   password_required: "Password is required"
-  password_invalid: "Password must be at least 6 characters"
   password_too_long: "Password cannot exceed 128 characters"
   password_mismatch: "Passwords do not match"
   password_login_failed: "Incorrect username or password"

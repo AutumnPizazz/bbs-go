@@ -42,7 +42,6 @@ user:
   username_occupied: "用户名：%s 已被占用"
   username_already_set: "你已设置了用户名，无法重复设置。"
   password_required: "请输入密码"
-  password_invalid: "密码过于简单"
   password_too_long: "密码长度不能超过128"
   password_mismatch: "两次输入密码不匹配"
   password_login_failed: "用户名或密码错误"
