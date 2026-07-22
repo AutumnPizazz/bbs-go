@@ -20,7 +20,11 @@ import (
 	"time"
 )
 
-const mysqlImage = "mysql:8.4"
+const (
+	nodeImage  = "node:24-alpine"
+	goImage    = "golang:1.26-alpine"
+	mysqlImage = "mysql:8.4"
+)
 
 var versionPattern = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$`)
 
@@ -85,10 +89,12 @@ func run() error {
 	}
 
 	appImage := "bbs-go:" + strings.ToLower(*version)
-	if err := command(root, "docker", "build", "--platform", *platform, "--tag", appImage, "."); err != nil {
-		return err
+	for _, image := range []string{nodeImage, goImage, mysqlImage} {
+		if err := command(root, "docker", "pull", "--platform", *platform, image); err != nil {
+			return err
+		}
 	}
-	if err := command(root, "docker", "pull", "--platform", *platform, mysqlImage); err != nil {
+	if err := command(root, "docker", "build", "--platform", *platform, "--tag", appImage, "."); err != nil {
 		return err
 	}
 

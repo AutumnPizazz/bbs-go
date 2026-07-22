@@ -31,7 +31,7 @@ ARM64 设备使用：
 go run ./cmd/package-release -version v1.0.0 -platform linux/arm64
 ```
 
-脚本会重新构建当前源码并拉取 MySQL 镜像，因此制作阶段需要联网。输出 ZIP 包含两个镜像，体积会明显大于普通源码包。
+命令会依次拉取 Node.js、Go、MySQL 基础镜像，再重新构建当前源码，因此制作阶段需要联网。输出 ZIP 包含运行所需的 BBS-GO 和 MySQL 镜像，体积会明显大于普通源码包。
 
 ## 部署
 
