@@ -50,7 +50,6 @@ func (s *userService) CreateManagedUser(operator *models.User, form modelReq.Adm
 	}
 
 	username := strings.TrimSpace(form.Username)
-	phone := strings.TrimSpace(form.Phone)
 	nickname := strings.TrimSpace(form.Nickname)
 	if username == "" {
 		return nil, errors.New(locales.Get("user.username_required"))
@@ -61,9 +60,6 @@ func (s *userService) CreateManagedUser(operator *models.User, form modelReq.Adm
 	if s.GetByUsername(username) != nil {
 		return nil, errors.New(locales.Getf("user.username_occupied", username))
 	}
-	if phone != "" && s.GetByPhone(phone) != nil {
-		return nil, errors.New(locales.Getf("user.phone_occupied", phone))
-	}
 	if nickname == "" {
 		return nil, errors.New(locales.Get("user.nickname_required"))
 	}
@@ -73,7 +69,6 @@ func (s *userService) CreateManagedUser(operator *models.User, form modelReq.Adm
 
 	user := &models.User{
 		Username:          sqls.SqlNullString(username),
-		Phone:             sqls.SqlNullString(phone),
 		Nickname:          nickname,
 		Password:          passwd.EncodePassword(form.Password),
 		Status:            form.Status,
@@ -125,7 +120,6 @@ func (s *userService) UpdateManagedUser(operator *models.User, form modelReq.Adm
 	}
 
 	username := strings.TrimSpace(form.Username)
-	phone := strings.TrimSpace(form.Phone)
 	if username == "" {
 		return nil, errors.New(locales.Get("user.username_required"))
 	}
@@ -135,12 +129,6 @@ func (s *userService) UpdateManagedUser(operator *models.User, form modelReq.Adm
 	if other := s.GetByUsername(username); other != nil && other.Id != target.Id {
 		return nil, errors.New(locales.Getf("user.username_occupied", username))
 	}
-	if phone != "" {
-		if other := s.GetByPhone(phone); other != nil && other.Id != target.Id {
-			return nil, errors.New(locales.Getf("user.phone_occupied", phone))
-		}
-	}
-
 	oldMode := target.ContentAccessMode
 	if target.IsOwner() {
 		oldMode = constants.ContentAccessModeAll
@@ -149,7 +137,6 @@ func (s *userService) UpdateManagedUser(operator *models.User, form modelReq.Adm
 	err := sqls.DB().Transaction(func(tx *gorm.DB) error {
 		updates := map[string]interface{}{
 			"username":            sqls.SqlNullString(username),
-			"phone":               sqls.SqlNullString(phone),
 			"nickname":            form.Nickname,
 			"avatar":              form.Avatar,
 			"gender":              constants.Gender(form.Gender),

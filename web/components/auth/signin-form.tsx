@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter, useSearchParams } from "@/lib/router/navigation"
-import { Lock, MessageSquare } from "lucide-react"
+import { Lock } from "lucide-react"
 import {
   useActionState,
   useEffect,
@@ -13,9 +13,7 @@ import {
 } from "react"
 
 import {
-  sendLoginSmsAction,
   signinAction,
-  smsLoginAction,
   type AuthActionState,
 } from "@/lib/actions/auth"
 import {
@@ -24,7 +22,6 @@ import {
 } from "@/components/auth/captcha-field"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { SiteConfig } from "@/lib/api/types"
 import { apiFetch } from "@/lib/api/client"
 import { useI18n } from "@/lib/i18n/provider"
@@ -85,85 +82,31 @@ function SigninFormContent({
   )
   const loginConfig = config?.loginConfig
   const passwordEnabled = enabled(loginConfig?.passwordLogin)
-  const smsEnabled = Boolean(loginConfig?.smsLogin?.enabled)
-  const accountMethods = [
-    passwordEnabled ? "password" : null,
-    smsEnabled ? "sms" : null,
-  ].filter(Boolean) as Array<"password" | "sms">
-  const defaultMethod = accountMethods[0] ?? "password"
   const thirdPartyEnabled = Boolean(
     loginConfig?.githubLogin?.enabled ||
     loginConfig?.googleLogin?.enabled ||
     loginConfig?.weixinLogin?.enabled
   )
-
   const { t } = useI18n()
-  const [method, setMethod] = useState(defaultMethod)
-
-  const singleTitle =
-    method === "sms"
-      ? t("user.signin.smsLogin")
-      : t("user.signin.passwordLogin")
 
   return (
     <div className="signin-card mx-auto max-w-[600px]">
       <div className="py-2 break-all">
-        {accountMethods.length === 1 ? (
+        {passwordEnabled ? (
           <div className="login-title">
-            {method === "sms" ? (
-              <MessageSquare className="login-title-icon" />
-            ) : (
-              <Lock className="login-title-icon" />
-            )}
-            <h2>{singleTitle}</h2>
+            <Lock className="login-title-icon" />
+            <h2>{t("user.signin.passwordLogin")}</h2>
           </div>
         ) : null}
 
-        {accountMethods.length > 1 ? (
-          <Tabs
-            value={method}
-            onValueChange={(value) => setMethod(value as "password" | "sms")}
-          >
-            <TabsList className="login-tabs-list mx-auto">
-              {passwordEnabled ? (
-                <TabsTrigger value="password" className="login-tab-trigger">
-                  <Lock className="login-tab-icon" />
-                  <span>{t("user.signin.passwordLogin")}</span>
-                </TabsTrigger>
-              ) : null}
-              {smsEnabled ? (
-                <TabsTrigger value="sms" className="login-tab-trigger">
-                  <MessageSquare className="login-tab-icon" />
-                  <span>{t("user.signin.smsLogin")}</span>
-                </TabsTrigger>
-              ) : null}
-            </TabsList>
-            <TabsContent value="password">
-              {passwordEnabled ? (
-                <PasswordLoginForm redirect={effectiveRedirect} />
-              ) : null}
-            </TabsContent>
-            <TabsContent value="sms">
-              {smsEnabled ? (
-                <SmsLoginForm redirect={effectiveRedirect} />
-              ) : null}
-            </TabsContent>
-          </Tabs>
-        ) : (
-          <>
-            {method === "password" && passwordEnabled ? (
-              <PasswordLoginForm redirect={effectiveRedirect} />
-            ) : null}
-            {method === "sms" && smsEnabled ? (
-              <SmsLoginForm redirect={effectiveRedirect} />
-            ) : null}
-          </>
-        )}
+        {passwordEnabled ? (
+          <PasswordLoginForm redirect={effectiveRedirect} />
+        ) : null}
 
         {thirdPartyEnabled ? (
           <ThirdPartyLogin
             config={config}
-            hasAccountLogin={accountMethods.length > 0}
+            hasAccountLogin={passwordEnabled}
             redirect={effectiveRedirect}
           />
         ) : null}
@@ -241,150 +184,6 @@ function PasswordLoginForm({ redirect }: { redirect?: string }) {
         </div>
         <Button type="submit" className="w-full" disabled={pending}>
           {t("user.signin.password.loginBtn")}
-        </Button>
-      </form>
-    </div>
-  )
-}
-
-function SmsLoginForm({ redirect }: { redirect?: string }) {
-  const { t } = useI18n()
-  const { msgError } = useToastActions()
-  const [sendState, sendAction, sending] = useActionState(
-    sendLoginSmsAction,
-    initialState
-  )
-  const [loginState, loginAction, loggingIn] = useActionState(
-    smsLoginAction,
-    initialState
-  )
-  const captchaRef = useRef<CaptchaChallengeHandle>(null)
-  const sendFormRef = useRef<HTMLFormElement>(null)
-  const loginFormRef = useRef<HTMLFormElement>(null)
-  const [phone, setPhone] = useState("")
-  const [smsCode, setSmsCode] = useState("")
-  const [smsTimeout, setSmsTimeout] = useState(0)
-  const smsId =
-    sendState.ok && "smsId" in sendState && typeof sendState.smsId === "string"
-      ? sendState.smsId
-      : ""
-  const lastSendErrorRef = useRef<string | undefined>(undefined)
-  const lastLoginErrorRef = useRef<string | undefined>(undefined)
-
-  useEffect(() => {
-    if (smsId) {
-      window.setTimeout(() => setSmsTimeout(60), 0)
-    } else if (
-      sendState.message &&
-      lastSendErrorRef.current !== sendState.message
-    ) {
-      lastSendErrorRef.current = sendState.message
-      msgError(sendState.message)
-      captchaRef.current?.reset()
-    }
-  }, [msgError, sendState.message, smsId])
-
-  useEffect(() => {
-    if (smsTimeout <= 0) return
-    const timer = window.setInterval(
-      () => setSmsTimeout((value) => Math.max(0, value - 1)),
-      1000
-    )
-    return () => window.clearInterval(timer)
-  }, [smsTimeout])
-
-  useEffect(() => {
-    if (loginState.ok && loginState.redirect) {
-      navigateAfterAuth(loginState.redirect)
-    } else if (
-      loginState.message &&
-      lastLoginErrorRef.current !== loginState.message
-    ) {
-      lastLoginErrorRef.current = loginState.message
-      msgError(loginState.message)
-    }
-  }, [loginState, msgError])
-
-  return (
-    <div className="sms-login mx-auto max-w-[400px]">
-      <form
-        ref={sendFormRef}
-        action={sendAction}
-        className="contents"
-        onSubmit={(event) => {
-          if (!/^1[0-9]{10}$/.test(phone)) {
-            event.preventDefault()
-            msgError(t("user.signin.sms.phoneError"))
-            return
-          }
-          if (!captchaRef.current?.hasCaptcha()) {
-            event.preventDefault()
-            void captchaRef.current?.open()
-          }
-        }}
-      >
-        <input type="hidden" name="phone" value={phone} readOnly />
-        <CaptchaChallenge
-          ref={captchaRef}
-          onVerified={() => sendFormRef.current?.requestSubmit()}
-        />
-      </form>
-      <form
-        ref={loginFormRef}
-        action={loginAction}
-        className="space-y-6"
-        onSubmit={(event) => {
-          if (!/^1[0-9]{10}$/.test(phone)) {
-            event.preventDefault()
-            msgError(t("user.signin.sms.phoneError"))
-            return
-          }
-          if (!smsId || !smsCode) {
-            event.preventDefault()
-            msgError(t("user.signin.sms.smsCodeRequired"))
-          }
-        }}
-      >
-        <input type="hidden" name="redirect" value={redirect || ""} />
-        <input type="hidden" name="smsId" value={smsId} />
-        <div className="space-y-2">
-          <div className="phone-input-wrapper">
-            <span className="phone-prefix">+86</span>
-            <input
-              name="phoneDisplay"
-              type="text"
-              placeholder={t("user.signin.sms.phonePlaceholder")}
-              className="phone-input"
-              value={phone}
-              onChange={(event) => setPhone(event.currentTarget.value)}
-            />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <div className="code-input-wrapper">
-            <Input
-              name="smsCode"
-              type="text"
-              placeholder={t("user.signin.sms.smsCodePlaceholder")}
-              className="code-input"
-              value={smsCode}
-              onChange={(event) => setSmsCode(event.currentTarget.value)}
-            />
-            <Button
-              type="button"
-              variant="outline"
-              disabled={smsTimeout > 0 || sending}
-              className="send-code-btn"
-              onClick={() => sendFormRef.current?.requestSubmit()}
-            >
-              {smsTimeout > 0
-                ? `${smsTimeout} s`
-                : t("user.signin.sms.getSmsCode")}
-            </Button>
-          </div>
-        </div>
-        <Button type="submit" className="w-full" disabled={loggingIn}>
-          {t("user.signin.sms.loginBtn")}
         </Button>
       </form>
     </div>

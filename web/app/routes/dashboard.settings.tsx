@@ -1651,33 +1651,6 @@ function LoginSettings({ settings, saving, s, update, onSave }: SettingsProps) {
         </Field>
       </LoginCard>
 
-      <LoginCard title={s("login.smsLogin")}>
-        <Field label={s("login.enabled")}>
-          <SwitchControl
-            checked={Boolean(getPathValue(login, "smsLogin.enabled"))}
-            onChange={(checked) =>
-              update("loginConfig.smsLogin.enabled", checked)
-            }
-          />
-        </Field>
-        {[
-          ["accessKeyId", "aliyun.accessKeyId"],
-          ["accessKeySecret", "aliyun.accessKeySecret"],
-          ["signName", "aliyun.signName"],
-          ["templateCode", "aliyun.templateCode"],
-        ].map(([labelKey, path]) => (
-          <Field key={path} label={s(`login.${labelKey}`)}>
-            <Input
-              type={labelKey === "accessKeySecret" ? "password" : "text"}
-              value={getString(getPathValue(login, `smsLogin.${path}`))}
-              onChange={(event) =>
-                update(`loginConfig.smsLogin.${path}`, event.target.value)
-              }
-            />
-          </Field>
-        ))}
-      </LoginCard>
-
       {(["googleLogin", "githubLogin"] as const).map((provider) => (
         <LoginCard key={provider} title={s(`login.${provider}`)}>
           <Field label={s("login.enabled")}>

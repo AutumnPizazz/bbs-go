@@ -45,7 +45,6 @@ func ConfigConfigs(ctx *gin.Context) {
 			LoginConfig: dto.OpenLoginConfig{
 				PasswordLogin: loginConfig.PasswordLogin,
 				WeixinLogin:   dto.EnabledConfig{Enabled: loginConfig.WeixinLogin.Enabled},
-				SmsLogin:      dto.EnabledConfig{Enabled: loginConfig.SmsLogin.Enabled},
 				GoogleLogin:   dto.OAuthConfig{Enabled: loginConfig.GoogleLogin.Enabled},
 				GithubLogin:   dto.EnabledConfig{Enabled: loginConfig.GithubLogin.Enabled},
 			},

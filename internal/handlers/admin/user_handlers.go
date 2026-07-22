@@ -41,7 +41,6 @@ func userBuildUserItem(user *models.User, buildRoleIds bool) map[string]interfac
 		Put("idEncode", idcodec.Encode(user.Id)).
 		Put("roles", user.GetRoles()).
 		Put("username", user.Username.String).
-		Put("phone", user.Phone.String).
 		Put("contentAccessMode", mode).
 		Put("categoryIds", services.ContentAccessService.GetAssignedCategoryIds(user.Id)).
 		Put("forbidden", user.IsForbidden())

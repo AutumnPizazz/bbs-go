@@ -82,7 +82,6 @@ type FooterLink struct {
 type OpenLoginConfig struct {
 	PasswordLogin EnabledConfig `json:"passwordLogin"` // 密码登录
 	WeixinLogin   EnabledConfig `json:"weixinLogin"`   // 微信登录
-	SmsLogin      EnabledConfig `json:"smsLogin"`      // 短信登录
 	GoogleLogin   OAuthConfig   `json:"googleLogin"`   // Google登录
 	GithubLogin   EnabledConfig `json:"githubLogin"`   // GitHub登录
 }
@@ -123,15 +122,6 @@ type LoginConfig struct {
 		AppSecret string `json:"appSecret"`
 	} `json:"weixinLogin"`
 
-	// 短信登录
-	SmsLogin struct {
-		Enabled bool `json:"enabled"`
-		// 短信平台
-		Platform string `json:"platform"`
-		// 阿里云平台配置
-		Aliyun AliyunSmsConfig `json:"aliyun"`
-	} `json:"smsLogin"`
-
 	// Google登录
 	GoogleLogin struct {
 		Enabled      bool   `json:"enabled"`
@@ -147,16 +137,9 @@ type LoginConfig struct {
 	} `json:"githubLogin"`
 }
 
-type AliyunSmsConfig struct {
-	AccessKeyId     string `json:"accessKeyId"`
-	AccessKeySecret string `json:"accessKeySecret"`
-	SignName        string `json:"signName"`
-	TemplateCode    string `json:"templateCode"`
-}
-
 // IsAllDisabled 是否禁用了所有登录方式
 func (c *LoginConfig) IsAllDisabled() bool {
-	return !c.PasswordLogin.Enabled && !c.WeixinLogin.Enabled && !c.SmsLogin.Enabled && !c.GoogleLogin.Enabled && !c.GithubLogin.Enabled
+	return !c.PasswordLogin.Enabled && !c.WeixinLogin.Enabled && !c.GoogleLogin.Enabled && !c.GithubLogin.Enabled
 }
 
 type UploadMethod string

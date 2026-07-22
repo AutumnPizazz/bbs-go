@@ -64,7 +64,6 @@ export default function DashboardUsersRoute() {
         label: dashboardData.label(t, "nickname"),
         render: (record) => dashboardData.userLinkCell(record, record.nickname),
       },
-      { key: "phone", label: dashboardData.label(t, "phone") },
       {
         key: "contentAccessMode",
         label: dashboardData.label(t, "contentAccessMode"),
@@ -92,7 +91,6 @@ export default function DashboardUsersRoute() {
         name: "username",
         label: dashboardData.label(t, "username"),
       },
-      { name: "phone", label: dashboardData.label(t, "phone") },
       {
         name: "nickname",
         label: dashboardData.label(t, "nickname"),

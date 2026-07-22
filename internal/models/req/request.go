@@ -97,7 +97,6 @@ func ParseImageDTO(str string) (img *ImageDTO) {
 
 type AdminUserCreateReq struct {
 	Username          string `json:"username" form:"username"`
-	Phone             string `json:"phone" form:"phone"`
 	Nickname          string `json:"nickname" form:"nickname"`
 	Password          string `json:"password" form:"password"`
 	RoleIds           string `json:"roleIds" form:"roleIds"`
@@ -116,7 +115,6 @@ type AdminUserUpdateReq struct {
 	Description       string `json:"description" form:"description"`
 	RoleIds           string `json:"roleIds" form:"roleIds"`
 	Status            int    `json:"status" form:"status"`
-	Phone             string `json:"phone" form:"phone"`
 	ContentAccessMode string `json:"contentAccessMode" form:"contentAccessMode"`
 	CategoryIds       string `json:"categoryIds" form:"categoryIds"`
 }
@@ -150,18 +148,6 @@ type LoginSigninReq struct {
 	Username        string `json:"username" form:"username"`
 	Password        string `json:"password" form:"password"`
 	Redirect        string `json:"redirect" form:"redirect"`
-}
-
-type LoginSmsCodeReq struct {
-	Phone       string `json:"phone" form:"phone"`
-	CaptchaId   string `json:"captchaId" form:"captchaId"`
-	CaptchaCode string `json:"captchaCode" form:"captchaCode"`
-}
-
-type LoginSmsReq struct {
-	SmsId    string `json:"smsId" form:"smsId"`
-	SmsCode  string `json:"smsCode" form:"smsCode"`
-	Redirect string `json:"redirect" form:"redirect"`
 }
 
 type OAuthConfigReq struct {

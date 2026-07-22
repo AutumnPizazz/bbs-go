@@ -26,28 +26,6 @@ export function signoutRequest() {
   return apiFetch<void>("/api/login/signout")
 }
 
-export function loginSmsCode(values: { phone: string } & CaptchaFields) {
-  return apiFetch<{ smsId: string }>("/api/login/login_sms_code", {
-    method: "POST",
-    body: toFormData({
-      ...values,
-      captchaProtocol: values.captchaProtocol ?? 2,
-    }),
-  })
-}
-
-export function loginSms(values: {
-  smsId: string
-  smsCode: string
-  redirect?: string
-  state?: string
-}) {
-  return apiFetch<LoginResult>("/api/login/login_sms", {
-    method: "POST",
-    body: toFormData(values),
-  })
-}
-
 export interface OAuthLoginConfig {
   authUrl?: string
   appid?: string

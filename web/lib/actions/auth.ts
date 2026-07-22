@@ -48,57 +48,6 @@ export async function signinAction(
   }
 }
 
-export async function sendLoginSmsAction(
-  _state: AuthActionState,
-  formData: FormData
-): Promise<AuthActionState & { smsId?: string }> {
-  try {
-    const result = await apiFetch<{ smsId: string }>(
-      "/api/login/login_sms_code",
-      {
-        method: "POST",
-        body: toFormData({
-          phone: formString(formData, "phone"),
-          captchaId: optionalFormString(formData, "captchaId"),
-          captchaCode: optionalFormString(formData, "captchaCode"),
-          captchaProtocol: optionalFormString(formData, "captchaProtocol") || 2,
-        }),
-      }
-    )
-
-    return { ok: true, smsId: result.smsId }
-  } catch (error) {
-    return {
-      ok: false,
-      message: getErrorMessage(error, "Send SMS code failed"),
-    }
-  }
-}
-
-export async function smsLoginAction(
-  _state: AuthActionState,
-  formData: FormData
-): Promise<AuthActionState> {
-  try {
-    const result = await apiFetch<LoginResult>("/api/login/login_sms", {
-      method: "POST",
-      body: toFormData({
-        smsId: formString(formData, "smsId"),
-        smsCode: formString(formData, "smsCode"),
-        redirect: optionalFormString(formData, "redirect"),
-        state: optionalFormString(formData, "state"),
-      }),
-    })
-
-    return {
-      ok: true,
-      redirect: safeRedirect(result.redirect, `/user/${result.user.id}`),
-    }
-  } catch (error) {
-    return { ok: false, message: getErrorMessage(error, "Sign in failed") }
-  }
-}
-
 export async function thirdPartySignin(
   provider: "github" | "google" | "weixin",
   code: string,

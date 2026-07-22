@@ -13,7 +13,7 @@ var Models = []interface{}{
 	&User{}, &UserToken{}, &ThirdUser{}, &UserCategoryAccess{}, &Tag{}, &Comment{}, &Favorite{}, &Topic{}, &Category{},
 	&TopicTag{}, &UserLike{}, &Message{}, &SysConfig{}, &Link{},
 	&Vote{}, &VoteOption{}, &VoteRecord{},
-	&OperateLog{}, &SmsCode{}, &UserFollow{}, &UserFeed{}, &UserReport{},
+	&OperateLog{}, &UserFollow{}, &UserFeed{}, &UserReport{},
 	&ForbiddenWord{},
 	&Attachment{},
 }
@@ -97,7 +97,6 @@ type Dict struct {
 
 type User struct {
 	Model
-	Phone             sql.NullString              `gorm:"size:16;unique;" json:"phone" form:"phone"`                                                                                         // 电话
 	Username          sql.NullString              `gorm:"size:32;unique;" json:"username" form:"username"`                                                                                   // 用户名
 	Nickname          string                      `gorm:"size:16;" json:"nickname" form:"nickname"`                                                                                          // 昵称
 	Avatar            string                      `gorm:"type:text" json:"avatar" form:"avatar"`                                                                                             // 头像
@@ -340,17 +339,6 @@ type OperateLog struct {
 	UserAgent   string `gorm:"type:text" json:"userAgent" form:"userAgent"`                                 // UserAgent
 	Referer     string `gorm:"type:text" json:"referer" form:"referer"`                                     // Referer
 	CreateTime  int64  `json:"createTime" form:"createTime"`                                                // 创建时间
-}
-
-// 短信验证码
-type SmsCode struct {
-	Model
-	SmsId      string `gorm:"size:32;unique" json:"smsId" form:"smsId"`
-	Phone      string `gorm:"size:32" json:"phone" form:"phone"`
-	Code       string `gorm:"size:16" json:"code" form:"code"`
-	ExpireAt   int64  `json:"expireAt" form:"expireAt"`
-	Status     int    `json:"status" form:"status"`
-	CreateTime int64  `json:"createTime" form:"createTime"`
 }
 
 // UserFollow 粉丝关注

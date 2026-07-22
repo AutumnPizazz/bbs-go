@@ -36,7 +36,6 @@ user:
   homepage_error: "Invalid homepage URL"
   avatar_empty: "Avatar cannot be empty"
   upload_image_required: "Please upload an image"
-  phone_occupied: "Phone: %s is already taken"
   username_required: "Username is required"
   username_invalid: "Username must be 5-12 characters, use letters, numbers, underscores, or hyphens, and start with a letter"
   username_occupied: "Username: %s is already taken"
@@ -64,8 +63,6 @@ errors:
 
 auth:
   password_login_disabled: "Password login/registration is disabled"
-  phone_required: "Phone number is required"
-  sms_login_disabled: "SMS login is disabled"
   login_data_error: "Sign-in data is invalid or expired. Please sign in again"
   weixin_login_disabled: "WeChat login is disabled"
   google_login_disabled: "Google sign-in is disabled"
@@ -120,9 +117,6 @@ comment:
 favorite:
   article_not_found: "Favorite article not found"
   topic_not_found: "Favorite topic not found"
-
-sms:
-  code_invalid: "Invalid verification code"
 
 settings:
   invalid_format: "Invalid configuration format"

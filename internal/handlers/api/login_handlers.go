@@ -26,8 +26,6 @@ import (
 
 // 用户名密码登录
 // 退出登录
-// 请求登录短信验证码
-// 短信登录
 func LoginSignin(ctx *gin.Context) {
 	var req req.LoginSigninReq
 	if err := ginx.Bind(ctx, &req); err != nil {
@@ -79,70 +77,6 @@ func LoginSignout(ctx *gin.Context) {
 		return
 	}
 	ginx.WriteJSON(ctx, nil)
-
-}
-
-func LoginLoginSmsCode(ctx *gin.Context) {
-	var req req.LoginSmsCodeReq
-	if err := ginx.Bind(ctx, &req); err != nil {
-		ginx.WriteJSON(ctx, err)
-		return
-	}
-
-	if strs.IsBlank(req.Phone) {
-		ginx.WriteJSON(ctx, ginx.ErrorMessage(locales.Get("auth.phone_required")))
-		return
-	}
-
-	if !captcha2.Verify(req.CaptchaId, req.CaptchaCode) {
-		ginx.WriteJSON(ctx, errs.CaptchaError())
-		return
-	}
-
-	if !services.SysConfigService.GetLoginConfig().SmsLogin.Enabled {
-		ginx.WriteJSON(ctx, ginx.ErrorMessage(locales.Get("auth.sms_login_disabled")))
-		return
-	}
-
-	smsId, err := services.SmsCodeService.SendSms(req.Phone)
-	if err != nil {
-		ginx.WriteJSON(ctx, err)
-		return
-	}
-	ginx.WriteJSON(ctx, map[string]interface{}{
-		"smsId": smsId,
-	})
-
-}
-
-func LoginLoginSms(ctx *gin.Context) {
-	var req req.LoginSmsReq
-	if err := ginx.Bind(ctx, &req); err != nil {
-		ginx.WriteJSON(ctx, err)
-		return
-	}
-	if req.Redirect == "" {
-		req.Redirect = ctx.Query("redirect")
-	}
-
-	if !services.SysConfigService.GetLoginConfig().SmsLogin.Enabled {
-		ginx.WriteJSON(ctx, ginx.ErrorMessage(locales.Get("auth.sms_login_disabled")))
-		return
-	}
-
-	phone, err := services.SmsCodeService.Verify(req.SmsId, req.SmsCode)
-	if err != nil {
-		ginx.WriteJSON(ctx, err)
-		return
-	}
-
-	user := services.UserService.GetByPhone(phone)
-	if user == nil {
-		ginx.WriteJSON(ctx, errs.RegistrationClosed())
-		return
-	}
-
-	ginx.WriteJSON(ctx, render.BuildLoginSuccess(ctx, user, req.Redirect))
 
 }
 

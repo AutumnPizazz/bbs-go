@@ -112,8 +112,6 @@ func registerAPIRoutes(group *gin.RouterGroup) {
 	loginGroup := group.Group("/login")
 	loginGroup.POST("/signin", apiHandlers.LoginSignin)
 	loginGroup.GET("/signout", apiHandlers.LoginSignout)
-	loginGroup.POST("/login_sms_code", apiHandlers.LoginLoginSmsCode)
-	loginGroup.POST("/login_sms", apiHandlers.LoginLoginSms)
 	loginGroup.GET("/wx_login_config", apiHandlers.LoginWxLoginConfig)
 	loginGroup.POST("/wx_login_submit", apiHandlers.LoginWxLoginSubmit)
 	loginGroup.POST("/wx_bind", apiHandlers.LoginWxBind)

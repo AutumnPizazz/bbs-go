@@ -173,10 +173,6 @@ func (s *userService) GetByUsername(username string) *models.User {
 	return repositories.UserRepository.GetByUsername(sqls.DB(), username)
 }
 
-func (s *userService) GetByPhone(phone string) *models.User {
-	return repositories.UserRepository.GetByPhone(sqls.DB(), phone)
-}
-
 // SignIn 登录
 func (s *userService) SignIn(username, password string) (*models.User, error) {
 	if strs.IsBlank(username) {

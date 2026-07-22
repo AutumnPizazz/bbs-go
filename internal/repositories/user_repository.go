@@ -94,7 +94,3 @@ func (r *userRepository) Delete(db *gorm.DB, id int64) {
 func (r *userRepository) GetByUsername(db *gorm.DB, username string) *models.User {
 	return r.Take(db, "username = ?", username)
 }
-
-func (r *userRepository) GetByPhone(db *gorm.DB, phone string) *models.User {
-	return r.Take(db, "phone = ?", phone)
-}

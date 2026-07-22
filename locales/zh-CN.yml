@@ -36,7 +36,6 @@ user:
   homepage_error: "个人主页地址错误"
   avatar_empty: "头像不能为空"
   upload_image_required: "请上传图片"
-  phone_occupied: "手机号：%s 已被占用"
   username_required: "请输入用户名"
   username_invalid: "用户名必须由5-12位(数字、字母、_、-)组成，且必须以字母开头"
   username_occupied: "用户名：%s 已被占用"
@@ -64,8 +63,6 @@ errors:
 
 auth:
   password_login_disabled: "账号密码登录/注册已禁用"
-  phone_required: "请输入手机号码"
-  sms_login_disabled: "短信登录已禁用"
   login_data_error: "登录数据错误"
   weixin_login_disabled: "微信登录已禁用"
   google_login_disabled: "Google登录未启用"
@@ -120,9 +117,6 @@ comment:
 favorite:
   article_not_found: "收藏的文章不存在"
   topic_not_found: "收藏的话题不存在"
-
-sms:
-  code_invalid: "验证码错误"
 
 settings:
   invalid_format: "配置数据格式错误"

@@ -196,7 +196,6 @@ export interface SiteConfig {
   }
   loginConfig?: {
     passwordLogin?: { enabled?: boolean }
-    smsLogin?: { enabled?: boolean }
     githubLogin?: { enabled?: boolean }
     googleLogin?: { enabled?: boolean; clientId?: string }
     weixinLogin?: { enabled?: boolean }
