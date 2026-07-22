@@ -116,4 +116,5 @@ func init() {
 	register(15, "remove comment admin permissions", migrate_remove_comment_admin_permissions)
 	register(16, "remove task growth and points systems", migrate_remove_task_growth_and_points)
 	register(17, "unify articles as topic format", migrate_unify_article_topics)
+	register(18, "remove phone and sms login data", migrate_remove_phone_and_sms)
 }
