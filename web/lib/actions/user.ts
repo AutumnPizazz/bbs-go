@@ -133,43 +133,6 @@ export async function setEmailAction(
   }
 }
 
-export async function setPasswordAction(
-  _state: UserActionState,
-  formData: FormData
-): Promise<UserActionState> {
-  try {
-    await apiFetch<null>("/api/user/set_password", {
-      method: "POST",
-      body: toFormData({
-        password: formString(formData, "password"),
-        rePassword: formString(formData, "rePassword"),
-      }),
-    })
-    return { ok: true }
-  } catch (error) {
-    return { ok: false, message: errorMessage(error, "Failed") }
-  }
-}
-
-export async function updatePasswordAction(
-  _state: UserActionState,
-  formData: FormData
-): Promise<UserActionState> {
-  try {
-    await apiFetch<null>("/api/user/update_password", {
-      method: "POST",
-      body: toFormData({
-        oldPassword: formString(formData, "oldPassword"),
-        password: formString(formData, "password"),
-        rePassword: formString(formData, "rePassword"),
-      }),
-    })
-    return { ok: true }
-  } catch (error) {
-    return { ok: false, message: errorMessage(error, "Failed") }
-  }
-}
-
 export async function followAction(
   userId: string,
   followed: boolean

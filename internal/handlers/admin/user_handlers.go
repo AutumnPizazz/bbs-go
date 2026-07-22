@@ -30,11 +30,22 @@ import (
 // 修改自己的密码
 // PostResetPassword 重置密码
 func userBuildUserItem(user *models.User, buildRoleIds bool) map[string]interface{} {
+	mode := user.ContentAccessMode
+	if user.IsOwner() {
+		mode = constants.ContentAccessModeAll
+	}
+	if !constants.IsContentAccessModeValid(mode) {
+		mode = constants.ContentAccessModeAssignedCategories
+	}
 	b := web.NewRspBuilder(user).
 		Put("idEncode", idcodec.Encode(user.Id)).
 		Put("roles", user.GetRoles()).
 		Put("username", user.Username.String).
 		Put("email", user.Email.String).
+		Put("phone", user.Phone.String).
+		Put("emailVerified", user.EmailVerified).
+		Put("contentAccessMode", mode).
+		Put("categoryIds", services.ContentAccessService.GetAssignedCategoryIds(user.Id)).
 		Put("forbidden", user.IsForbidden())
 	if buildRoleIds {
 		b.Put("roleIds", services.UserRoleService.GetUserRoleIds(user.Id))
@@ -117,13 +128,18 @@ func UserList(ctx *gin.Context) {
 }
 
 func UserCreate(ctx *gin.Context) {
+	operator, err := common.CheckLogin(ctx)
+	if err != nil {
+		ginx.WriteJSON(ctx, err)
+		return
+	}
 	var req modelReq.AdminUserCreateReq
 	if err := ginx.Bind(ctx, &req); err != nil {
 		ginx.WriteJSON(ctx, err)
 		return
 	}
 
-	user, err := services.UserService.SignUp(req.Username, req.Email, req.Nickname, req.Password, req.Password)
+	user, err := services.UserService.CreateManagedUser(operator, req, ctx.Request)
 	if err != nil {
 		ginx.WriteJSON(ctx, err)
 		return
@@ -133,36 +149,22 @@ func UserCreate(ctx *gin.Context) {
 }
 
 func UserUpdate(ctx *gin.Context) {
+	operator, err := common.CheckLogin(ctx)
+	if err != nil {
+		ginx.WriteJSON(ctx, err)
+		return
+	}
 	var req modelReq.AdminUserUpdateReq
 	if err := ginx.Bind(ctx, &req); err != nil {
 		ginx.WriteJSON(ctx, err)
 		return
 	}
 
-	user := services.UserService.Get(req.Id)
-	if user == nil {
-		ginx.WriteJSON(ctx, ginx.ErrorMessage("entity not found"))
-		return
-	}
-
-	user.Username = sqls.SqlNullString(req.Username)
-	user.Email = sqls.SqlNullString(req.Email)
-	user.Nickname = req.Nickname
-	user.Avatar = req.Avatar
-	user.Gender = constants.Gender(req.Gender)
-	user.HomePage = req.HomePage
-	user.Description = req.Description
-	user.Status = req.Status
-
-	if err := services.UserService.Update(user); err != nil {
+	user, err := services.UserService.UpdateManagedUser(operator, req, ctx.Request)
+	if err != nil {
 		ginx.WriteJSON(ctx, err)
 		return
 	}
-	if err := services.UserRoleService.UpdateUserRoles(user.Id, modelReq.SplitCommaInt64s(req.RoleIds)); err != nil {
-		ginx.WriteJSON(ctx, err)
-		return
-	}
-	user = services.UserService.Get(user.Id)
 	ginx.WriteJSON(ctx, userBuildUserItem(user, true))
 
 }
@@ -199,17 +201,17 @@ func UserForbidden(ctx *gin.Context) {
 }
 
 func UserUpdatePassword(ctx *gin.Context) {
-	user := common.GetCurrentUser(ctx)
-	if user == nil {
-		ginx.WriteJSON(ctx, errs.NotLogin())
+	operator, err := common.CheckLogin(ctx)
+	if err != nil {
+		ginx.WriteJSON(ctx, err)
 		return
 	}
-	var req modelReq.PasswordUpdateReq
+	var req modelReq.AdminPasswordUpdateReq
 	if err := ginx.Bind(ctx, &req); err != nil {
 		ginx.WriteJSON(ctx, err)
 		return
 	}
-	if err := services.UserService.UpdatePassword(user.Id, req.OldPassword, req.Password, req.RePassword); err != nil {
+	if err := services.UserService.UpdatePasswordByAdmin(operator, req.UserId, req.Password, req.RePassword, ctx.Request); err != nil {
 		ginx.WriteJSON(ctx, err)
 		return
 	}
@@ -225,7 +227,12 @@ func UserResetPassword(ctx *gin.Context) {
 		return
 	}
 
-	newPassword, err := services.UserService.ResetPassword(userId)
+	operator, err := common.CheckLogin(ctx)
+	if err != nil {
+		ginx.WriteJSON(ctx, err)
+		return
+	}
+	newPassword, err := services.UserService.ResetPasswordByAdmin(operator, userId, ctx.Request)
 	if err != nil {
 		ginx.WriteJSON(ctx, err)
 		return

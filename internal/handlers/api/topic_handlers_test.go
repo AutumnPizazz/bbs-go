@@ -11,6 +11,7 @@ import (
 	"bbs-go/internal/models"
 	"bbs-go/internal/models/constants"
 	"bbs-go/internal/models/resp"
+	"bbs-go/internal/pkg/common"
 	"bbs-go/internal/pkg/config"
 
 	"github.com/gin-gonic/gin"
@@ -102,6 +103,10 @@ func getCategoryNavs(t *testing.T) []resp.CategoryResponse {
 	w := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(w)
 	ctx.Request = httptest.NewRequest(http.MethodGet, "/api/topic/category_navs", nil)
+	common.SetCurrentUser(ctx, &models.User{
+		Model: models.Model{Id: 1},
+		Roles: constants.RoleOwner,
+	})
 
 	CategoryNavs(ctx)
 

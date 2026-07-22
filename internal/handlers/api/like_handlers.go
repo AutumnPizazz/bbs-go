@@ -29,6 +29,10 @@ func LikeLike(ctx *gin.Context) {
 		ginx.WriteJSON(ctx, errs.NotLogin())
 		return
 	}
+	if !services.ContentAccessService.CanAccessEntity(user, req.EntityType, entityId) {
+		ginx.WriteJSON(ctx, errs.ContentAccessDenied())
+		return
+	}
 	switch req.EntityType {
 	case constants.EntityTopic:
 		err = services.UserLikeService.TopicLike(user.Id, entityId)
@@ -58,6 +62,10 @@ func LikeUnlike(ctx *gin.Context) {
 		ginx.WriteJSON(ctx, errs.NotLogin())
 		return
 	}
+	if !services.ContentAccessService.CanAccessEntity(user, req.EntityType, entityId) {
+		ginx.WriteJSON(ctx, errs.ContentAccessDenied())
+		return
+	}
 	switch req.EntityType {
 	case constants.EntityTopic:
 		err = services.UserLikeService.TopicUnLike(user.Id, entityId)
@@ -84,6 +92,12 @@ func LikeLikedIds(ctx *gin.Context) {
 		likedEntityIds []int64
 	)
 	if user != nil {
+		for _, entityId := range entityIds {
+			if !services.ContentAccessService.CanAccessEntity(user, req.EntityType, entityId) {
+				ginx.WriteJSON(ctx, errs.ContentAccessDenied())
+				return
+			}
+		}
 		likedEntityIds = services.UserLikeService.IsLiked(user.Id, req.EntityType, entityIds)
 	}
 	ginx.WriteJSON(ctx, likedEntityIds)
@@ -104,6 +118,10 @@ func LikeLiked(ctx *gin.Context) {
 		ginx.WriteJSON(ctx, false)
 		return
 	} else {
+		if !services.ContentAccessService.CanAccessEntity(user, req.EntityType, entityId) {
+			ginx.WriteJSON(ctx, errs.ContentAccessDenied())
+			return
+		}
 		liked := services.UserLikeService.Exists(user.Id, req.EntityType, entityId)
 		ginx.WriteJSON(ctx, liked)
 		return

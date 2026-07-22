@@ -187,6 +187,10 @@ func (s *voteService) Cast(userId int64, form req.VoteCastReq) error {
 	if len(selected) == 0 {
 		return errors.New(locales.Get("vote.select_option_required"))
 	}
+	vote := s.Get(form.VoteId)
+	if vote == nil || !ContentAccessService.CanAccessTopic(UserService.Get(userId), TopicService.Get(vote.TopicId)) {
+		return errors.New(locales.Get("vote.not_found"))
+	}
 
 	return sqls.WithTransaction(func(ctx *sqls.TxContext) error {
 		tx := ctx.Tx

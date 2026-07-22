@@ -36,6 +36,14 @@ func Init() {
 	}
 }
 
+func Close() {
+	if index == nil {
+		return
+	}
+	_ = index.Close()
+	index = nil
+}
+
 func NewTopicDoc(topic *models.Topic) *TopicDocument {
 	if topic == nil {
 		return nil
@@ -148,6 +156,11 @@ func SearchTopic(keyword string, categoryId int64, categoryIds []int64, timeRang
 	query := bleve.NewBooleanQuery()
 	query.AddMust(bleve.NewMatchAllQuery())
 	query.AddMust(typeQuery(EntityTypeTopic))
+	status := float64(constants.StatusOk)
+	statusInclusive := true
+	statusQuery := bleve.NewNumericRangeInclusiveQuery(&status, &status, &statusInclusive, &statusInclusive)
+	statusQuery.SetField("status")
+	query.AddMust(statusQuery)
 
 	if strs.IsNotBlank(format) {
 		formatQuery := bleve.NewTermQuery(format)
@@ -162,9 +175,14 @@ func SearchTopic(keyword string, categoryId int64, categoryIds []int64, timeRang
 			boolFieldQuery := bleve.NewBoolFieldQuery(true)
 			boolFieldQuery.SetField("recommend")
 			query.AddMust(boolFieldQuery)
+			if categoryQuery := buildCategoryQuery(0, categoryIds); categoryQuery != nil && len(categoryIds) > 0 {
+				query.AddMust(categoryQuery)
+			}
 		} else if categoryQuery := buildCategoryQuery(categoryId, categoryIds); categoryQuery != nil {
 			query.AddMust(categoryQuery)
 		}
+	} else if categoryQuery := buildCategoryQuery(0, categoryIds); categoryQuery != nil && len(categoryIds) > 0 {
+		query.AddMust(categoryQuery)
 	}
 	addTimeRangeQuery(query, timeRange)
 

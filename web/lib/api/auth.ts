@@ -22,24 +22,6 @@ export function signin(
   })
 }
 
-export function signup(
-  values: {
-    nickname: string
-    email: string
-    password: string
-    rePassword: string
-    redirect?: string
-  } & CaptchaFields
-) {
-  return apiFetch<LoginResult>("/api/login/signup", {
-    method: "POST",
-    body: toFormData({
-      ...values,
-      captchaProtocol: values.captchaProtocol ?? 2,
-    }),
-  })
-}
-
 export function signoutRequest() {
   return apiFetch<void>("/api/login/signout")
 }
@@ -97,32 +79,6 @@ export function googleOneTapLogin(values: { credential: string }) {
 
 export function weixinLoginSubmit(values: { code: string; state: string }) {
   return apiFetch<LoginResult>("/api/login/wx_login_submit", {
-    method: "POST",
-    body: toFormData(values),
-  })
-}
-
-export function sendResetPasswordEmail(values: {
-  email: string
-  captchaId?: string
-  captchaCode?: string
-  captchaProtocol?: string | number
-}) {
-  return apiFetch<void>("/api/login/send_reset_password_email", {
-    method: "POST",
-    body: toFormData({
-      ...values,
-      captchaProtocol: values.captchaProtocol ?? 2,
-    }),
-  })
-}
-
-export function resetPassword(values: {
-  token: string
-  password: string
-  rePassword: string
-}) {
-  return apiFetch<void>("/api/login/reset_password", {
     method: "POST",
     body: toFormData(values),
   })

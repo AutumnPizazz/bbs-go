@@ -98,7 +98,7 @@ func (s *userLikeService) IsLiked(userId int64, entityType string, entityIds []i
 // TopicLike 话题点赞
 func (s *userLikeService) TopicLike(userId int64, topicId int64) error {
 	topic := repositories.TopicRepository.Get(sqls.DB(), topicId)
-	if topic == nil || topic.Status != constants.StatusOk {
+	if topic == nil || !ContentAccessService.CanAccessTopic(UserService.Get(userId), topic) {
 		return errors.New("topic not found")
 	}
 
@@ -124,7 +124,7 @@ func (s *userLikeService) TopicLike(userId int64, topicId int64) error {
 
 func (s *userLikeService) TopicUnLike(userId int64, topicId int64) error {
 	topic := repositories.TopicRepository.Get(sqls.DB(), topicId)
-	if topic == nil || topic.Status != constants.StatusOk {
+	if topic == nil || !ContentAccessService.CanAccessTopic(UserService.Get(userId), topic) {
 		return errors.New("topic not found")
 	}
 
@@ -151,7 +151,7 @@ func (s *userLikeService) TopicUnLike(userId int64, topicId int64) error {
 // CommentLike comment like
 func (s *userLikeService) CommentLike(userId int64, commentId int64) error {
 	comment := repositories.CommentRepository.Get(sqls.DB(), commentId)
-	if comment == nil || comment.Status != constants.StatusOk {
+	if comment == nil || !ContentAccessService.CanAccessComment(UserService.Get(userId), comment) {
 		return errors.New("comment not found")
 	}
 
@@ -178,7 +178,7 @@ func (s *userLikeService) CommentLike(userId int64, commentId int64) error {
 // CommentUnLike comment unlike
 func (s *userLikeService) CommentUnLike(userId int64, commentId int64) error {
 	comment := repositories.CommentRepository.Get(sqls.DB(), commentId)
-	if comment == nil || comment.Status != constants.StatusOk {
+	if comment == nil || !ContentAccessService.CanAccessComment(UserService.Get(userId), comment) {
 		return errors.New("comment not found")
 	}
 

@@ -168,42 +168,6 @@ func UserSetEmail(ctx *gin.Context) {
 
 }
 
-func UserSetPassword(ctx *gin.Context) {
-	user := common.GetCurrentUser(ctx)
-	if user == nil {
-		ginx.WriteJSON(ctx, errs.NotLogin())
-		return
-	}
-	password := params.FormValue(ctx, "password")
-	rePassword := params.FormValue(ctx, "rePassword")
-	err := services.UserService.SetPassword(user.Id, password, rePassword)
-	if err != nil {
-		ginx.WriteJSON(ctx, err)
-		return
-	}
-	ginx.WriteJSON(ctx, nil)
-
-}
-
-func UserUpdatePassword(ctx *gin.Context) {
-	user := common.GetCurrentUser(ctx)
-	if user == nil {
-		ginx.WriteJSON(ctx, errs.NotLogin())
-		return
-	}
-	var req req.PasswordUpdateReq
-	if err := ginx.Bind(ctx, &req); err != nil {
-		ginx.WriteJSON(ctx, err)
-		return
-	}
-	if err := services.UserService.UpdatePassword(user.Id, req.OldPassword, req.Password, req.RePassword); err != nil {
-		ginx.WriteJSON(ctx, err)
-		return
-	}
-	ginx.WriteJSON(ctx, nil)
-
-}
-
 func UserSetBackgroundImage(ctx *gin.Context) {
 	user := common.GetCurrentUser(ctx)
 	if user == nil {
@@ -233,23 +197,29 @@ func UserFavorites(ctx *gin.Context) {
 		return
 	}
 
-	// 查询列表
 	limit := 20
-	var favorites []models.Favorite
+	cnd := sqls.NewCnd().Where("user_id = ?", user.Id).Desc("id")
 	if cursor > 0 {
-		favorites = services.FavoriteService.Find(sqls.NewCnd().Where("user_id = ? and id < ?",
-			user.Id, cursor).Desc("id").Limit(20))
-	} else {
-		favorites = services.FavoriteService.Find(sqls.NewCnd().Where("user_id = ?", user.Id).Desc("id").Limit(limit))
+		cnd.Lt("id", cursor)
+	}
+	favorites := services.FavoriteService.Find(cnd)
+	visibleFavorites := make([]models.Favorite, 0, len(favorites))
+	for i := range favorites {
+		favorite := &favorites[i]
+		if favorite.EntityType == constants.EntityTopic && services.ContentAccessService.CanAccessEntity(user, favorite.EntityType, favorite.EntityId) {
+			visibleFavorites = append(visibleFavorites, *favorite)
+		}
+	}
+	hasMore := len(visibleFavorites) > limit
+	if hasMore {
+		visibleFavorites = visibleFavorites[:limit]
 	}
 
-	hasMore := false
-	if len(favorites) > 0 {
-		cursor = favorites[len(favorites)-1].Id
-		hasMore = len(favorites) >= limit
+	if len(visibleFavorites) > 0 {
+		cursor = visibleFavorites[len(visibleFavorites)-1].Id
 	}
 
-	ginx.WriteJSON(ctx, ginx.CursorData(render.BuildFavorites(favorites), strconv.FormatInt(cursor, 10), hasMore))
+	ginx.WriteJSON(ctx, ginx.CursorData(render.BuildFavorites(visibleFavorites), strconv.FormatInt(cursor, 10), hasMore))
 
 }
 
@@ -258,9 +228,14 @@ func UserMsgRecent(ctx *gin.Context) {
 	var count int64 = 0
 	var messages []models.Message
 	if user != nil {
-		count = services.MessageService.GetUnReadCount(user.Id)
-		messages = services.MessageService.Find(sqls.NewCnd().Eq("user_id", user.Id).
-			Eq("status", msg.StatusUnread).Limit(3).Desc("id"))
+		unread := services.MessageService.Find(sqls.NewCnd().Eq("user_id", user.Id).
+			Eq("status", msg.StatusUnread).Desc("id"))
+		visible := services.ContentAccessService.FilterMessages(user, unread)
+		count = int64(len(visible))
+		if len(visible) > 3 {
+			visible = visible[:3]
+		}
+		messages = visible
 	}
 	ginx.WriteJSON(ctx, map[string]any{"count": count, "messages": render.BuildMessages(messages)})
 
@@ -277,19 +252,21 @@ func UserMessages(ctx *gin.Context) {
 		cursor, _ = params.GetInt64(ctx, "cursor")
 	)
 
-	cnd := sqls.NewCnd().Eq("user_id", user.Id).Limit(limit).Desc("id")
+	cnd := sqls.NewCnd().Eq("user_id", user.Id).Desc("id")
 	if cursor > 0 {
 		cnd.Lt("id", cursor)
 	}
-	list := services.MessageService.Find(cnd)
+	list := services.ContentAccessService.FilterMessages(user, services.MessageService.Find(cnd))
+	hasMore := len(list) > limit
+	if hasMore {
+		list = list[:limit]
+	}
 
 	var (
 		nextCursor = cursor
-		hasMore    = false
 	)
 	if len(list) > 0 {
 		nextCursor = list[len(list)-1].Id
-		hasMore = len(list) == limit
 	}
 
 	// 全部标记为已读

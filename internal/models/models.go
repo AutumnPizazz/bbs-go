@@ -10,7 +10,7 @@ var Models = []interface{}{
 	&Migration{},
 	&UserRole{}, &Role{}, &Permission{}, &RolePermission{}, &DictType{}, &Dict{},
 
-	&User{}, &UserToken{}, &ThirdUser{}, &Tag{}, &Comment{}, &Favorite{}, &Topic{}, &Category{},
+	&User{}, &UserToken{}, &ThirdUser{}, &UserCategoryAccess{}, &Tag{}, &Comment{}, &Favorite{}, &Topic{}, &Category{},
 	&TopicTag{}, &UserLike{}, &Message{}, &SysConfig{}, &Link{},
 	&Vote{}, &VoteOption{}, &VoteRecord{},
 	&OperateLog{}, &EmailLog{}, &EmailCode{}, &SmsCode{}, &UserFollow{}, &UserFeed{}, &UserReport{},
@@ -97,27 +97,38 @@ type Dict struct {
 
 type User struct {
 	Model
-	Phone            sql.NullString   `gorm:"size:16;unique;" json:"phone" form:"phone"`                           // 电话
-	Username         sql.NullString   `gorm:"size:32;unique;" json:"username" form:"username"`                     // 用户名
-	Email            sql.NullString   `gorm:"size:128;unique;" json:"email" form:"email"`                          // 邮箱
-	EmailVerified    bool             `gorm:"not null;default:false" json:"emailVerified" form:"emailVerified"`    // 邮箱是否验证
-	Nickname         string           `gorm:"size:16;" json:"nickname" form:"nickname"`                            // 昵称
-	Avatar           string           `gorm:"type:text" json:"avatar" form:"avatar"`                               // 头像
-	Gender           constants.Gender `gorm:"size:16;default:''" json:"gender" form:"gender"`                      // 性别
-	Birthday         *time.Time       `json:"birthday" form:"birthday"`                                            // 生日
-	BackgroundImage  string           `gorm:"type:text" json:"backgroundImage" form:"backgroundImage"`             // 个人中心背景图片
-	Password         string           `gorm:"size:512" json:"password" form:"password"`                            // 密码
-	HomePage         string           `gorm:"size:1024" json:"homePage" form:"homePage"`                           // 个人主页
-	Description      string           `gorm:"type:text" json:"description" form:"description"`                     // 个人描述
-	Status           int              `gorm:"type:int;index:idx_user_status;not null" json:"status" form:"status"` // 状态
-	TopicCount       int              `gorm:"type:int;not null" json:"topicCount" form:"topicCount"`               // 帖子数量
-	CommentCount     int              `gorm:"type:int;not null" json:"commentCount" form:"commentCount"`           // 跟帖数量
-	FollowCount      int              `gorm:"type:int;not null" json:"followCount" form:"followCount"`             // 关注数量
-	FansCount        int              `gorm:"type:int;not null" json:"fansCount" form:"fansCount"`                 // 粉丝数量
-	Roles            string           `gorm:"type:text" json:"roles" form:"roles"`                                 // 角色
-	ForbiddenEndTime int64            `gorm:"not null;default:0" json:"forbiddenEndTime" form:"forbiddenEndTime"`  // 禁言结束时间
-	CreateTime       int64            `json:"createTime" form:"createTime"`                                        // 创建时间
-	UpdateTime       int64            `json:"updateTime" form:"updateTime"`                                        // 更新时间
+	Phone             sql.NullString              `gorm:"size:16;unique;" json:"phone" form:"phone"`                                                                                         // 电话
+	Username          sql.NullString              `gorm:"size:32;unique;" json:"username" form:"username"`                                                                                   // 用户名
+	Email             sql.NullString              `gorm:"size:128;unique;" json:"email" form:"email"`                                                                                        // 邮箱
+	EmailVerified     bool                        `gorm:"not null;default:false" json:"emailVerified" form:"emailVerified"`                                                                  // 邮箱是否验证
+	Nickname          string                      `gorm:"size:16;" json:"nickname" form:"nickname"`                                                                                          // 昵称
+	Avatar            string                      `gorm:"type:text" json:"avatar" form:"avatar"`                                                                                             // 头像
+	Gender            constants.Gender            `gorm:"size:16;default:''" json:"gender" form:"gender"`                                                                                    // 性别
+	Birthday          *time.Time                  `json:"birthday" form:"birthday"`                                                                                                          // 生日
+	BackgroundImage   string                      `gorm:"type:text" json:"backgroundImage" form:"backgroundImage"`                                                                           // 个人中心背景图片
+	Password          string                      `gorm:"size:512" json:"password" form:"password"`                                                                                          // 密码
+	HomePage          string                      `gorm:"size:1024" json:"homePage" form:"homePage"`                                                                                         // 个人主页
+	Description       string                      `gorm:"type:text" json:"description" form:"description"`                                                                                   // 个人描述
+	Status            int                         `gorm:"type:int;index:idx_user_status;not null" json:"status" form:"status"`                                                               // 状态
+	TopicCount        int                         `gorm:"type:int;not null" json:"topicCount" form:"topicCount"`                                                                             // 帖子数量
+	CommentCount      int                         `gorm:"type:int;not null" json:"commentCount" form:"commentCount"`                                                                         // 跟帖数量
+	FollowCount       int                         `gorm:"type:int;not null" json:"followCount" form:"followCount"`                                                                           // 关注数量
+	FansCount         int                         `gorm:"type:int;not null" json:"fansCount" form:"fansCount"`                                                                               // 粉丝数量
+	Roles             string                      `gorm:"type:text" json:"roles" form:"roles"`                                                                                               // 角色
+	ContentAccessMode constants.ContentAccessMode `gorm:"size:32;not null;default:assigned_categories;index:idx_user_content_access_mode" json:"contentAccessMode" form:"contentAccessMode"` // 内容访问范围
+	ForbiddenEndTime  int64                       `gorm:"not null;default:0" json:"forbiddenEndTime" form:"forbiddenEndTime"`                                                                // 禁言结束时间
+	CreateTime        int64                       `json:"createTime" form:"createTime"`                                                                                                      // 创建时间
+	UpdateTime        int64                       `json:"updateTime" form:"updateTime"`                                                                                                      // 更新时间
+}
+
+// UserCategoryAccess stores explicit category roots assigned to a user.
+// Disabled categories remain in this table for auditability and restoration.
+type UserCategoryAccess struct {
+	Model
+	UserId     int64 `gorm:"not null;uniqueIndex:uk_user_category_access;index:idx_user_category_access_user_id" json:"userId" form:"userId"`
+	CategoryId int64 `gorm:"not null;uniqueIndex:uk_user_category_access;index:idx_user_category_access_category_id" json:"categoryId" form:"categoryId"`
+	CreateTime int64 `gorm:"not null;default:0" json:"createTime" form:"createTime"`
+	UpdateTime int64 `gorm:"not null;default:0" json:"updateTime" form:"updateTime"`
 }
 
 type UserToken struct {

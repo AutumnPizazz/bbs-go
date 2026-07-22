@@ -3,9 +3,7 @@ package api
 import (
 	"bbs-go/internal/cache"
 	"bbs-go/internal/handlers/render"
-	"bbs-go/internal/models"
 	"bbs-go/internal/models/req"
-	"database/sql"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -13,7 +11,6 @@ import (
 	"bbs-go/internal/pkg/ginx"
 
 	"github.com/dchest/captcha"
-	"github.com/mlogclub/simple/common/dates"
 	"github.com/mlogclub/simple/common/strs"
 
 	"bbs-go/internal/pkg/bbsurls"
@@ -27,54 +24,10 @@ import (
 	"bbs-go/internal/services"
 )
 
-// 注册
 // 用户名密码登录
-// 请求找回密码邮件
-// 重置密码
 // 退出登录
 // 请求登录短信验证码
 // 短信登录
-func LoginSignup(ctx *gin.Context) {
-	var req req.LoginSignupReq
-	if err := ginx.Bind(ctx, &req); err != nil {
-		ginx.WriteJSON(ctx, err)
-		return
-	}
-	req.CaptchaId = strings.TrimSpace(req.CaptchaId)
-	req.CaptchaCode = strings.TrimSpace(req.CaptchaCode)
-	req.Email = strings.TrimSpace(req.Email)
-	req.Username = strings.TrimSpace(req.Username)
-	req.Password = strings.TrimSpace(req.Password)
-	req.RePassword = strings.TrimSpace(req.RePassword)
-	req.Nickname = strings.TrimSpace(req.Nickname)
-	if req.Redirect == "" {
-		req.Redirect = ctx.Query("redirect")
-	}
-	if !services.SysConfigService.GetLoginConfig().PasswordLogin.Enabled {
-		ginx.WriteJSON(ctx, ginx.ErrorMessage(locales.Get("auth.password_login_disabled")))
-		return
-	}
-	// 根据验证码协议版本校验验证码
-	if req.CaptchaProtocol == 2 {
-		if !captcha2.Verify(req.CaptchaId, req.CaptchaCode) {
-			ginx.WriteJSON(ctx, errs.CaptchaError())
-			return
-		}
-	} else {
-		if !captcha.VerifyString(req.CaptchaId, req.CaptchaCode) {
-			ginx.WriteJSON(ctx, errs.CaptchaError())
-			return
-		}
-	}
-	user, err := services.UserService.SignUp(req.Username, req.Email, req.Nickname, req.Password, req.RePassword)
-	if err != nil {
-		ginx.WriteJSON(ctx, err)
-		return
-	}
-	ginx.WriteJSON(ctx, render.BuildLoginSuccess(ctx, user, req.Redirect))
-
-}
-
 func LoginSignin(ctx *gin.Context) {
 	var req req.LoginSigninReq
 	if err := ginx.Bind(ctx, &req); err != nil {
@@ -116,62 +69,6 @@ func LoginSignin(ctx *gin.Context) {
 		}
 	}
 	ginx.WriteJSON(ctx, render.BuildLoginSuccess(ctx, user, req.Redirect))
-
-}
-
-func LoginSendResetPasswordEmail(ctx *gin.Context) {
-	if !services.SysConfigService.GetLoginConfig().PasswordLogin.Enabled {
-		ginx.WriteJSON(ctx, ginx.ErrorMessage(locales.Get("auth.password_login_disabled")))
-		return
-	}
-	var req req.LoginResetEmailReq
-	if err := ginx.Bind(ctx, &req); err != nil {
-		ginx.WriteJSON(ctx, err)
-		return
-	}
-	req.CaptchaId = strings.TrimSpace(req.CaptchaId)
-	req.CaptchaCode = strings.TrimSpace(req.CaptchaCode)
-	req.Email = strings.TrimSpace(req.Email)
-
-	// 根据验证码协议版本校验验证码
-	if req.CaptchaProtocol == 2 {
-		if !captcha2.Verify(req.CaptchaId, req.CaptchaCode) {
-			ginx.WriteJSON(ctx, errs.CaptchaError())
-			return
-		}
-	} else {
-		if !captcha.VerifyString(req.CaptchaId, req.CaptchaCode) {
-			ginx.WriteJSON(ctx, errs.CaptchaError())
-			return
-		}
-	}
-
-	if err := services.UserService.SendResetPasswordEmail(req.Email); err != nil {
-		ginx.WriteJSON(ctx, err)
-		return
-	}
-	ginx.WriteJSON(ctx, nil)
-
-}
-
-func LoginResetPassword(ctx *gin.Context) {
-	if !services.SysConfigService.GetLoginConfig().PasswordLogin.Enabled {
-		ginx.WriteJSON(ctx, ginx.ErrorMessage(locales.Get("auth.password_login_disabled")))
-		return
-	}
-	var req req.LoginResetPasswordReq
-	if err := ginx.Bind(ctx, &req); err != nil {
-		ginx.WriteJSON(ctx, err)
-		return
-	}
-	req.Token = strings.TrimSpace(req.Token)
-	req.Password = strings.TrimSpace(req.Password)
-	req.RePassword = strings.TrimSpace(req.RePassword)
-	if err := services.UserService.ResetPasswordByToken(req.Token, req.Password, req.RePassword); err != nil {
-		ginx.WriteJSON(ctx, err)
-		return
-	}
-	ginx.WriteJSON(ctx, nil)
 
 }
 
@@ -241,20 +138,8 @@ func LoginLoginSms(ctx *gin.Context) {
 
 	user := services.UserService.GetByPhone(phone)
 	if user == nil {
-		user = &models.User{
-			Phone: sql.NullString{
-				String: phone,
-				Valid:  true,
-			},
-			Nickname:   "User" + common.StrRight(phone, 4),
-			CreateTime: dates.NowTimestamp(),
-			UpdateTime: dates.NowTimestamp(),
-		}
-
-		if err := services.UserService.Create(user); err != nil {
-			ginx.WriteJSON(ctx, err)
-			return
-		}
+		ginx.WriteJSON(ctx, errs.RegistrationClosed())
+		return
 	}
 
 	ginx.WriteJSON(ctx, render.BuildLoginSuccess(ctx, user, req.Redirect))

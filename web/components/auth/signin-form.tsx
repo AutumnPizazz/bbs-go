@@ -1,6 +1,5 @@
 "use client"
 
-import Link from "@/components/common/link"
 import { useRouter, useSearchParams } from "@/lib/router/navigation"
 import { Lock, MessageSquare } from "lucide-react"
 import {
@@ -34,10 +33,6 @@ import { useToastActions } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 
 const initialState: AuthActionState = { ok: false }
-
-function authLink(path: string, redirect?: string) {
-  return redirect ? `${path}?redirect=${encodeURIComponent(redirect)}` : path
-}
 
 function enabled(value?: { enabled?: boolean }) {
   return value?.enabled !== false
@@ -247,22 +242,6 @@ function PasswordLoginForm({ redirect }: { redirect?: string }) {
         <Button type="submit" className="w-full" disabled={pending}>
           {t("user.signin.password.loginBtn")}
         </Button>
-        <div className="text-center">
-          <Link
-            href="/user/password/forgot"
-            className="text-sm text-muted-foreground transition-colors hover:text-primary"
-          >
-            {t("user.signin.password.forgotPassword")}
-          </Link>
-        </div>
-        <div className="text-center">
-          <Link
-            href={authLink("/user/signup", redirect)}
-            className="text-sm text-muted-foreground transition-colors hover:text-primary"
-          >
-            {t("user.signin.password.noAccount")}
-          </Link>
-        </div>
       </form>
     </div>
   )

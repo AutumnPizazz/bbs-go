@@ -39,6 +39,18 @@ func (s *attachmentService) extAllowed(ext string, allowedTypes []string) bool {
 // Upload 流式上传附件；content 为数据流，contentLength 为文件大小（用于存储 FileSize 与上传 ContentLength）。
 func (s *attachmentService) Upload(userId int64, filename string, content io.Reader, contentLength int64, contentType string) (*models.Attachment, error) {
 	cfg := SysConfigService.GetAttachmentConfig()
+	user := UserService.Get(userId)
+	if user == nil {
+		return nil, errors.New(locales.Get("errors.not_login"))
+	}
+	if user.ContentAccessMode == constants.ContentAccessModeAssignedCategories && !user.IsOwner() {
+		if !cfg.ExternalCustomerAttachment.Enabled {
+			return nil, errors.New(locales.Get("attachment.disabled"))
+		}
+		if cfg.ExternalCustomerAttachment.MaxSizeMB > 0 && contentLength > int64(cfg.ExternalCustomerAttachment.MaxSizeMB)*1024*1024 {
+			return nil, errors.New(locales.Getf("attachment.too_large", cfg.ExternalCustomerAttachment.MaxSizeMB))
+		}
+	}
 	ext := strings.ToLower(filepath.Ext(filename))
 	if !s.extAllowed(ext, cfg.AllowedTypes) {
 		return nil, errors.New(locales.Get("attachment.ext_not_allowed"))
@@ -103,7 +115,7 @@ func (s *attachmentService) Download(attachmentId string, userId int64) (redirec
 	}
 
 	topic := repositories.TopicRepository.Get(sqls.DB(), att.TopicId)
-	if topic == nil || topic.Status == constants.StatusDeleted {
+	if topic == nil || !ContentAccessService.CanAccessTopic(UserService.Get(userId), topic) {
 		return "", errors.New(locales.Get("attachment.not_found"))
 	}
 
@@ -128,6 +140,16 @@ func (s *attachmentService) ReplaceTopicAttachments(ctx *sqls.TxContext, topicId
 	for _, id := range attachmentIds {
 		if strs.IsNotBlank(id) {
 			newSet[id] = true
+		}
+	}
+	user := UserService.Get(userId)
+	cfg := SysConfigService.GetAttachmentConfig()
+	if user != nil && user.ContentAccessMode == constants.ContentAccessModeAssignedCategories && !user.IsOwner() {
+		if !cfg.ExternalCustomerAttachment.Enabled {
+			return errors.New(locales.Get("attachment.disabled"))
+		}
+		if cfg.ExternalCustomerAttachment.MaxCountPerContent > 0 && len(newSet) > cfg.ExternalCustomerAttachment.MaxCountPerContent {
+			return errors.New(locales.Getf("attachment.too_many", cfg.ExternalCustomerAttachment.MaxCountPerContent))
 		}
 	}
 
@@ -166,16 +188,28 @@ func (s *attachmentService) ReplaceTopicAttachments(ctx *sqls.TxContext, topicId
 
 // CheckAttachmentsExistAndOwned 检查 attachmentIds 是否存在且均属于 userId，且未绑定其他帖子（或仅绑定 topicId）
 func (s *attachmentService) CheckAttachmentsExistAndOwned(ctx *sqls.TxContext, userId int64, attachmentIds []string, topicId int64) error {
+	uniqueIds := make(map[string]struct{}, len(attachmentIds))
 	for _, aid := range attachmentIds {
 		if strs.IsBlank(aid) {
 			continue
 		}
+		uniqueIds[aid] = struct{}{}
 		att := repositories.AttachmentRepository.Get(ctx.Tx, aid)
 		if att == nil || att.UserId != userId {
 			return errors.New(locales.Get("attachment.no_permission"))
 		}
 		if att.TopicId != 0 && att.TopicId != topicId {
 			return errors.New(locales.Get("attachment.already_bound"))
+		}
+	}
+	user := UserService.Get(userId)
+	cfg := SysConfigService.GetAttachmentConfig()
+	if user != nil && user.ContentAccessMode == constants.ContentAccessModeAssignedCategories && !user.IsOwner() {
+		if !cfg.ExternalCustomerAttachment.Enabled {
+			return errors.New(locales.Get("attachment.disabled"))
+		}
+		if cfg.ExternalCustomerAttachment.MaxCountPerContent > 0 && len(uniqueIds) > cfg.ExternalCustomerAttachment.MaxCountPerContent {
+			return errors.New(locales.Getf("attachment.too_many", cfg.ExternalCustomerAttachment.MaxCountPerContent))
 		}
 	}
 	return nil

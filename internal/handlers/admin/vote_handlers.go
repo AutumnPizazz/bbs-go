@@ -2,6 +2,8 @@ package admin
 
 import (
 	"bbs-go/internal/models"
+	"bbs-go/internal/pkg/common"
+	"bbs-go/internal/pkg/errs"
 	"bbs-go/internal/services"
 	"strconv"
 
@@ -21,7 +23,7 @@ func VoteDetail(ctx *gin.Context) {
 	}
 
 	t := services.VoteService.Get(id)
-	if t == nil {
+	if t == nil || !services.ContentAccessService.CanAccessTopicCategory(common.GetCurrentUser(ctx), services.TopicService.Get(t.TopicId)) {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage("Not found, id="+strconv.FormatInt(id, 10)))
 		return
 	}
@@ -30,11 +32,12 @@ func VoteDetail(ctx *gin.Context) {
 }
 
 func VoteList(ctx *gin.Context) {
+	user := common.GetCurrentUser(ctx)
 	list, paging := services.VoteService.FindPageByCnd(params.NewPagedSqlCnd(ctx,
 		params.QueryFilter{
 			ParamName: "id",
 		},
-	).Desc("id"))
+	).Where("topic_id IN (?)", services.ContentAccessService.AllowedTopicSubquery(user)).Desc("id"))
 	ginx.WriteJSON(ctx, &web.PageResult{Results: list, Page: paging})
 
 }
@@ -43,6 +46,10 @@ func VoteCreate(ctx *gin.Context) {
 	t := &models.Vote{}
 	if err := ginx.Bind(ctx, t); err != nil {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage(err.Error()))
+		return
+	}
+	if !services.ContentAccessService.CanAccessTopicCategory(common.GetCurrentUser(ctx), services.TopicService.Get(t.TopicId)) {
+		ginx.WriteJSON(ctx, errs.ContentAccessDenied())
 		return
 	}
 
@@ -57,13 +64,17 @@ func VoteCreate(ctx *gin.Context) {
 func VoteUpdate(ctx *gin.Context) {
 	id, _ := params.GetInt64(ctx, "id")
 	t := services.VoteService.Get(id)
-	if t == nil {
+	if t == nil || !services.ContentAccessService.CanAccessTopicCategory(common.GetCurrentUser(ctx), services.TopicService.Get(t.TopicId)) {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage("entity not found"))
 		return
 	}
 
 	if err := ginx.Bind(ctx, t); err != nil {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage(err.Error()))
+		return
+	}
+	if !services.ContentAccessService.CanAccessTopicCategory(common.GetCurrentUser(ctx), services.TopicService.Get(t.TopicId)) {
+		ginx.WriteJSON(ctx, errs.ContentAccessDenied())
 		return
 	}
 
@@ -82,6 +93,11 @@ func VoteRemove(ctx *gin.Context) {
 		return
 	}
 	for _, id := range ids {
+		vote := services.VoteService.Get(id)
+		if vote == nil || !services.ContentAccessService.CanAccessTopicCategory(common.GetCurrentUser(ctx), services.TopicService.Get(vote.TopicId)) {
+			ginx.WriteJSON(ctx, errs.ContentAccessDenied())
+			return
+		}
 		services.VoteService.Delete(id)
 	}
 	ginx.WriteJSON(ctx, nil)

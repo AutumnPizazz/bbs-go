@@ -129,27 +129,6 @@ export async function setEmail(email: string): Promise<void> {
   })
 }
 
-export async function setPassword(values: {
-  password: string
-  rePassword: string
-}): Promise<void> {
-  await apiFetch<null>("/api/user/set_password", {
-    method: "POST",
-    body: toFormData(values),
-  })
-}
-
-export async function updatePassword(values: {
-  oldPassword: string
-  password: string
-  rePassword: string
-}): Promise<void> {
-  await apiFetch<null>("/api/user/update_password", {
-    method: "POST",
-    body: toFormData(values),
-  })
-}
-
 export async function toggleFollow(
   userId: string,
   followed: boolean

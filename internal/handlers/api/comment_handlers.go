@@ -3,6 +3,7 @@ package api
 import (
 	"bbs-go/internal/models/req"
 	"bbs-go/internal/pkg/common"
+	"bbs-go/internal/pkg/errs"
 	"bbs-go/internal/spam"
 	"strconv"
 
@@ -23,6 +24,10 @@ func CommentComments(ctx *gin.Context) {
 		entityId      = common.GetID(ctx, "entityId")
 		currentUser   = common.GetCurrentUser(ctx)
 	)
+	if !services.ContentAccessService.CanAccessEntity(currentUser, entityType, entityId) {
+		ginx.WriteJSON(ctx, errs.ContentAccessDenied())
+		return
+	}
 	comments, cursor, hasMore := services.CommentService.GetComments(entityType, entityId, cursor)
 	ginx.WriteJSON(ctx, ginx.CursorData(render.BuildComments(comments, currentUser, true, false), strconv.FormatInt(cursor, 10), hasMore))
 
@@ -32,8 +37,12 @@ func CommentReplies(ctx *gin.Context) {
 	var (
 		cursor, _    = params.GetInt64(ctx, "cursor")
 		commentId, _ = params.GetInt64(ctx, "commentId")
+		currentUser  = common.GetCurrentUser(ctx)
 	)
-	currentUser := common.GetCurrentUser(ctx)
+	if !services.ContentAccessService.CanAccessComment(currentUser, services.CommentService.Get(commentId)) {
+		ginx.WriteJSON(ctx, errs.ContentAccessDenied())
+		return
+	}
 	comments, cursor, hasMore := services.CommentService.GetReplies(commentId, cursor, 10)
 	ginx.WriteJSON(ctx, ginx.CursorData(render.BuildComments(comments, currentUser, false, true), strconv.FormatInt(cursor, 10), hasMore))
 
@@ -48,6 +57,10 @@ func CommentCreate(ctx *gin.Context) {
 	var body req.CreateCommentReq
 	if err := ginx.Bind(ctx, &body); err != nil {
 		ginx.WriteJSON(ctx, err)
+		return
+	}
+	if !services.ContentAccessService.CanAccessEntity(user, body.EntityType, body.DecodedEntityId()) {
+		ginx.WriteJSON(ctx, errs.ContentAccessDenied())
 		return
 	}
 	body.UserAgent = web.GetUserAgent(ctx.Request)
@@ -74,6 +87,10 @@ func CommentRemove(ctx *gin.Context) {
 		return
 	}
 	user := common.GetCurrentUser(ctx)
+	if !services.ContentAccessService.CanAccessComment(user, services.CommentService.Get(id)) {
+		ginx.WriteJSON(ctx, errs.ContentAccessDenied())
+		return
+	}
 	if err := services.CommentService.DeleteByUser(user, id); err != nil {
 		ginx.WriteJSON(ctx, err)
 		return

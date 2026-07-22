@@ -2,6 +2,7 @@ package api
 
 import (
 	"bbs-go/internal/handlers/render"
+	"bbs-go/internal/pkg/common"
 	"bbs-go/internal/pkg/search"
 	"bbs-go/internal/services"
 
@@ -23,8 +24,28 @@ func SearchTopic(ctx *gin.Context) {
 		limit      = 20
 	)
 	var categoryIds []int64
+	allowedCategoryIds := services.ContentAccessService.GetAllowedCategoryIds(common.GetCurrentUser(ctx))
+	if len(allowedCategoryIds) == 0 {
+		ginx.WriteJSON(ctx, ginx.CursorData([]search.TopicDocument{}, cast.ToString(cursor+1), false))
+		return
+	}
 	if categoryId > 0 {
-		categoryIds = services.CategoryService.GetCategoryIdsForList(categoryId)
+		requested := services.CategoryService.GetCategoryIdsForList(categoryId)
+		allowed := make(map[int64]struct{}, len(allowedCategoryIds))
+		for _, id := range allowedCategoryIds {
+			allowed[id] = struct{}{}
+		}
+		for _, id := range requested {
+			if _, ok := allowed[id]; ok {
+				categoryIds = append(categoryIds, id)
+			}
+		}
+		if len(categoryIds) == 0 {
+			ginx.WriteJSON(ctx, ginx.CursorData([]search.TopicDocument{}, cast.ToString(cursor+1), false))
+			return
+		}
+	} else {
+		categoryIds = allowedCategoryIds
 	}
 	list, _, err := search.SearchTopic(keyword, categoryId, categoryIds, timeRange, format, cursor, limit)
 	if err != nil {

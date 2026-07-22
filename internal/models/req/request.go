@@ -96,23 +96,33 @@ func ParseImageDTO(str string) (img *ImageDTO) {
 }
 
 type AdminUserCreateReq struct {
-	Username string `json:"username" form:"username"`
-	Email    string `json:"email" form:"email"`
-	Nickname string `json:"nickname" form:"nickname"`
-	Password string `json:"password" form:"password"`
+	Username          string `json:"username" form:"username"`
+	Email             string `json:"email" form:"email"`
+	Phone             string `json:"phone" form:"phone"`
+	Nickname          string `json:"nickname" form:"nickname"`
+	Password          string `json:"password" form:"password"`
+	RoleIds           string `json:"roleIds" form:"roleIds"`
+	ContentAccessMode string `json:"contentAccessMode" form:"contentAccessMode"`
+	CategoryIds       string `json:"categoryIds" form:"categoryIds"`
+	Status            int    `json:"status" form:"status"`
+	EmailVerified     bool   `json:"emailVerified" form:"emailVerified"`
 }
 
 type AdminUserUpdateReq struct {
-	Id          int64  `json:"id" form:"id"`
-	Username    string `json:"username" form:"username"`
-	Email       string `json:"email" form:"email"`
-	Nickname    string `json:"nickname" form:"nickname"`
-	Avatar      string `json:"avatar" form:"avatar"`
-	Gender      string `json:"gender" form:"gender"`
-	HomePage    string `json:"homePage" form:"homePage"`
-	Description string `json:"description" form:"description"`
-	RoleIds     string `json:"roleIds" form:"roleIds"`
-	Status      int    `json:"status" form:"status"`
+	Id                int64  `json:"id" form:"id"`
+	Username          string `json:"username" form:"username"`
+	Email             string `json:"email" form:"email"`
+	Nickname          string `json:"nickname" form:"nickname"`
+	Avatar            string `json:"avatar" form:"avatar"`
+	Gender            string `json:"gender" form:"gender"`
+	HomePage          string `json:"homePage" form:"homePage"`
+	Description       string `json:"description" form:"description"`
+	RoleIds           string `json:"roleIds" form:"roleIds"`
+	Status            int    `json:"status" form:"status"`
+	Phone             string `json:"phone" form:"phone"`
+	ContentAccessMode string `json:"contentAccessMode" form:"contentAccessMode"`
+	CategoryIds       string `json:"categoryIds" form:"categoryIds"`
+	EmailVerified     bool   `json:"emailVerified" form:"emailVerified"`
 }
 
 type AdminUserForbiddenReq struct {
@@ -121,10 +131,10 @@ type AdminUserForbiddenReq struct {
 	Reason string `json:"reason" form:"reason"`
 }
 
-type PasswordUpdateReq struct {
-	OldPassword string `json:"oldPassword" form:"oldPassword"`
-	Password    string `json:"password" form:"password"`
-	RePassword  string `json:"rePassword" form:"rePassword"`
+type AdminPasswordUpdateReq struct {
+	UserId     int64  `json:"userId" form:"userId"`
+	Password   string `json:"password" form:"password"`
+	RePassword string `json:"rePassword" form:"rePassword"`
 }
 
 type RolePermissionsReq struct {
@@ -137,18 +147,6 @@ type TopicAcceptAnswerReq struct {
 	CommentId int64 `json:"commentId" form:"commentId"`
 }
 
-type LoginSignupReq struct {
-	CaptchaId       string `json:"captchaId" form:"captchaId"`
-	CaptchaCode     string `json:"captchaCode" form:"captchaCode"`
-	CaptchaProtocol int    `json:"captchaProtocol" form:"captchaProtocol"`
-	Email           string `json:"email" form:"email"`
-	Username        string `json:"username" form:"username"`
-	Password        string `json:"password" form:"password"`
-	RePassword      string `json:"rePassword" form:"rePassword"`
-	Nickname        string `json:"nickname" form:"nickname"`
-	Redirect        string `json:"redirect" form:"redirect"`
-}
-
 type LoginSigninReq struct {
 	CaptchaId       string `json:"captchaId" form:"captchaId"`
 	CaptchaCode     string `json:"captchaCode" form:"captchaCode"`
@@ -156,19 +154,6 @@ type LoginSigninReq struct {
 	Username        string `json:"username" form:"username"`
 	Password        string `json:"password" form:"password"`
 	Redirect        string `json:"redirect" form:"redirect"`
-}
-
-type LoginResetEmailReq struct {
-	CaptchaId       string `json:"captchaId" form:"captchaId"`
-	CaptchaCode     string `json:"captchaCode" form:"captchaCode"`
-	CaptchaProtocol int    `json:"captchaProtocol" form:"captchaProtocol"`
-	Email           string `json:"email" form:"email"`
-}
-
-type LoginResetPasswordReq struct {
-	Token      string `json:"token" form:"token"`
-	Password   string `json:"password" form:"password"`
-	RePassword string `json:"rePassword" form:"rePassword"`
 }
 
 type LoginSmsCodeReq struct {

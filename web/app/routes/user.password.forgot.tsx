@@ -1,4 +1,3 @@
-import { ForgotPasswordForm } from "@/components/auth/password-reset-forms"
 import { WidgetCard } from "@/components/common/widget-card"
 import { useI18n } from "@/lib/i18n/provider"
 import { noindexRouteMeta } from "@/lib/seo"
@@ -20,7 +19,9 @@ export default function ForgotRoute() {
       <div className="container">
         <div className="main-body no-bg">
           <WidgetCard className="mx-auto max-w-[520px] p-6">
-            <ForgotPasswordForm />
+            <p className="p-6 text-center text-muted-foreground">
+              {t("user.passwordReset.adminOnly")}
+            </p>
           </WidgetCard>
         </div>
       </div>

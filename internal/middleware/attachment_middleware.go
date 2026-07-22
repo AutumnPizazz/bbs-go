@@ -6,8 +6,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	"bbs-go/internal/models"
 	"bbs-go/internal/models/constants"
 	"bbs-go/internal/repositories"
+	"bbs-go/internal/services"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mlogclub/simple/sqls"
@@ -38,8 +40,15 @@ func AttachmentMiddleware(ctx *gin.Context) {
 	// 存储 key 格式：attachments/2006/01/02/uuid.ext 或 test/attachments/2006/01/02/uuid.ext，最后一段为 uuid.ext
 	attachmentId := strings.TrimSuffix(base, filepath.Ext(base))
 	downloadName := base
+	att := (*models.Attachment)(nil)
 	if attachmentId != "" {
-		att := repositories.AttachmentRepository.Get(sqls.DB(), attachmentId)
+		att = repositories.AttachmentRepository.Get(sqls.DB(), attachmentId)
+		user := services.UserTokenService.GetCurrent(ctx)
+		if att == nil || att.Status != constants.StatusOk || !services.ContentAccessService.CanAccessTopic(user, repositories.TopicRepository.Get(sqls.DB(), att.TopicId)) {
+			ctx.Status(http.StatusNotFound)
+			ctx.Abort()
+			return
+		}
 		if att != nil && att.Status == constants.StatusOk && att.FileName != "" {
 			downloadName = filepath.Base(att.FileName)
 		}

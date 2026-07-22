@@ -81,7 +81,7 @@ func (s *favoriteService) GetBy(userId int64, entityType string, entityId int64)
 // AddTopicFavorite 收藏主题
 func (s *favoriteService) AddTopicFavorite(userId, topicId int64) error {
 	topic := repositories.TopicRepository.Get(sqls.DB(), topicId)
-	if topic == nil || topic.Status != constants.StatusOk {
+	if topic == nil || !ContentAccessService.CanAccessTopic(UserService.Get(userId), topic) {
 		return errors.New(locales.Get("favorite.topic_not_found"))
 	}
 	return s.addFavorite(userId, constants.EntityTopic, topicId)

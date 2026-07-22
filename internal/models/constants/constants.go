@@ -18,14 +18,12 @@ const (
 )
 
 const (
-	EmailCodeBizTypeEmailVerify   = "emailVerify"
-	EmailCodeBizTypePasswordReset = "passwordReset"
+	EmailCodeBizTypeEmailVerify = "emailVerify"
 )
 
 const (
 	EmailLogBizTypeUnknown       = "unknown"
 	EmailLogBizTypeEmailVerify   = "emailVerify"
-	EmailLogBizTypePasswordReset = "passwordReset"
 	EmailLogBizTypeMessageNotice = "messageNotice"
 )
 
@@ -85,6 +83,18 @@ const (
 const (
 	RoleOwner = "owner" // 站长
 )
+
+// ContentAccessMode controls the node scope used for content reads.
+type ContentAccessMode string
+
+const (
+	ContentAccessModeAll                ContentAccessMode = "all"
+	ContentAccessModeAssignedCategories ContentAccessMode = "assigned_categories"
+)
+
+func IsContentAccessModeValid(mode ContentAccessMode) bool {
+	return mode == ContentAccessModeAll || mode == ContentAccessModeAssignedCategories
+}
 
 // 操作类型
 const (
@@ -220,4 +230,3 @@ const (
 	ForbiddenWordTypeWord  = "word"
 	ForbiddenWordTypeRegex = "regex"
 )
-

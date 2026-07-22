@@ -395,6 +395,9 @@ func (s *sysConfigService) GetAttachmentConfig() dto.AttachmentConfig {
 	if err := jsons.Parse(str, &cfg); err != nil {
 		slog.Warn("附件配置解析错误", slog.Any("err", err))
 	}
+	if strings.TrimSpace(str) == "" || !strings.Contains(str, "externalCustomerAttachment") {
+		cfg.ExternalCustomerAttachment.Enabled = true
+	}
 	return normalizeAttachmentConfig(cfg)
 }
 
@@ -408,6 +411,12 @@ func normalizeAttachmentConfig(cfg dto.AttachmentConfig) dto.AttachmentConfig {
 	}
 	if len(cfg.AllowedTypes) == 0 {
 		cfg.AllowedTypes = []string{".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".txt", ".md", ".csv", ".zip", ".rar", ".7z", ".tar", ".gz"}
+	}
+	if cfg.ExternalCustomerAttachment.MaxSizeMB == 0 {
+		cfg.ExternalCustomerAttachment.MaxSizeMB = 20
+	}
+	if cfg.ExternalCustomerAttachment.MaxCountPerContent == 0 {
+		cfg.ExternalCustomerAttachment.MaxCountPerContent = 5
 	}
 	return cfg
 }

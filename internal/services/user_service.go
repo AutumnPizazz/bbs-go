@@ -7,7 +7,6 @@ import (
 	"bbs-go/internal/pkg/errs"
 	"bbs-go/internal/pkg/locales"
 	"bbs-go/internal/pkg/search"
-	"bbs-go/internal/pkg/str"
 	"bbs-go/internal/pkg/validate"
 	"errors"
 	"log/slog"
@@ -32,9 +31,6 @@ import (
 
 // 邮箱验证邮件有效期（小时）
 const emailVerifyExpireHour = 24
-
-// 密码重置邮件有效期（小时）
-const passwordResetExpireHour = 1
 
 var UserService = newUserService()
 
@@ -70,12 +66,7 @@ func (s *userService) FindPageByCnd(cnd *sqls.Cnd) (list []models.User, paging *
 }
 
 func (s *userService) Create(t *models.User) error {
-	err := repositories.UserRepository.Create(sqls.DB(), t)
-	if err == nil {
-		cache.UserCache.Invalidate(t.Id)
-		search.UpdateUserIndex(t)
-	}
-	return nil
+	return errs.RegistrationClosed()
 }
 
 func (s *userService) Update(t *models.User) error {
@@ -196,61 +187,9 @@ func (s *userService) GetByPhone(phone string) *models.User {
 	return repositories.UserRepository.GetByPhone(sqls.DB(), phone)
 }
 
-// SignUp 注册
+// SignUp is retained as a compatibility guard for callers compiled against the old service.
 func (s *userService) SignUp(username, email, nickname, password, rePassword string) (*models.User, error) {
-	username = strings.TrimSpace(username)
-	email = strings.TrimSpace(email)
-	nickname = strings.TrimSpace(nickname)
-
-	// 验证昵称
-	if len(nickname) == 0 {
-		return nil, errors.New(locales.Get("user.nickname_required"))
-	}
-
-	// 验证密码
-	err := validate.IsValidPassword(password, rePassword)
-	if err != nil {
-		return nil, err
-	}
-
-	// 验证邮箱
-	if len(email) > 0 {
-		if err := validate.IsEmail(email); err != nil {
-			return nil, err
-		}
-		if s.GetByEmail(email) != nil {
-			return nil, errors.New(locales.Getf("user.email_occupied", email))
-		}
-	} else {
-		return nil, errors.New(locales.Get("user.email_required"))
-	}
-
-	// 验证用户名
-	if len(username) > 0 {
-		if err := validate.IsUsername(username); err != nil {
-			return nil, err
-		}
-		if s.isUsernameExists(username) {
-			return nil, errors.New(locales.Getf("user.username_occupied", username))
-		}
-	}
-
-	user := &models.User{
-		Username:   sqls.SqlNullString(username),
-		Email:      sqls.SqlNullString(email),
-		Nickname:   nickname,
-		Password:   passwd.EncodePassword(password),
-		Status:     constants.StatusOk,
-		CreateTime: dates.NowTimestamp(),
-		UpdateTime: dates.NowTimestamp(),
-	}
-
-	err = repositories.UserRepository.Create(sqls.DB(), user)
-	if err != nil {
-		return nil, err
-	}
-	search.UpdateUserIndex(user)
-	return user, nil
+	return nil, errs.RegistrationClosed()
 }
 
 // SignIn 登录
@@ -374,168 +313,6 @@ func (s *userService) SetEmail(userId int64, email string) error {
 	return s.Updates(userId, map[string]interface{}{
 		"email":          email,
 		"email_verified": false,
-	})
-}
-
-// SetPassword 设置密码
-func (s *userService) SetPassword(userId int64, password, rePassword string) error {
-	if err := validate.IsValidPassword(password, rePassword); err != nil {
-		return err
-	}
-	user := s.Get(userId)
-	if len(user.Password) > 0 {
-		return errors.New(locales.Get("user.password_already_set"))
-	}
-	password = passwd.EncodePassword(password)
-	return s.UpdateColumn(userId, "password", password)
-}
-
-// UpdatePassword 修改密码
-func (s *userService) UpdatePassword(userId int64, oldPassword, password, rePassword string) error {
-	if err := validate.IsValidPassword(password, rePassword); err != nil {
-		return err
-	}
-	user := s.Get(userId)
-
-	if len(user.Password) == 0 {
-		return errors.New(locales.Get("user.password_not_set"))
-	}
-
-	if !passwd.ValidatePassword(user.Password, oldPassword) {
-		return errors.New(locales.Get("user.old_password_invalid"))
-	}
-
-	return s.UpdateColumn(userId, "password", passwd.EncodePassword(password))
-}
-
-// ResetPassword generates a new password, updates the user, and returns the new plaintext password.
-func (s *userService) ResetPassword(userId int64) (string, error) {
-	// 1. Find user
-	user := s.Get(userId)
-	if user == nil {
-		return "", errors.New(locales.Get("user.not_found"))
-	}
-
-	// 2. Generate a new random password
-	newPassword := str.GenerateRandomPassword()
-
-	// 3. Hash the new password, update database, and invalidate login tokens
-	if err := sqls.WithTransaction(func(ctx *sqls.TxContext) error {
-		activeTokens := repositories.UserTokenRepository.Find(ctx.Tx, sqls.NewCnd().
-			Eq("user_id", user.Id).
-			Eq("status", constants.StatusOk))
-
-		if err := repositories.UserRepository.UpdateColumn(ctx.Tx, user.Id, "password", passwd.EncodePassword(newPassword)); err != nil {
-			return err
-		}
-
-		if err := ctx.Tx.Model(&models.UserToken{}).
-			Where("user_id = ? AND status = ?", user.Id, constants.StatusOk).
-			Update("status", constants.StatusDeleted).Error; err != nil {
-			return err
-		}
-
-		ctx.RegisterCallback(func() {
-			cache.UserCache.Invalidate(user.Id)
-			for _, token := range activeTokens {
-				cache.UserTokenCache.Invalidate(token.Token)
-			}
-		})
-		return nil
-	}); err != nil {
-		return "", err
-	}
-
-	// 4. Return the PLAINTEXT new password
-	return newPassword, nil
-}
-
-func (s *userService) SendResetPasswordEmail(emailAddress string) error {
-	emailAddress = strings.TrimSpace(emailAddress)
-	if err := validate.IsEmail(emailAddress); err != nil {
-		return err
-	}
-
-	user := s.GetByEmail(emailAddress)
-	// 统一返回成功，避免通过接口枚举邮箱是否存在
-	if user == nil || user.Status != constants.StatusOk || len(user.Password) == 0 {
-		return nil
-	}
-
-	token := strs.UUID()
-	url := bbsurls.AbsUrl("/user/password/reset?token=" + token)
-	link := &dto.ActionLink{Title: locales.Get("user.password_reset_link"), Url: url}
-	siteTitle := cache.SysConfigCache.GetStr(constants.SysConfigSiteTitle)
-	subject := locales.Getf("user.password_reset_title", siteTitle)
-	title := locales.Getf("user.password_reset_title", siteTitle)
-	content := locales.Getf("user.password_reset_content", siteTitle, passwordResetExpireHour, url)
-
-	if err := repositories.EmailCodeRepository.Create(sqls.DB(), &models.EmailCode{
-		UserId:     user.Id,
-		BizType:    constants.EmailCodeBizTypePasswordReset,
-		Email:      user.Email.String,
-		Code:       "",
-		Token:      token,
-		Title:      title,
-		Content:    content,
-		Used:       false,
-		CreateTime: dates.NowTimestamp(),
-	}); err != nil {
-		return err
-	}
-	return EmailService.SendTemplateEmail(nil, user.Email.String, subject, title, content, "", link, constants.EmailLogBizTypePasswordReset)
-}
-
-func (s *userService) ResetPasswordByToken(token, password, rePassword string) error {
-	if strs.IsBlank(token) {
-		return errors.New(locales.Get("user.password_reset_illegal"))
-	}
-	if err := validate.IsValidPassword(password, rePassword); err != nil {
-		return err
-	}
-
-	emailCode := EmailCodeService.FindOne(sqls.NewCnd().
-		Eq("token", token).
-		Eq("biz_type", constants.EmailCodeBizTypePasswordReset))
-	if emailCode == nil || emailCode.Used {
-		return errors.New(locales.Get("user.password_reset_illegal"))
-	}
-
-	if dates.FromTimestamp(emailCode.CreateTime).Add(time.Hour * time.Duration(passwordResetExpireHour)).Before(time.Now()) {
-		return errors.New(locales.Get("user.password_reset_expired"))
-	}
-
-	user := s.Get(emailCode.UserId)
-	if user == nil || user.Email.String != emailCode.Email || user.Status != constants.StatusOk {
-		return errors.New(locales.Get("user.password_reset_expired"))
-	}
-
-	return sqls.WithTransaction(func(ctx *sqls.TxContext) error {
-		activeTokens := repositories.UserTokenRepository.Find(ctx.Tx, sqls.NewCnd().
-			Eq("user_id", user.Id).
-			Eq("status", constants.StatusOk))
-
-		if err := repositories.UserRepository.UpdateColumn(ctx.Tx, user.Id, "password", passwd.EncodePassword(password)); err != nil {
-			return err
-		}
-
-		if err := repositories.EmailCodeRepository.UpdateColumn(ctx.Tx, emailCode.Id, "used", true); err != nil {
-			return err
-		}
-
-		if err := ctx.Tx.Model(&models.UserToken{}).
-			Where("user_id = ? AND status = ?", user.Id, constants.StatusOk).
-			Update("status", constants.StatusDeleted).Error; err != nil {
-			return err
-		}
-
-		ctx.RegisterCallback(func() {
-			cache.UserCache.Invalidate(user.Id)
-			for _, token := range activeTokens {
-				cache.UserTokenCache.Invalidate(token.Token)
-			}
-		})
-		return nil
 	})
 }
 
@@ -672,4 +449,3 @@ func (s *userService) CheckPostStatus(user *models.User) error {
 	}
 	return nil
 }
-

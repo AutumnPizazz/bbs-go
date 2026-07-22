@@ -64,12 +64,14 @@ function TopicAttachmentField({
   value,
   uploading,
   config,
+  categoryId,
   onUploadingChange,
   onChange,
 }: {
   value: TopicAttachment[]
   uploading: boolean
   config?: SiteConfig["attachmentConfig"]
+  categoryId: number
   onUploadingChange: (value: boolean) => void
   onChange: (value: TopicAttachment[]) => void
 }) {
@@ -106,6 +108,7 @@ function TopicAttachmentField({
     try {
       const body = new FormData()
       body.append("file", file, file.name)
+      body.append("categoryId", String(categoryId))
       const attachment = await apiFetch<TopicAttachment>(
         "/api/attachment/upload",
         {
@@ -320,6 +323,7 @@ export function TopicEditForm({
           <TopicAttachmentField
             value={attachmentList}
             config={config.attachmentConfig}
+            categoryId={effectiveCategoryId}
             uploading={attachmentUploading}
             onUploadingChange={setAttachmentUploading}
             onChange={setAttachmentList}

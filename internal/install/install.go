@@ -341,7 +341,7 @@ func InitData(req InstallReq) error {
 			CreateTime: dates.NowTimestamp(),
 			UpdateTime: dates.NowTimestamp(),
 		}
-		if err := services.UserService.Create(user); err != nil {
+		if err := services.UserService.CreateInitialOwner(user); err != nil {
 			return err
 		}
 	}

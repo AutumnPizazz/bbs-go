@@ -12,6 +12,7 @@ import (
 
 	"bbs-go/internal/models"
 	"bbs-go/internal/models/constants"
+	"bbs-go/internal/pkg/common"
 	"bbs-go/internal/pkg/config"
 	"bbs-go/internal/pkg/idcodec"
 	"bbs-go/internal/pkg/search"
@@ -188,7 +189,9 @@ func setupAdminUserTestDB(t *testing.T) *gorm.DB {
 			IndexPath: filepath.Join(t.TempDir(), "index"),
 		},
 	}
+	search.Close()
 	search.Init()
+	t.Cleanup(search.Close)
 
 	dsn := fmt.Sprintf("file:admin_user_test_%d?mode=memory&cache=shared&_fk=1", time.Now().UnixNano())
 	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{
@@ -213,7 +216,7 @@ func setupAdminUserTestDB(t *testing.T) *gorm.DB {
 	})
 
 	sqls.SetDB(db)
-	if err := db.AutoMigrate(&models.User{}, &models.UserToken{}); err != nil {
+	if err := db.AutoMigrate(&models.User{}, &models.UserToken{}, &models.OperateLog{}); err != nil {
 		t.Fatalf("auto migrate users: %v", err)
 	}
 	return db
@@ -244,6 +247,7 @@ func postUserResetPassword(t *testing.T, body string) {
 	req := httptest.NewRequest(http.MethodPost, "/api/admin/user/reset_password", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	ctx.Request = req
+	common.SetCurrentUser(ctx, &models.User{Model: models.Model{Id: 99}, Roles: constants.RoleOwner})
 
 	UserResetPassword(ctx)
 

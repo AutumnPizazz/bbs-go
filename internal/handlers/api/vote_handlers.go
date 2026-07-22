@@ -22,7 +22,7 @@ func VoteDetail(ctx *gin.Context) {
 	voteId := id
 
 	vote := services.VoteService.Get(voteId)
-	if vote == nil {
+	if vote == nil || !services.ContentAccessService.CanAccessTopic(common.GetCurrentUser(ctx), services.TopicService.Get(vote.TopicId)) {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage("vote not found"))
 		return
 	}
@@ -42,6 +42,11 @@ func VoteCast(ctx *gin.Context) {
 		ginx.WriteJSON(ctx, err)
 		return
 	}
+	vote := services.VoteService.Get(form.VoteId)
+	if vote == nil || !services.ContentAccessService.CanAccessTopic(user, services.TopicService.Get(vote.TopicId)) {
+		ginx.WriteJSON(ctx, errs.ContentAccessDenied())
+		return
+	}
 
 	err := services.VoteService.Cast(user.Id, form)
 	if err != nil {
@@ -49,7 +54,7 @@ func VoteCast(ctx *gin.Context) {
 		return
 	}
 
-	vote := services.VoteService.Get(form.VoteId)
+	vote = services.VoteService.Get(form.VoteId)
 	ginx.WriteJSON(ctx, render.BuildVote(ctx, vote))
 
 }

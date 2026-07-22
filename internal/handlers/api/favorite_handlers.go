@@ -29,6 +29,10 @@ func FavoriteAdd(ctx *gin.Context) {
 		ginx.WriteJSON(ctx, errs.NotLogin())
 		return
 	}
+	if !services.ContentAccessService.CanAccessEntity(user, req.EntityType, entityId) {
+		ginx.WriteJSON(ctx, errs.ContentAccessDenied())
+		return
+	}
 	var err error
 	switch req.EntityType {
 	case constants.EntityTopic:
@@ -57,6 +61,10 @@ func FavoriteRemove(ctx *gin.Context) {
 	)
 	if user == nil {
 		ginx.WriteJSON(ctx, errs.NotLogin())
+		return
+	}
+	if !services.ContentAccessService.CanAccessEntity(user, req.EntityType, entityId) {
+		ginx.WriteJSON(ctx, errs.ContentAccessDenied())
 		return
 	}
 	tmp := services.FavoriteService.GetBy(user.Id, req.EntityType, entityId)

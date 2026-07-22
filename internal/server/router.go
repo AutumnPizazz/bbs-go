@@ -70,7 +70,7 @@ func newRouter() *gin.Engine {
 			ginx.WriteHttpStatusJSON(ctx, http.StatusNotFound, web.JsonErrorCode(http.StatusNotFound, "Not found"))
 		},
 	})
-	app.GET("/sitemap.xml", func(ctx *gin.Context) {
+	app.GET("/sitemap.xml", middleware.AuthMiddleware, middleware.ContentAccessMiddleware, func(ctx *gin.Context) {
 		redirectURL := services.SeoSitemapService.RedirectURL()
 		if strs.IsBlank(redirectURL) {
 			ginx.WriteHttpStatusJSON(ctx, http.StatusNotFound, web.JsonErrorCode(http.StatusNotFound, "Not found"))
@@ -88,7 +88,7 @@ func registerAPIRoutes(group *gin.RouterGroup) {
 	installGroup.POST("/test_db_connection", apiHandlers.InstallTestDbConnection)
 	installGroup.POST("/install", apiHandlers.InstallInstall)
 
-	topicGroup := group.Group("/topic")
+	topicGroup := group.Group("/topic", middleware.ContentAccessMiddleware)
 	topicGroup.GET("/category_navs", apiHandlers.CategoryNavs)
 	topicGroup.GET("/categories", apiHandlers.Categories)
 	topicGroup.GET("/category", apiHandlers.Category)
@@ -110,10 +110,7 @@ func registerAPIRoutes(group *gin.RouterGroup) {
 	topicGroup.GET("/:id", apiHandlers.TopicDetail)
 
 	loginGroup := group.Group("/login")
-	loginGroup.POST("/signup", apiHandlers.LoginSignup)
 	loginGroup.POST("/signin", apiHandlers.LoginSignin)
-	loginGroup.POST("/send_reset_password_email", apiHandlers.LoginSendResetPasswordEmail)
-	loginGroup.POST("/reset_password", apiHandlers.LoginResetPassword)
 	loginGroup.GET("/signout", apiHandlers.LoginSignout)
 	loginGroup.POST("/login_sms_code", apiHandlers.LoginLoginSmsCode)
 	loginGroup.POST("/login_sms", apiHandlers.LoginLoginSms)
@@ -136,8 +133,6 @@ func registerAPIRoutes(group *gin.RouterGroup) {
 	userGroup.POST("/update_avatar", apiHandlers.UserUpdateAvatar)
 	userGroup.POST("/set_username", apiHandlers.UserSetUsername)
 	userGroup.POST("/set_email", apiHandlers.UserSetEmail)
-	userGroup.POST("/set_password", apiHandlers.UserSetPassword)
-	userGroup.POST("/update_password", apiHandlers.UserUpdatePassword)
 	userGroup.POST("/set_background_image", apiHandlers.UserSetBackgroundImage)
 	userGroup.GET("/favorites", apiHandlers.UserFavorites)
 	userGroup.GET("/msg_recent", apiHandlers.UserMsgRecent)
@@ -150,22 +145,22 @@ func registerAPIRoutes(group *gin.RouterGroup) {
 	userGroup.GET("/github_bind_info", apiHandlers.UserGithubBindInfo)
 	userGroup.GET("/:id", apiHandlers.UserDetail)
 
-	tagGroup := group.Group("/tag")
+	tagGroup := group.Group("/tag", middleware.ContentAccessMiddleware)
 	tagGroup.GET("/tags", apiHandlers.TagTags)
 	tagGroup.POST("/autocomplete", apiHandlers.TagAutocompleteSubmit)
 	tagGroup.GET("/:id", apiHandlers.TagDetail)
 
-	commentGroup := group.Group("/comment")
+	commentGroup := group.Group("/comment", middleware.ContentAccessMiddleware)
 	commentGroup.GET("/comments", apiHandlers.CommentComments)
 	commentGroup.GET("/replies", apiHandlers.CommentReplies)
 	commentGroup.POST("/create", apiHandlers.CommentCreate)
 	commentGroup.POST("/delete/:id", apiHandlers.CommentRemove)
 
-	favoriteGroup := group.Group("/favorite")
+	favoriteGroup := group.Group("/favorite", middleware.ContentAccessMiddleware)
 	favoriteGroup.POST("/add", apiHandlers.FavoriteAdd)
 	favoriteGroup.POST("/delete", apiHandlers.FavoriteRemove)
 
-	likeGroup := group.Group("/like")
+	likeGroup := group.Group("/like", middleware.ContentAccessMiddleware)
 	likeGroup.POST("/like", apiHandlers.LikeLike)
 	likeGroup.POST("/unlike", apiHandlers.LikeUnlike)
 	likeGroup.GET("/liked_ids", apiHandlers.LikeLikedIds)
@@ -178,7 +173,7 @@ func registerAPIRoutes(group *gin.RouterGroup) {
 	uploadGroup := group.Group("/upload")
 	uploadGroup.POST("", apiHandlers.UploadHandle)
 
-	attachmentGroup := group.Group("/attachment")
+	attachmentGroup := group.Group("/attachment", middleware.ContentAccessMiddleware)
 	attachmentGroup.POST("/upload", apiHandlers.AttachmentUpload)
 	attachmentGroup.GET("/download/:id", apiHandlers.AttachmentDownload)
 
@@ -191,7 +186,7 @@ func registerAPIRoutes(group *gin.RouterGroup) {
 	captchaGroup.GET("/verify", apiHandlers.CaptchaVerify)
 	captchaGroup.GET("/request_angle", apiHandlers.CaptchaRequestAngle)
 
-	searchGroup := group.Group("/search")
+	searchGroup := group.Group("/search", middleware.ContentAccessMiddleware)
 	searchGroup.GET("/topic", apiHandlers.SearchTopic)
 	searchGroup.GET("/user", apiHandlers.SearchUser)
 
@@ -207,7 +202,7 @@ func registerAPIRoutes(group *gin.RouterGroup) {
 	userReportGroup := group.Group("/user-report")
 	userReportGroup.POST("/submit", apiHandlers.UserReportSubmit)
 
-	voteGroup := group.Group("/vote")
+	voteGroup := group.Group("/vote", middleware.ContentAccessMiddleware)
 	voteGroup.POST("/cast", apiHandlers.VoteCast)
 	voteGroup.GET("/:id", apiHandlers.VoteDetail)
 
@@ -315,7 +310,6 @@ func registerAdminRoutes(group *gin.RouterGroup) {
 	linkGroup.POST("/delete", adminHandlers.LinkRemove)
 	linkGroup.POST("/update_sort", adminHandlers.LinkUpdateSort)
 	linkGroup.GET("/:id", adminHandlers.LinkDetail)
-
 
 	operateLogGroup := group.Group("/operate-log")
 	operateLogGroup.POST("/list", adminHandlers.OperateLogList)

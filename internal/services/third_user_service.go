@@ -4,6 +4,7 @@ import (
 	"bbs-go/internal/models"
 	"bbs-go/internal/models/constants"
 	"bbs-go/internal/pkg/bbsurls"
+	"bbs-go/internal/pkg/errs"
 	"bbs-go/internal/pkg/github"
 	"bbs-go/internal/pkg/google"
 	"bbs-go/internal/pkg/locales"
@@ -11,7 +12,6 @@ import (
 	"bbs-go/internal/pkg/wx"
 	"bbs-go/internal/repositories"
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -19,7 +19,6 @@ import (
 	"github.com/mlogclub/simple/common/dates"
 	"github.com/mlogclub/simple/common/jsons"
 	"github.com/mlogclub/simple/sqls"
-	"gorm.io/gorm"
 )
 
 var ThirdUserService = newThirdUserService()
@@ -103,49 +102,14 @@ func (s *thirdUserService) LoginWeixin(code, state string) (*models.User, error)
 	}
 
 	thirdUser := ThirdUserService.GetByOpenId(info.OpenID, constants.ThirdTypeWeixin)
-	if thirdUser != nil && thirdUser.UserId > 0 {
-		return UserService.Get(thirdUser.UserId), nil
+	if thirdUser == nil || thirdUser.UserId <= 0 {
+		return nil, errs.RegistrationClosed()
 	}
-
-	// copy wechat head image
-	avatar, _ := UploadService.CopyImage(info.HeadImgURL)
-
-	user := &models.User{
-		Nickname:   info.Nickname,
-		Avatar:     avatar,
-		Status:     constants.StatusOk,
-		CreateTime: dates.NowTimestamp(),
-		UpdateTime: dates.NowTimestamp(),
+	boundUser := UserService.Get(thirdUser.UserId)
+	if boundUser == nil {
+		return nil, errs.RegistrationClosed()
 	}
-
-	err = sqls.DB().Transaction(func(tx *gorm.DB) error {
-		if err := repositories.UserRepository.Create(tx, user); err != nil {
-			return err
-		}
-		if thirdUser == nil {
-			return repositories.ThirdUserRepository.Create(tx, &models.ThirdUser{
-				UserId:     user.Id,
-				OpenId:     info.OpenID,
-				ThirdType:  constants.ThirdTypeWeixin,
-				Nickname:   info.Nickname,
-				Avatar:     avatar,
-				ExtraData:  jsons.ToJsonStr(info),
-				CreateTime: dates.NowTimestamp(),
-				UpdateTime: dates.NowTimestamp(),
-			})
-		} else {
-			thirdUser.Nickname = info.Nickname
-			thirdUser.Avatar = avatar
-			thirdUser.ExtraData = jsons.ToJsonStr(info)
-			thirdUser.UpdateTime = dates.NowTimestamp()
-			return repositories.ThirdUserRepository.Update(tx, thirdUser)
-		}
-	})
-
-	if err != nil {
-		return nil, err
-	}
-	return user, nil
+	return boundUser, nil
 }
 
 func (s *thirdUserService) BindWeixin(userId int64, code, state string) error {
@@ -208,67 +172,15 @@ func (s *thirdUserService) LoginGoogle(code, state string) (*models.User, error)
 	}
 
 	thirdUser := ThirdUserService.GetByOpenId(info.ID, constants.ThirdTypeGoogle)
-	if thirdUser != nil && thirdUser.UserId > 0 {
-		return UserService.Get(thirdUser.UserId), nil
+	if thirdUser == nil || thirdUser.UserId <= 0 {
+		return nil, errs.RegistrationClosed()
 	}
-
-	// copy google avatar image
-	avatar, _ := UploadService.CopyImage(info.Picture)
-
-	// 使用 Google 名称作为昵称，如果没有则使用邮箱前缀
-	nickname := info.Name
-	if nickname == "" {
-		nickname = info.Email
-		if nickname == "" {
-			nickname = locales.Get("auth.google_default_nickname")
-		}
+	boundUser := UserService.Get(thirdUser.UserId)
+	if boundUser == nil {
+		return nil, errs.RegistrationClosed()
 	}
+	return boundUser, nil
 
-	user := &models.User{
-		Nickname:   nickname,
-		Avatar:     avatar,
-		Status:     constants.StatusOk,
-		CreateTime: dates.NowTimestamp(),
-		UpdateTime: dates.NowTimestamp(),
-	}
-
-	// 如果邮箱已验证，设置邮箱
-	if info.VerifiedEmail && info.Email != "" {
-		user.Email = sql.NullString{
-			String: info.Email,
-			Valid:  true,
-		}
-		user.EmailVerified = true
-	}
-
-	err = sqls.DB().Transaction(func(tx *gorm.DB) error {
-		if err := repositories.UserRepository.Create(tx, user); err != nil {
-			return err
-		}
-		if thirdUser == nil {
-			return repositories.ThirdUserRepository.Create(tx, &models.ThirdUser{
-				UserId:     user.Id,
-				OpenId:     info.ID,
-				ThirdType:  constants.ThirdTypeGoogle,
-				Nickname:   nickname,
-				Avatar:     avatar,
-				ExtraData:  jsons.ToJsonStr(info),
-				CreateTime: dates.NowTimestamp(),
-				UpdateTime: dates.NowTimestamp(),
-			})
-		} else {
-			thirdUser.Nickname = nickname
-			thirdUser.Avatar = avatar
-			thirdUser.ExtraData = jsons.ToJsonStr(info)
-			thirdUser.UpdateTime = dates.NowTimestamp()
-			return repositories.ThirdUserRepository.Update(tx, thirdUser)
-		}
-	})
-
-	if err != nil {
-		return nil, err
-	}
-	return user, nil
 }
 
 func (s *thirdUserService) LoginGoogleOneTap(credential string) (*models.User, error) {
@@ -290,67 +202,15 @@ func (s *thirdUserService) LoginGoogleOneTap(credential string) (*models.User, e
 
 	// 查找已存在的第三方用户（使用 sub 作为 OpenId，等同于 OAuth 的 id）
 	thirdUser := ThirdUserService.GetByOpenId(info.ID, constants.ThirdTypeGoogle)
-	if thirdUser != nil && thirdUser.UserId > 0 {
-		return UserService.Get(thirdUser.UserId), nil
+	if thirdUser == nil || thirdUser.UserId <= 0 {
+		return nil, errs.RegistrationClosed()
 	}
-
-	// copy google avatar image
-	avatar, _ := UploadService.CopyImage(info.Picture)
-
-	// 使用 Google 名称作为昵称，如果没有则使用邮箱前缀
-	nickname := info.Name
-	if nickname == "" {
-		nickname = info.Email
-		if nickname == "" {
-			nickname = locales.Get("auth.google_default_nickname")
-		}
+	boundUser := UserService.Get(thirdUser.UserId)
+	if boundUser == nil {
+		return nil, errs.RegistrationClosed()
 	}
+	return boundUser, nil
 
-	user := &models.User{
-		Nickname:   nickname,
-		Avatar:     avatar,
-		Status:     constants.StatusOk,
-		CreateTime: dates.NowTimestamp(),
-		UpdateTime: dates.NowTimestamp(),
-	}
-
-	// 如果邮箱已验证，设置邮箱
-	if info.VerifiedEmail && info.Email != "" {
-		user.Email = sql.NullString{
-			String: info.Email,
-			Valid:  true,
-		}
-		user.EmailVerified = true
-	}
-
-	err = sqls.DB().Transaction(func(tx *gorm.DB) error {
-		if err := repositories.UserRepository.Create(tx, user); err != nil {
-			return err
-		}
-		if thirdUser == nil {
-			return repositories.ThirdUserRepository.Create(tx, &models.ThirdUser{
-				UserId:     user.Id,
-				OpenId:     info.ID, // 使用 sub 作为 OpenId
-				ThirdType:  constants.ThirdTypeGoogle,
-				Nickname:   nickname,
-				Avatar:     avatar,
-				ExtraData:  jsons.ToJsonStr(info),
-				CreateTime: dates.NowTimestamp(),
-				UpdateTime: dates.NowTimestamp(),
-			})
-		} else {
-			thirdUser.Nickname = nickname
-			thirdUser.Avatar = avatar
-			thirdUser.ExtraData = jsons.ToJsonStr(info)
-			thirdUser.UpdateTime = dates.NowTimestamp()
-			return repositories.ThirdUserRepository.Update(tx, thirdUser)
-		}
-	})
-
-	if err != nil {
-		return nil, err
-	}
-	return user, nil
 }
 
 func (s *thirdUserService) LoginGithub(code, state string) (*models.User, error) {
@@ -371,91 +231,15 @@ func (s *thirdUserService) LoginGithub(code, state string) (*models.User, error)
 
 	openId := fmt.Sprintf("%d", info.ID)
 	thirdUser := ThirdUserService.GetByOpenId(openId, constants.ThirdTypeGithub)
-	if thirdUser != nil && thirdUser.UserId > 0 {
-		return UserService.Get(thirdUser.UserId), nil
+	if thirdUser == nil || thirdUser.UserId <= 0 {
+		return nil, errs.RegistrationClosed()
 	}
-
-	// 若 GitHub 返回了邮箱，尝试查找是否已有同邮箱用户，避免重复创建账号
-	var existingUser *models.User
-	if info.Email != "" {
-		existingUser = UserService.GetByEmail(info.Email)
+	boundUser := UserService.Get(thirdUser.UserId)
+	if boundUser == nil {
+		return nil, errs.RegistrationClosed()
 	}
+	return boundUser, nil
 
-	avatar, _ := UploadService.CopyImage(info.AvatarURL)
-
-	nickname := info.Name
-	if nickname == "" {
-		nickname = info.Login
-		if nickname == "" {
-			nickname = locales.Get("auth.github_default_nickname")
-		}
-	}
-
-	var user *models.User
-	if err := sqls.WithTransaction(func(txCtx *sqls.TxContext) error {
-		if existingUser != nil {
-			// 邮箱已存在：自动将当前 GitHub 账号绑定到该用户
-			user = existingUser
-
-			// 若原用户没有邮箱或未验证，而 GitHub 返回了邮箱，则更新邮箱信息
-			if info.Email != "" {
-				if !user.Email.Valid || user.Email.String == "" {
-					user.Email = sql.NullString{String: info.Email, Valid: true}
-				}
-				// GitHub 邮箱本身即为已验证邮箱，这里可以安全标记为已验证
-				user.EmailVerified = true
-			}
-			// // 同步头像和昵称（以 GitHub 为准）
-			// user.Avatar = avatar
-			// user.Nickname = nickname
-			user.UpdateTime = dates.NowTimestamp()
-
-			if err := repositories.UserRepository.Update(txCtx.Tx, user); err != nil {
-				return err
-			}
-		} else {
-			// 邮箱不存在：创建新用户
-			user = &models.User{
-				Nickname:   nickname,
-				Avatar:     avatar,
-				Status:     constants.StatusOk,
-				CreateTime: dates.NowTimestamp(),
-				UpdateTime: dates.NowTimestamp(),
-			}
-			if info.Email != "" {
-				user.Email = sql.NullString{String: info.Email, Valid: true}
-				user.EmailVerified = true
-			}
-			if err := repositories.UserRepository.Create(txCtx.Tx, user); err != nil {
-				return err
-			}
-		}
-
-		// 处理第三方用户记录
-		if thirdUser == nil {
-			return repositories.ThirdUserRepository.Create(txCtx.Tx, &models.ThirdUser{
-				UserId:     user.Id,
-				OpenId:     openId,
-				ThirdType:  constants.ThirdTypeGithub,
-				Nickname:   nickname,
-				Avatar:     avatar,
-				ExtraData:  jsons.ToJsonStr(info),
-				CreateTime: dates.NowTimestamp(),
-				UpdateTime: dates.NowTimestamp(),
-			})
-		}
-
-		thirdUser.UserId = user.Id
-		thirdUser.Nickname = nickname
-		thirdUser.Avatar = avatar
-		thirdUser.ExtraData = jsons.ToJsonStr(info)
-		thirdUser.UpdateTime = dates.NowTimestamp()
-		return repositories.ThirdUserRepository.Update(txCtx.Tx, thirdUser)
-	}); err != nil {
-		return nil, err
-	}
-
-	return user, nil
 }
 
 func (s *thirdUserService) BindGithub(userId int64, code, state string) error {

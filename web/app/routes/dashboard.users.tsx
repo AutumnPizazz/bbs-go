@@ -16,6 +16,8 @@ export default function DashboardUsersRoute() {
     listEndpoint: "/api/admin/user/list",
     viewPermission: PERMISSIONS.DASHBOARD_USER_VIEW,
     detailEndpoint: (id) => `/api/admin/user/${id}`,
+    createEndpoint: "/api/admin/user/create",
+    createPermission: PERMISSIONS.DASHBOARD_USER_CREATE,
     updateEndpoint: "/api/admin/user/update",
     updatePermission: PERMISSIONS.DASHBOARD_USER_UPDATE,
     filters: [
@@ -63,6 +65,15 @@ export default function DashboardUsersRoute() {
         render: (record) => dashboardData.userLinkCell(record, record.nickname),
       },
       { key: "email", label: dashboardData.label(t, "email") },
+      { key: "phone", label: dashboardData.label(t, "phone") },
+      {
+        key: "contentAccessMode",
+        label: dashboardData.label(t, "contentAccessMode"),
+        render: (record) =>
+          record.contentAccessMode === "all"
+            ? t("dashboard.userAccess.all")
+            : t("dashboard.userAccess.assignedCategories"),
+      },
       {
         key: "forbidden",
         label: dashboardData.label(t, "forbidden"),
@@ -83,6 +94,7 @@ export default function DashboardUsersRoute() {
         label: dashboardData.label(t, "username"),
       },
       { name: "email", label: dashboardData.label(t, "email") },
+      { name: "phone", label: dashboardData.label(t, "phone") },
       {
         name: "nickname",
         label: dashboardData.label(t, "nickname"),
@@ -120,6 +132,52 @@ export default function DashboardUsersRoute() {
           Array.isArray(record.roleIds)
             ? record.roleIds.map((item) => String(item))
             : [],
+      },
+      {
+        name: "password",
+        label: dashboardData.label(t, "password"),
+        type: "password",
+      },
+      {
+        name: "contentAccessMode",
+        label: dashboardData.label(t, "contentAccessMode"),
+        type: "select",
+        required: true,
+        options: [
+          { label: t("dashboard.userAccess.all"), value: "all" },
+          {
+            label: t("dashboard.userAccess.assignedCategories"),
+            value: "assigned_categories",
+          },
+        ],
+      },
+      {
+        name: "categoryIds",
+        label: dashboardData.label(t, "categoryIds"),
+        type: "multiselect",
+        optionsEndpoint: "/api/admin/category/options",
+        optionLabel: dashboardData.treeOptionLabel,
+        optionValue: (record) => record.id as number,
+        valueFromRecord: (record) =>
+          Array.isArray(record.categoryIds)
+            ? record.categoryIds.map((item) => String(item))
+            : [],
+      },
+      {
+        name: "status",
+        label: dashboardData.label(t, "status"),
+        type: "select",
+        required: true,
+        options: dashboardData.normalDeletedOptions(t),
+      },
+      {
+        name: "emailVerified",
+        label: dashboardData.label(t, "emailVerified"),
+        type: "select",
+        options: [
+          { label: t("dashboard.boolean.yes"), value: "true" },
+          { label: t("dashboard.boolean.no"), value: "false" },
+        ],
       },
     ],
     rowActions: [

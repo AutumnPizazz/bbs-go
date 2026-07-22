@@ -13,12 +13,10 @@ import (
 	"time"
 
 	"bbs-go/internal/models"
-	"bbs-go/internal/models/constants"
 	"bbs-go/internal/pkg/bbsurls"
 	"bbs-go/internal/pkg/uploader"
 
 	"github.com/mlogclub/simple/common/dates"
-	"github.com/mlogclub/simple/sqls"
 )
 
 const (
@@ -219,81 +217,17 @@ func buildContentSitemapFiles(keyPrefix string, items []sitemapURLItem, batchSiz
 func (s *seoSitemapService) buildStaticSitemapFiles() ([]generatedSitemapFile, error) {
 	items := []sitemapURLItem{
 		{Loc: bbsurls.AbsUrl("/")},
-		{Loc: bbsurls.AbsUrl("/topics")},
-		{Loc: bbsurls.AbsUrl("/articles")},
 		{Loc: bbsurls.AbsUrl("/about")},
 		{Loc: bbsurls.AbsUrl("/links")},
-	}
-
-	var categories []models.Category
-	if err := sqls.NewCnd().
-		Eq("status", constants.StatusOk).
-		Asc("id").
-		Build(sqls.DB()).
-		Find(&categories).Error; err != nil {
-		return nil, err
-	}
-	for _, category := range categories {
-		items = append(items, sitemapURLItem{
-			Loc:     bbsurls.AbsUrl("/topics/category/" + strconv.FormatInt(category.Id, 10)),
-			LastMod: seoSitemapLastMod(category.CreateTime),
-		})
-	}
-
-	var tags []models.Tag
-	if err := sqls.NewCnd().
-		Eq("status", constants.StatusOk).
-		Asc("id").
-		Build(sqls.DB()).
-		Find(&tags).Error; err != nil {
-		return nil, err
-	}
-	for _, tag := range tags {
-		tagID := strconv.FormatInt(tag.Id, 10)
-		lastMod := seoSitemapLastMod(tag.UpdateTime)
-		items = append(items,
-			sitemapURLItem{Loc: bbsurls.AbsUrl("/topics/tag/" + tagID), LastMod: lastMod},
-			sitemapURLItem{Loc: bbsurls.AbsUrl("/articles/tag/" + tagID), LastMod: lastMod},
-		)
 	}
 
 	return buildContentSitemapFiles("seo/sitemap-static", items, sitemapBatchSize), nil
 }
 
 func (s *seoSitemapService) buildTopicSitemapFiles() ([]generatedSitemapFile, error) {
-	var files []generatedSitemapFile
-	var cursor int64
-
-	for {
-		var topics []models.Topic
-		if err := sqls.NewCnd().
-			Eq("status", constants.StatusOk).
-			Gt("id", cursor).
-			Asc("id").
-			Limit(sitemapBatchSize).
-			Build(sqls.DB()).
-			Find(&topics).Error; err != nil {
-			return nil, err
-		}
-		if len(topics) == 0 {
-			break
-		}
-
-		items := make([]sitemapURLItem, 0, len(topics))
-		for _, topic := range topics {
-			items = append(items, sitemapURLItem{
-				Loc:     bbsurls.TopicUrl(topic.Id),
-				LastMod: seoSitemapLastMod(seoSitemapTopicLastModTime(topic)),
-			})
-		}
-		files = append(files, generatedSitemapFile{
-			Key: "seo/sitemap-topics-" + strconv.Itoa(len(files)+1) + ".xml",
-			XML: buildSitemapXML(items),
-		})
-		cursor = topics[len(topics)-1].Id
-	}
-
-	return files, nil
+	// The public sitemap cannot represent per-user node scopes. Omitting content URLs
+	// prevents an object-store sitemap URL from becoming a scope bypass.
+	return nil, nil
 }
 
 func buildSitemapIndexXML(items []sitemapIndexItem) string {

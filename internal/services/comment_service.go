@@ -110,6 +110,9 @@ func (s *commentService) Publish(userId int64, form req.CreateCommentReq) (*mode
 	if strs.IsBlank(form.Content) {
 		return nil, errors.New(locales.Get("comment.content_required"))
 	}
+	if !ContentAccessService.CanAccessEntity(UserService.Get(userId), form.EntityType, entityId) {
+		return nil, errs.ContentAccessDenied()
+	}
 
 	comment := &models.Comment{
 		UserId:      userId,

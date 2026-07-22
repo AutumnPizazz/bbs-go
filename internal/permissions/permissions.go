@@ -73,6 +73,7 @@ var (
 	PermissionUserForbiddenForever = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.user.forbiddenForever", GroupName: GroupCommunity, SortNo: 735, NameEn: "Forbid Users Permanently", NameZh: "永久禁言用户"}
 	PermissionUserUpdatePassword   = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.user.updatePassword", GroupName: GroupCommunity, SortNo: 740, NameEn: "Update Own Password", NameZh: "修改自己的密码"}
 	PermissionUserResetPassword    = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.user.resetPassword", GroupName: GroupCommunity, SortNo: 750, NameEn: "Reset User Password", NameZh: "重置用户密码"}
+	PermissionUserAccessScope      = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.user.accessScope", GroupName: GroupCommunity, SortNo: 760, NameEn: "Manage User Content Scope", NameZh: "管理用户内容范围"}
 
 	PermissionSettingView     = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.setting.view", GroupName: GroupSystem, SortNo: 1100, NameEn: "View Settings", NameZh: "查看设置"}
 	PermissionSettingUpdate   = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.setting.update", GroupName: GroupSystem, SortNo: 1110, NameEn: "Update Settings", NameZh: "编辑设置"}
@@ -122,6 +123,7 @@ var Permissions = []PermissionDefinition{
 	PermissionUserForbiddenForever,
 	PermissionUserUpdatePassword,
 	PermissionUserResetPassword,
+	PermissionUserAccessScope,
 	PermissionRoleView,
 	PermissionRoleCreate,
 	PermissionRoleUpdate,

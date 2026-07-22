@@ -1,6 +1,3 @@
-import { useSearchParams } from "react-router"
-
-import { SignupForm } from "@/components/auth/signup-form"
 import { WidgetCard } from "@/components/common/widget-card"
 import { useI18n } from "@/lib/i18n/provider"
 import { noindexRouteMeta } from "@/lib/seo"
@@ -15,7 +12,6 @@ export function meta({
 }
 
 export default function SignupRoute() {
-  const [searchParams] = useSearchParams()
   const { t } = useI18n()
   useDocumentTitle(t("user.signup.title"))
   return (
@@ -26,7 +22,9 @@ export default function SignupRoute() {
           title={t("user.signup.title")}
           bodyClassName="pt-0"
         >
-          <SignupForm redirect={searchParams.get("redirect") || undefined} />
+          <p className="p-6 text-center text-muted-foreground">
+            {t("user.signup.adminOnly")}
+          </p>
         </WidgetCard>
       </div>
     </section>

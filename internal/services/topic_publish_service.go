@@ -4,6 +4,7 @@ import (
 	"bbs-go/internal/models"
 	"bbs-go/internal/models/constants"
 	"bbs-go/internal/models/req"
+	"bbs-go/internal/pkg/errs"
 	"bbs-go/internal/pkg/event"
 	"bbs-go/internal/pkg/iplocator"
 	"bbs-go/internal/pkg/locales"
@@ -223,15 +224,26 @@ func (s topicPublishService) checkParams(userId int64, form req.CreateTopicReq) 
 			return errors.New(locales.Get("topic.category_required"))
 		}
 	}
+	if !ContentAccessService.CanWriteCategory(UserService.Get(userId), form.CategoryId) {
+		return errs.ContentAccessDenied()
+	}
 
 	// 帖子附件校验
 	if form.Type == constants.TopicTypeTopic && len(form.AttachmentIds) > 0 {
 		attCfg := SysConfigService.GetAttachmentConfig()
+		user := UserService.Get(userId)
+		if user != nil && user.ContentAccessMode == constants.ContentAccessModeAssignedCategories && !user.IsOwner() && !attCfg.ExternalCustomerAttachment.Enabled {
+			return errors.New(locales.Get("attachment.disabled"))
+		}
+		maxCount := attCfg.MaxCount
+		if user != nil && user.ContentAccessMode == constants.ContentAccessModeAssignedCategories && !user.IsOwner() {
+			maxCount = attCfg.ExternalCustomerAttachment.MaxCountPerContent
+		}
 		if !attCfg.Enabled {
 			return errors.New(locales.Get("attachment.disabled"))
 		}
-		if attCfg.MaxCount > 0 && len(form.AttachmentIds) > attCfg.MaxCount {
-			return errors.New(locales.Getf("attachment.too_many", attCfg.MaxCount))
+		if maxCount > 0 && len(form.AttachmentIds) > maxCount {
+			return errors.New(locales.Getf("attachment.too_many", maxCount))
 		}
 	}
 

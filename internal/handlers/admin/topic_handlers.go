@@ -29,7 +29,7 @@ func TopicDetail(ctx *gin.Context) {
 	}
 
 	t := services.TopicService.Get(id)
-	if t == nil {
+	if t == nil || !services.ContentAccessService.CanAccessTopicCategory(common.GetCurrentUser(ctx), t) {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage("Not found, id="+strconv.FormatInt(id, 10)))
 		return
 	}
@@ -38,7 +38,8 @@ func TopicDetail(ctx *gin.Context) {
 }
 
 func TopicList(ctx *gin.Context) {
-	list, paging := services.TopicService.FindPageByCnd(params.NewPagedSqlCnd(ctx,
+	user := common.GetCurrentUser(ctx)
+	cnd := params.NewPagedSqlCnd(ctx,
 		params.QueryFilter{
 			ParamName: "id",
 			Op:        params.Eq,
@@ -83,7 +84,14 @@ func TopicList(ctx *gin.Context) {
 			ParamName: "title",
 			Op:        params.Like,
 		},
-	).Desc("id"))
+	).Desc("id")
+	allowed := services.ContentAccessService.GetAllowedCategoryIds(user)
+	if len(allowed) == 0 {
+		cnd.Eq("id", -1)
+	} else {
+		cnd.In("category_id", allowed)
+	}
+	list, paging := services.TopicService.FindPageByCnd(cnd)
 
 	var results []map[string]interface{}
 	for _, topic := range list {
@@ -108,6 +116,10 @@ func TopicRecommend(ctx *gin.Context) {
 		ginx.WriteJSON(ctx, err)
 		return
 	}
+	if !services.ContentAccessService.CanAccessTopicCategory(common.GetCurrentUser(ctx), services.TopicService.Get(id)) {
+		ginx.WriteJSON(ctx, errs.ContentAccessDenied())
+		return
+	}
 	err = services.TopicService.SetRecommend(id, true)
 	if err != nil {
 		ginx.WriteJSON(ctx, err)
@@ -121,6 +133,10 @@ func TopicRemoveRecommend(ctx *gin.Context) {
 	id, err := params.FormValueInt64(ctx, "id")
 	if err != nil {
 		ginx.WriteJSON(ctx, err)
+		return
+	}
+	if !services.ContentAccessService.CanAccessTopicCategory(common.GetCurrentUser(ctx), services.TopicService.Get(id)) {
+		ginx.WriteJSON(ctx, errs.ContentAccessDenied())
 		return
 	}
 	err = services.TopicService.SetRecommend(id, false)
@@ -143,6 +159,10 @@ func TopicRemove(ctx *gin.Context) {
 		ginx.WriteJSON(ctx, errs.NotLogin())
 		return
 	}
+	if !services.ContentAccessService.CanAccessTopicCategory(user, services.TopicService.Get(id)) {
+		ginx.WriteJSON(ctx, errs.ContentAccessDenied())
+		return
+	}
 	err = services.TopicService.Delete(id, user.Id, ctx.Request)
 	if err != nil {
 		ginx.WriteJSON(ctx, err)
@@ -158,6 +178,10 @@ func TopicUndelete(ctx *gin.Context) {
 		ginx.WriteJSON(ctx, err)
 		return
 	}
+	if !services.ContentAccessService.CanAccessTopicCategory(common.GetCurrentUser(ctx), services.TopicService.Get(id)) {
+		ginx.WriteJSON(ctx, errs.ContentAccessDenied())
+		return
+	}
 	err = services.TopicService.Undelete(id)
 	if err != nil {
 		ginx.WriteJSON(ctx, err)
@@ -171,6 +195,10 @@ func TopicAudit(ctx *gin.Context) {
 	id, _ := params.GetInt64(ctx, "id")
 	if id <= 0 {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage("id is required"))
+		return
+	}
+	if !services.ContentAccessService.CanAccessTopicCategory(common.GetCurrentUser(ctx), services.TopicService.Get(id)) {
+		ginx.WriteJSON(ctx, errs.ContentAccessDenied())
 		return
 	}
 	err := services.TopicService.UpdateColumn(id, "status", constants.StatusOk)
@@ -197,6 +225,10 @@ func TopicAcceptAnswer(ctx *gin.Context) {
 		ginx.WriteJSON(ctx, errs.NotLogin())
 		return
 	}
+	if !services.ContentAccessService.CanAccessTopicCategory(user, services.TopicService.Get(req.Id)) {
+		ginx.WriteJSON(ctx, errs.ContentAccessDenied())
+		return
+	}
 	if err := services.TopicService.AcceptAnswer(req.Id, req.CommentId, user.Id, true); err != nil {
 		ginx.WriteJSON(ctx, err)
 		return
@@ -216,6 +248,10 @@ func TopicUnacceptAnswer(ctx *gin.Context) {
 		ginx.WriteJSON(ctx, errs.NotLogin())
 		return
 	}
+	if !services.ContentAccessService.CanAccessTopicCategory(user, services.TopicService.Get(id)) {
+		ginx.WriteJSON(ctx, errs.ContentAccessDenied())
+		return
+	}
 	if err := services.TopicService.UnacceptAnswer(id, user.Id, true); err != nil {
 		ginx.WriteJSON(ctx, err)
 		return
@@ -230,6 +266,10 @@ func TopicMarkSolved(ctx *gin.Context) {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage("id is required"))
 		return
 	}
+	if !services.ContentAccessService.CanAccessTopicCategory(common.GetCurrentUser(ctx), services.TopicService.Get(id)) {
+		ginx.WriteJSON(ctx, errs.ContentAccessDenied())
+		return
+	}
 	if err := services.TopicService.ForceSetQaStatus(id, constants.QaStatusSolved); err != nil {
 		ginx.WriteJSON(ctx, err)
 		return
@@ -242,6 +282,10 @@ func TopicMarkUnsolved(ctx *gin.Context) {
 	id, _ := params.GetInt64(ctx, "id")
 	if id <= 0 {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage("id is required"))
+		return
+	}
+	if !services.ContentAccessService.CanAccessTopicCategory(common.GetCurrentUser(ctx), services.TopicService.Get(id)) {
+		ginx.WriteJSON(ctx, errs.ContentAccessDenied())
 		return
 	}
 	if err := services.TopicService.ForceSetQaStatus(id, constants.QaStatusUnsolved); err != nil {

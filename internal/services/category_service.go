@@ -50,19 +50,35 @@ func (s *categoryService) FindPageByCnd(cnd *sqls.Cnd) (list []models.Category, 
 }
 
 func (s *categoryService) Create(t *models.Category) error {
-	return repositories.CategoryRepository.Create(sqls.DB(), t)
+	err := repositories.CategoryRepository.Create(sqls.DB(), t)
+	if err == nil {
+		ContentAccessService.InvalidateAll()
+	}
+	return err
 }
 
 func (s *categoryService) Update(t *models.Category) error {
-	return repositories.CategoryRepository.Update(sqls.DB(), t)
+	err := repositories.CategoryRepository.Update(sqls.DB(), t)
+	if err == nil {
+		ContentAccessService.InvalidateAll()
+	}
+	return err
 }
 
 func (s *categoryService) Updates(id int64, columns map[string]interface{}) error {
-	return repositories.CategoryRepository.Updates(sqls.DB(), id, columns)
+	err := repositories.CategoryRepository.Updates(sqls.DB(), id, columns)
+	if err == nil {
+		ContentAccessService.InvalidateAll()
+	}
+	return err
 }
 
 func (s *categoryService) UpdateColumn(id int64, name string, value interface{}) error {
-	return repositories.CategoryRepository.UpdateColumn(sqls.DB(), id, name, value)
+	err := repositories.CategoryRepository.UpdateColumn(sqls.DB(), id, name, value)
+	if err == nil {
+		ContentAccessService.InvalidateAll()
+	}
+	return err
 }
 
 // DeleteWithCheck 删除节点，若为一级且有子节点则返回错误
@@ -77,9 +93,13 @@ func (s *categoryService) DeleteWithCheck(id int64) error {
 			return errors.New(locales.Get("topic.category.has_children"))
 		}
 	}
-	return repositories.CategoryRepository.Updates(sqls.DB(), id, map[string]interface{}{
+	err := repositories.CategoryRepository.Updates(sqls.DB(), id, map[string]interface{}{
 		"status": constants.StatusDeleted,
 	})
+	if err == nil {
+		ContentAccessService.InvalidateAll()
+	}
+	return err
 }
 
 // GetTopLevelCategories 仅一级节点（parent_id=0），用于导航
@@ -98,20 +118,34 @@ func (s *categoryService) GetChildren(parentId int64) []models.Category {
 		Asc("sort_no").Desc("id"))
 }
 
-// GetCategoryIdsForList 用于帖子列表筛选：一级返回 [自身+子节点id]，二级返回 [自身]
+// GetCategoryIdsForList returns a category and all active descendants.
 func (s *categoryService) GetCategoryIdsForList(categoryId int64) []int64 {
-	category := s.Get(categoryId)
-	if category == nil {
+	if categoryId <= 0 {
 		return nil
 	}
-	if category.ParentId == 0 {
-		ids := []int64{categoryId}
-		for _, c := range s.GetChildren(categoryId) {
-			ids = append(ids, c.Id)
+	categories := s.GetCategories()
+	byParent := make(map[int64][]int64)
+	found := false
+	for _, category := range categories {
+		if category.Id == categoryId {
+			found = true
 		}
-		return ids
+		byParent[category.ParentId] = append(byParent[category.ParentId], category.Id)
 	}
-	return []int64{categoryId}
+	if !found {
+		return nil
+	}
+	ids := []int64{categoryId}
+	queue := []int64{categoryId}
+	for len(queue) > 0 {
+		parentId := queue[0]
+		queue = queue[1:]
+		for _, childId := range byParent[parentId] {
+			ids = append(ids, childId)
+			queue = append(queue, childId)
+		}
+	}
+	return ids
 }
 
 func (s *categoryService) GetCategories() []models.Category {

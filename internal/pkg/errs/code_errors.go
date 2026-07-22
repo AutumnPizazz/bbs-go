@@ -21,6 +21,8 @@ const (
 	CodeUserDisabled        = 1002
 	CodeInObservationPeriod = 1003
 	CodeEmailNotVerified    = 1004
+	CodeRegistrationClosed  = 1005
+	CodeContentAccessDenied = 1006
 )
 
 // NewError 创建错误
@@ -39,6 +41,10 @@ func NewError(code int) *web.CodeError {
 		message = locales.Get("errors.user_disabled")
 	case CodeEmailNotVerified:
 		message = locales.Get("errors.email_not_verified")
+	case CodeRegistrationClosed:
+		message = locales.Get("errors.registration_closed")
+	case CodeContentAccessDenied:
+		message = locales.Get("errors.content_access_denied")
 	default:
 		message = "Unknown error"
 	}
@@ -47,10 +53,12 @@ func NewError(code int) *web.CodeError {
 
 // 预定义的错误创建函数
 var (
-	NotLogin         = func() *web.CodeError { return NewError(CodeNotLogin) }
-	NoPermission     = func() *web.CodeError { return NewError(CodeNoPermission) }
-	CaptchaError     = func() *web.CodeError { return NewError(CodeCaptchaError) }
-	ForbiddenError   = func() *web.CodeError { return NewError(CodeForbiddenError) }
-	UserDisabled     = func() *web.CodeError { return NewError(CodeUserDisabled) }
-	EmailNotVerified = func() *web.CodeError { return NewError(CodeEmailNotVerified) }
+	NotLogin            = func() *web.CodeError { return NewError(CodeNotLogin) }
+	NoPermission        = func() *web.CodeError { return NewError(CodeNoPermission) }
+	CaptchaError        = func() *web.CodeError { return NewError(CodeCaptchaError) }
+	ForbiddenError      = func() *web.CodeError { return NewError(CodeForbiddenError) }
+	UserDisabled        = func() *web.CodeError { return NewError(CodeUserDisabled) }
+	EmailNotVerified    = func() *web.CodeError { return NewError(CodeEmailNotVerified) }
+	RegistrationClosed  = func() *web.CodeError { return NewError(CodeRegistrationClosed) }
+	ContentAccessDenied = func() *web.CodeError { return NewError(CodeContentAccessDenied) }
 )

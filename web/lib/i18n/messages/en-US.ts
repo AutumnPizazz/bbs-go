@@ -182,6 +182,10 @@ const enUS = {
       yes: "Yes",
       no: "No",
     },
+    userAccess: {
+      all: "All categories",
+      assignedCategories: "Assigned categories and descendants",
+    },
     reportDataTypes: {
       topic: "Topic",
       article: "Article",
@@ -669,6 +673,7 @@ const enUS = {
       username: "Username",
       nickname: "Nickname",
       email: "Email",
+      phone: "Phone",
       password: "Password",
       type: "Type",
       gender: "Gender",
@@ -701,6 +706,8 @@ const enUS = {
       icon: "Icon",
       summary: "Summary",
       forbidden: "Forbidden",
+      contentAccessMode: "Content access",
+      categoryIds: "Allowed categories",
       toEmail: "To Email",
       bizType: "Content type",
       subject: "Subject",
@@ -1561,8 +1568,6 @@ const enUS = {
         usernamePlaceholder: "Enter your username or email",
         passwordPlaceholder: "Enter your password",
         loginBtn: "Sign in",
-        forgotPassword: "Forgot password?",
-        noAccount: "Don't have an account? Sign up",
         usernameRequired: "Enter your username or email",
         passwordRequired: "Enter your password",
       },
@@ -1582,21 +1587,7 @@ const enUS = {
     },
     signup: {
       title: "Sign up",
-      nickname: "Nickname",
-      nicknamePlaceholder: "Enter a nickname",
-      email: "Email",
-      emailPlaceholder: "Enter your email",
-      password: "Password",
-      passwordPlaceholder: "Enter your password",
-      passwordHelp: "Password must be at least 6 characters long.",
-      confirmPassword: "Confirm Password",
-      confirmPasswordPlaceholder: "Enter your password again",
-      signupBtn: "Sign up",
-      alreadyHaveAccount: "Already have an account? Sign in",
-      nicknameRequired: "Enter a nickname",
-      emailRequired: "Enter your email",
-      passwordRequired: "Enter your password",
-      passwordMismatch: "Passwords do not match",
+      adminOnly: "Accounts can only be created by an administrator.",
     },
     email: {
       verify: {
@@ -1618,29 +1609,12 @@ const enUS = {
       viewDetails: "View details",
     },
     passwordReset: {
-      backToSignin: "Back to sign in",
+      adminOnly: "Password recovery and changes are managed by an administrator.",
       forgot: {
         title: "Forgot password?",
-        emailPlaceholder: "Enter your email",
-        emailRequired: "Enter your email",
-        sendButton: "Send reset email",
-        sending: "Sending...",
-        sentNotice:
-          "If the email exists, a password reset email has been sent.",
       },
       reset: {
         title: "Reset password",
-        tokenMissing:
-          "Invalid reset link. Please request a new password reset link.",
-        passwordPlaceholder: "Enter a new password",
-        rePasswordPlaceholder: "Enter the new password again",
-        passwordRequired: "Enter a new password",
-        rePasswordRequired: "Please confirm new password",
-        passwordMismatch: "Passwords do not match",
-        submitButton: "Reset password",
-        submitting: "Submitting...",
-        successNotice:
-          "Password has been reset. Please sign in with the new password.",
       },
     },
     profile: {

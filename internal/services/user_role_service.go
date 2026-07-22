@@ -96,6 +96,7 @@ func (s *userRoleService) UpdateUserRoles(userId int64, roleIds []int64) error {
 	}
 	cache.UserCache.Invalidate(userId)
 	PermissionService.InvalidateUser(userId)
+	ContentAccessService.InvalidateUser(userId)
 	return nil
 }
 

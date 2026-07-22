@@ -66,19 +66,20 @@ func topicGetBuiltInCategories() []resp.CategoryResponse {
 // 收藏
 // 设置置顶
 func CategoryNavs(ctx *gin.Context) {
-
-	categories := render.BuildCategoryResponses(services.CategoryService.GetTopLevelCategories())
+	user := common.GetCurrentUser(ctx)
+	categories := render.BuildCategoryResponseTree(0, services.ContentAccessService.FilterCategoryTree(user, services.CategoryService.GetCategories()))
 	ginx.WriteJSON(ctx, categories)
 
 }
 
 func Categories(ctx *gin.Context) {
+	user := common.GetCurrentUser(ctx)
 	topicType := constants.TopicType(params.FormValueIntDefault(ctx, "type", -1))
 	var categoryList []models.Category
 	if topicType >= 0 {
-		categoryList = services.CategoryService.GetCategoriesByTopicType(topicType)
+		categoryList = services.ContentAccessService.FilterCategoryTree(user, services.CategoryService.GetCategoriesByTopicType(topicType))
 	} else {
-		categoryList = services.CategoryService.GetCategories()
+		categoryList = services.ContentAccessService.FilterCategoryTree(user, services.CategoryService.GetCategories())
 	}
 	categories := render.BuildCategoryResponseTree(0, categoryList)
 	ginx.WriteJSON(ctx, categories)
@@ -86,6 +87,7 @@ func Categories(ctx *gin.Context) {
 }
 
 func Category(ctx *gin.Context) {
+	user := common.GetCurrentUser(ctx)
 	categoryId, _ := params.GetInt64(ctx, "categoryId")
 	if categoryId <= 0 {
 		for _, category := range topicGetBuiltInCategories() {
@@ -96,7 +98,7 @@ func Category(ctx *gin.Context) {
 		}
 	}
 	category := services.CategoryService.Get(categoryId)
-	if category == nil {
+	if category == nil || !services.ContentAccessService.CanAccessCategory(user, categoryId) {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage(locales.Get("common.not_found")))
 		return
 	}
@@ -150,7 +152,7 @@ func TopicEditForm(ctx *gin.Context) {
 	}
 
 	topic := services.TopicService.Get(topicId)
-	if topic == nil || topic.Status != constants.StatusOk {
+	if topic == nil || !services.ContentAccessService.CanAccessTopic(user, topic) {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage(locales.Get("common.not_found")))
 		return
 	}
@@ -204,7 +206,7 @@ func TopicEdit(ctx *gin.Context) {
 	}
 
 	topic := services.TopicService.Get(topicId)
-	if topic == nil || topic.Status != constants.StatusOk {
+	if topic == nil || !services.ContentAccessService.CanAccessTopic(user, topic) {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage(locales.Get("common.not_found")))
 		return
 	}
@@ -223,6 +225,10 @@ func TopicEdit(ctx *gin.Context) {
 	form.Title = strings.TrimSpace(form.Title)
 	form.Content = strings.TrimSpace(form.Content)
 	form.HideContent = strings.TrimSpace(form.HideContent)
+	if !services.ContentAccessService.CanWriteCategory(user, form.CategoryId) {
+		ginx.WriteJSON(ctx, errs.ContentAccessDenied())
+		return
+	}
 
 	err := services.TopicService.Edit(user.Id, topicId, form)
 	if err != nil {
@@ -295,14 +301,14 @@ func TopicDetail(ctx *gin.Context) {
 	topicIdStr := ctx.Param("id")
 
 	topicId := idcodec.Decode(topicIdStr)
+	user := common.GetCurrentUser(ctx)
 	topic := services.TopicService.Get(topicId)
-	if topic == nil || topic.Status == constants.StatusDeleted {
+	if topic == nil || !services.ContentAccessService.CanAccessTopic(user, topic) {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage(locales.Get("common.not_found")))
 		return
 	}
 
 	// 审核中文章控制展示
-	user := common.GetCurrentUser(ctx)
 	if topic.Status == constants.StatusReview {
 		if user != nil {
 			if topic.UserId != user.Id && !user.IsOwner() {
@@ -324,6 +330,10 @@ func TopicRecentlikes(ctx *gin.Context) {
 	topicIdStr := ctx.Param("id")
 
 	topicId := idcodec.Decode(topicIdStr)
+	if !services.ContentAccessService.CanAccessTopic(common.GetCurrentUser(ctx), services.TopicService.Get(topicId)) {
+		ginx.WriteJSON(ctx, errs.ContentAccessDenied())
+		return
+	}
 	likes := services.UserLikeService.Recent(constants.EntityTopic, topicId, 5)
 	var users []resp.UserInfo
 	for _, like := range likes {
@@ -337,7 +347,13 @@ func TopicRecentlikes(ctx *gin.Context) {
 }
 
 func TopicRecent(ctx *gin.Context) {
-	topics := services.TopicService.Find(sqls.NewCnd().Where("status = ?", constants.StatusOk).Desc("id").Limit(10))
+	user := common.GetCurrentUser(ctx)
+	allowed := services.ContentAccessService.GetAllowedCategoryIds(user)
+	if len(allowed) == 0 {
+		ginx.WriteJSON(ctx, render.BuildSimpleTopics(ctx, nil))
+		return
+	}
+	topics := services.TopicService.Find(sqls.NewCnd().Where("status = ?", constants.StatusOk).In("category_id", allowed).Desc("id").Limit(10))
 	ginx.WriteJSON(ctx, render.BuildSimpleTopics(ctx, topics))
 
 }
@@ -350,7 +366,7 @@ func TopicUserTopics(ctx *gin.Context) {
 	}
 	cursor := params.FormValueInt64Default(ctx, "cursor", 0)
 	format := constants.TopicFormat(strings.TrimSpace(params.FormValue(ctx, "format")))
-	topics, cursor, hasMore := services.TopicService.GetUserTopics(userId, cursor, format)
+	topics, cursor, hasMore := services.TopicService.GetUserTopics(common.GetCurrentUser(ctx), userId, cursor, format)
 	ginx.WriteJSON(ctx, ginx.CursorData(render.BuildSimpleTopics(ctx, topics), strconv.FormatInt(cursor, 10), hasMore))
 
 }
@@ -371,7 +387,7 @@ func TopicTopics(ctx *gin.Context) {
 
 	var temp []models.Topic
 	if cursor <= 0 {
-		stickyTopics := services.TopicService.GetStickyTopics(categoryId, 3, qaStatus, format)
+		stickyTopics := services.TopicService.GetStickyTopics(user, categoryId, 3, qaStatus, format)
 		temp = append(temp, stickyTopics...)
 	}
 	topics, cursor, hasMore := services.TopicService.GetTopics(user, categoryId, cursor, qaStatus, sort, format)
@@ -435,7 +451,7 @@ func TopicTagTopics(ctx *gin.Context) {
 		return
 	}
 	format := constants.TopicFormat(strings.TrimSpace(params.FormValue(ctx, "format")))
-	topics, cursor, hasMore := services.TopicService.GetTagTopics(tagId, cursor, format)
+	topics, cursor, hasMore := services.TopicService.GetTagTopics(common.GetCurrentUser(ctx), tagId, cursor, format)
 	ginx.WriteJSON(ctx, ginx.CursorData(render.BuildSimpleTopics(ctx, topics), strconv.FormatInt(cursor, 10), hasMore))
 
 }
@@ -447,6 +463,10 @@ func TopicFavorite(ctx *gin.Context) {
 	user := common.GetCurrentUser(ctx)
 	if user == nil {
 		ginx.WriteJSON(ctx, errs.NotLogin())
+		return
+	}
+	if !services.ContentAccessService.CanAccessTopic(user, services.TopicService.Get(topicId)) {
+		ginx.WriteJSON(ctx, errs.ContentAccessDenied())
 		return
 	}
 	err := services.FavoriteService.AddTopicFavorite(user.Id, topicId)
@@ -491,7 +511,7 @@ func TopicHideContent(ctx *gin.Context) {
 		hideContent = ""    // 隐藏内容
 	)
 	topic := services.TopicService.Get(topicId)
-	if topic != nil && topic.Status == constants.StatusOk && strs.IsNotBlank(topic.HideContent) {
+	if topic != nil && services.ContentAccessService.CanAccessTopic(common.GetCurrentUser(ctx), topic) && strs.IsNotBlank(topic.HideContent) {
 		exists = true
 		if user := common.GetCurrentUser(ctx); user != nil {
 			if user.Id == topic.UserId || services.CommentService.IsCommented(user.Id, constants.EntityTopic, topic.Id) {

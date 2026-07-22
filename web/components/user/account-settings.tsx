@@ -7,10 +7,8 @@ import { useActionState } from "react"
 import {
   requestEmailVerifyAction,
   setEmailAction,
-  setPasswordAction,
   setUsernameAction,
   unbindProviderAction,
-  updatePasswordAction,
   type UserActionState,
 } from "@/lib/actions/user"
 import { useRequiredUser } from "@/components/auth/require-user"
@@ -29,7 +27,7 @@ import { toast } from "@/lib/toast"
 
 const initialState: UserActionState = { ok: false }
 
-type DialogKey = "username" | "email" | "setPassword" | "updatePassword" | null
+type DialogKey = "username" | "email" | null
 type BindDialogKey = "wx" | "google" | "github" | null
 type BindProvider = "wx" | "google" | "github"
 
@@ -184,24 +182,6 @@ export function AccountSettings({
               {t("user.profile.account.set")}
             </button>
           ) : null}
-        </SettingsItem>
-        <SettingsItem
-          title={t("user.profile.account.password")}
-          value={
-            user.passwordSet
-              ? t("user.profile.account.passwordSet")
-              : t("user.profile.account.passwordNotSet")
-          }
-        >
-          {user.passwordSet ? (
-            <button type="button" onClick={() => setDialog("updatePassword")}>
-              {t("user.profile.account.modify")}
-            </button>
-          ) : (
-            <button type="button" onClick={() => setDialog("setPassword")}>
-              {t("user.profile.account.set")}
-            </button>
-          )}
         </SettingsItem>
         {config?.loginConfig?.weixinLogin?.enabled ? (
           <BindItem
@@ -468,14 +448,7 @@ function AccountDialog({
 }) {
   const { t } = useI18n()
   const router = useRouter()
-  const action =
-    dialog === "username"
-      ? setUsernameAction
-      : dialog === "email"
-        ? setEmailAction
-        : dialog === "setPassword"
-          ? setPasswordAction
-          : updatePasswordAction
+  const action = dialog === "username" ? setUsernameAction : setEmailAction
   const [state, formAction, pending] = useActionState(action, initialState)
 
   React.useEffect(() => {
@@ -495,11 +468,7 @@ function AccountDialog({
         className="w-full max-w-md rounded-lg bg-background p-5 shadow-lg"
       >
         <h2 className="mb-4 text-lg font-semibold">{titleText(dialog, t)}</h2>
-        <div
-          className={
-            dialog === "setPassword" ? "space-y-6 py-4" : "space-y-4 py-4"
-          }
-        >
+        <div className="space-y-4 py-4">
           {dialog === "username" ? (
             <>
               <Alert className="border-blue-200 bg-blue-50">
@@ -529,54 +498,6 @@ function AccountDialog({
               placeholder={t("component.setEmailDialog.emailPlaceholder")}
             />
           ) : null}
-          {dialog === "setPassword" ? (
-            <>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                placeholder={t(
-                  "component.setPasswordDialog.passwordPlaceholder"
-                )}
-              />
-              <Input
-                id="rePassword"
-                name="rePassword"
-                type="password"
-                placeholder={t(
-                  "component.setPasswordDialog.rePasswordPlaceholder"
-                )}
-              />
-            </>
-          ) : null}
-          {dialog === "updatePassword" ? (
-            <>
-              <Input
-                id="oldPassword"
-                name="oldPassword"
-                type="password"
-                placeholder={t(
-                  "component.updatePasswordDialog.oldPasswordPlaceholder"
-                )}
-              />
-              <Input
-                id="newPassword"
-                name="password"
-                type="password"
-                placeholder={t(
-                  "component.updatePasswordDialog.newPasswordPlaceholder"
-                )}
-              />
-              <Input
-                id="rePassword"
-                name="rePassword"
-                type="password"
-                placeholder={t(
-                  "component.updatePasswordDialog.rePasswordPlaceholder"
-                )}
-              />
-            </>
-          ) : null}
         </div>
         <div className="mt-5 flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={onClose}>
@@ -593,16 +514,12 @@ function AccountDialog({
 
 function titleText(dialog: Exclude<DialogKey, null>, t: TFunction) {
   if (dialog === "username") return t("component.setUsernameDialog.title")
-  if (dialog === "email") return t("component.setEmailDialog.title")
-  if (dialog === "setPassword") return t("component.setPasswordDialog.title")
-  return t("component.updatePasswordDialog.title")
+  return t("component.setEmailDialog.title")
 }
 
 function successText(dialog: Exclude<DialogKey, null>, t: TFunction) {
   if (dialog === "username") return t("component.setUsernameDialog.success")
-  if (dialog === "email") return t("component.setEmailDialog.success")
-  if (dialog === "setPassword") return t("component.setPasswordDialog.success")
-  return t("component.updatePasswordDialog.success")
+  return t("component.setEmailDialog.success")
 }
 
 function bindTitle(provider: Exclude<BindDialogKey, null>, t: TFunction) {
