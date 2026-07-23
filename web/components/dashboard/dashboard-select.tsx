@@ -40,6 +40,154 @@ type DashboardSelectProps = {
 
 const DEFAULT_EMPTY_VALUE = "__empty__"
 
+type DashboardHierarchicalOption = DashboardSelectOption & {
+  depth: number
+  parentValue?: string | number | boolean
+  ancestorValues: string[]
+}
+
+function useDashboardHierarchy(
+  options: DashboardSelectOption[],
+  search: string,
+  open: boolean,
+  selectedValues: string[]
+) {
+  const hierarchicalOptions = React.useMemo(() => {
+    const stack: DashboardSelectOption[] = []
+    return options.map((option) => {
+      const depth = Math.max(0, Number(option.depth || 0))
+      stack.length = depth
+      const parentValue = depth > 0 ? stack[depth - 1]?.value : undefined
+      stack[depth] = option
+      return { ...option, depth, parentValue }
+    })
+  }, [options])
+  const optionsWithAncestors = React.useMemo<DashboardHierarchicalOption[]>(
+    () => {
+      const stack: DashboardSelectOption[] = []
+      return hierarchicalOptions.map((option) => {
+        const ancestorValues = Array.from({ length: option.depth || 0 })
+          .map((_, index) => stack[index])
+          .filter(
+            (ancestor): ancestor is DashboardSelectOption => Boolean(ancestor)
+          )
+          .map((ancestor) => String(ancestor.value))
+        stack[option.depth || 0] = option
+        return { ...option, ancestorValues }
+      })
+    },
+    [hierarchicalOptions]
+  )
+  const parentValues = React.useMemo(
+    () =>
+      new Set(
+        hierarchicalOptions
+          .map((option) => option.parentValue)
+          .filter(
+            (value): value is string | number | boolean => value !== undefined
+          )
+          .map(String)
+      ),
+    [hierarchicalOptions]
+  )
+  const [expandedValues, setExpandedValues] = React.useState<Set<string>>(
+    () => new Set()
+  )
+  const normalizedSearch = search.trim().toLowerCase()
+  const filteredOptions = React.useMemo(() => {
+    if (!normalizedSearch) {
+      return optionsWithAncestors.filter(
+        (option) =>
+          option.depth === 0 ||
+          option.ancestorValues.every((value) => expandedValues.has(value))
+      )
+    }
+    const matchingValues = new Set<string>()
+    optionsWithAncestors.forEach((option) => {
+      const text = `${option.label} ${option.searchText || ""} ${option.value}`.toLowerCase()
+      if (text.includes(normalizedSearch)) {
+        matchingValues.add(String(option.value))
+        option.ancestorValues.forEach((value) => matchingValues.add(value))
+      }
+    })
+    return optionsWithAncestors.filter((option) =>
+      matchingValues.has(String(option.value))
+    )
+  }, [expandedValues, normalizedSearch, optionsWithAncestors])
+
+  function toggleExpanded(valueToToggle: string) {
+    setExpandedValues((current) => {
+      const next = new Set(current)
+      if (next.has(valueToToggle)) next.delete(valueToToggle)
+      else next.add(valueToToggle)
+      return next
+    })
+  }
+
+  React.useEffect(() => {
+    if (!open || !selectedValues.length) return
+    const selectedValueSet = new Set(selectedValues)
+    const selectedAncestorValues = optionsWithAncestors.flatMap((option) =>
+      selectedValueSet.has(String(option.value)) ? option.ancestorValues : []
+    )
+    if (!selectedAncestorValues.length) return
+    setExpandedValues((current) => {
+      const next = new Set(current)
+      selectedAncestorValues.forEach((value) => next.add(value))
+      return next
+    })
+  }, [open, optionsWithAncestors, selectedValues])
+
+  return {
+    expandedValues,
+    filteredOptions,
+    normalizedSearch,
+    parentValues,
+    toggleExpanded,
+  }
+}
+
+function HierarchyExpandButton({
+  hasChildren,
+  searching,
+  expanded,
+  onToggle,
+}: {
+  hasChildren: boolean
+  searching: boolean
+  expanded: boolean
+  onToggle: () => void
+}) {
+  const { t } = useI18n()
+  if (!hasChildren || searching) {
+    return <span className="size-6 shrink-0" aria-hidden="true" />
+  }
+
+  const label = t(
+    expanded
+      ? "common.accessibility.collapse"
+      : "common.accessibility.expand"
+  )
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon-xs"
+      aria-label={label}
+      aria-expanded={expanded}
+      title={label}
+      onClick={onToggle}
+    >
+      <ChevronRightIcon
+        className={cn(
+          "size-3 transition-transform",
+          expanded && "rotate-90"
+        )}
+      />
+    </Button>
+  )
+}
+
 export function DashboardSelect({
   value,
   options,
@@ -70,91 +218,23 @@ export function DashboardSelect({
       ? placeholder
       : selectedOption?.label || placeholder
   const canClear = allowClear && selectedValue !== emptyValue
-  const hierarchicalOptions = React.useMemo(() => {
-    const stack: DashboardSelectOption[] = []
-    return options.map((option) => {
-      const depth = Math.max(0, Number(option.depth || 0))
-      stack.length = depth
-      const parentValue = depth > 0 ? stack[depth - 1]?.value : undefined
-      stack[depth] = option
-      return { ...option, depth, parentValue }
-    })
-  }, [options])
-  const parentValues = React.useMemo(
-    () =>
-      new Set(
-        hierarchicalOptions
-          .map((option) => option.parentValue)
-          .filter((value): value is string | number | boolean => value !== undefined)
-          .map(String)
-      ),
-    [hierarchicalOptions]
+  const hierarchySelectedValues = React.useMemo(
+    () => [selectedValue],
+    [selectedValue]
   )
-  const [expandedValues, setExpandedValues] = React.useState<Set<string>>(
-    () => new Set()
-  )
-  const normalizedSearch = search.trim().toLowerCase()
-  const optionsWithAncestors = React.useMemo(() => {
-    const stack: DashboardSelectOption[] = []
-    return hierarchicalOptions.map((option) => {
-      const ancestorValues = Array.from({ length: option.depth || 0 })
-        .map((_, index) => stack[index])
-        .filter(
-          (ancestor): ancestor is DashboardSelectOption => Boolean(ancestor)
-        )
-        .map((ancestor) => String(ancestor.value))
-      stack[option.depth || 0] = option
-      return { ...option, ancestorValues }
-    })
-  }, [hierarchicalOptions])
-  const filteredOptions = React.useMemo(() => {
-    if (!normalizedSearch) {
-      return optionsWithAncestors.filter(
-        (option) =>
-          option.depth === 0 ||
-          option.ancestorValues?.every((value) => expandedValues.has(value))
-      )
-    }
-    const matchingValues = new Set<string>()
-    optionsWithAncestors.forEach((option) => {
-      const text = `${option.label} ${option.searchText || ""} ${option.value}`.toLowerCase()
-      if (text.includes(normalizedSearch)) {
-        matchingValues.add(String(option.value))
-        option.ancestorValues?.forEach((value) => matchingValues.add(value))
-      }
-    })
-    return optionsWithAncestors.filter((option) =>
-      matchingValues.has(String(option.value))
-    )
-  }, [expandedValues, normalizedSearch, optionsWithAncestors])
+  const {
+    expandedValues,
+    filteredOptions,
+    normalizedSearch,
+    parentValues,
+    toggleExpanded,
+  } = useDashboardHierarchy(options, search, open, hierarchySelectedValues)
 
   function selectValue(nextValue: string) {
     onValueChange(nextValue === emptyValue ? undefined : nextValue)
     setOpen(false)
     setSearch("")
   }
-
-  function toggleExpanded(valueToToggle: string) {
-    setExpandedValues((current) => {
-      const next = new Set(current)
-      if (next.has(valueToToggle)) next.delete(valueToToggle)
-      else next.add(valueToToggle)
-      return next
-    })
-  }
-
-  React.useEffect(() => {
-    if (!open) return
-    const selected = optionsWithAncestors.find(
-      (option) => String(option.value) === selectedValue
-    )
-    if (!selected?.ancestorValues?.length) return
-    setExpandedValues((current) => {
-      const next = new Set(current)
-      selected.ancestorValues.forEach((value) => next.add(value))
-      return next
-    })
-  }, [open, optionsWithAncestors, selectedValue])
 
   function clearValue(event: React.MouseEvent<HTMLElement>) {
     event.preventDefault()
@@ -237,40 +317,12 @@ export function DashboardSelect({
                   Boolean(normalizedSearch) || expandedValues.has(optionValue)
                 return (
                   <div key={optionValue} className="flex items-center gap-1">
-                    {hasChildren && !normalizedSearch ? (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-xs"
-                        aria-label={
-                          t(
-                            expanded
-                              ? "common.accessibility.collapse"
-                              : "common.accessibility.expand"
-                          )
-                        }
-                        aria-expanded={expanded}
-                        title={
-                          t(
-                            expanded
-                              ? "common.accessibility.collapse"
-                              : "common.accessibility.expand"
-                          )
-                        }
-                        onClick={() => toggleExpanded(optionValue)}
-                      >
-                        <ChevronRightIcon
-                          className={cn(
-                            "size-3 transition-transform",
-                            expanded && "rotate-90"
-                          )}
-                        />
-                      </Button>
-                    ) : hasChildren ? (
-                      <span className="size-6 shrink-0" aria-hidden="true" />
-                    ) : (
-                      <span className="size-6 shrink-0" aria-hidden="true" />
-                    )}
+                    <HierarchyExpandButton
+                      hasChildren={hasChildren}
+                      searching={Boolean(normalizedSearch)}
+                      expanded={expanded}
+                      onToggle={() => toggleExpanded(optionValue)}
+                    />
                     <ComboboxOptionButton
                       label={option.label}
                       selected={selectedValue === optionValue}
@@ -330,69 +382,13 @@ export function DashboardMultiSelect({
   const selectedLabel = selectedOptions.length
     ? selectedOptions.map((option) => option.label).join(", ")
     : placeholder
-  const hierarchicalOptions = React.useMemo(() => {
-    const stack: DashboardSelectOption[] = []
-    return options.map((option) => {
-      const depth = Math.max(0, Number(option.depth || 0))
-      stack.length = depth
-      const parentValue = depth > 0 ? stack[depth - 1]?.value : undefined
-      stack[depth] = option
-      return { ...option, depth, parentValue }
-    })
-  }, [options])
-  const parentValues = React.useMemo(
-    () =>
-      new Set(
-        hierarchicalOptions
-          .map((option) => option.parentValue)
-          .filter(
-            (value): value is string | number | boolean => value !== undefined
-          )
-          .map(String)
-      ),
-    [hierarchicalOptions]
-  )
-  const [expandedValues, setExpandedValues] = React.useState<Set<string>>(
-    () => new Set()
-  )
-  const normalizedSearch = search.trim().toLowerCase()
-  const optionsWithAncestors = React.useMemo(() => {
-    const stack: DashboardSelectOption[] = []
-    return hierarchicalOptions.map((option) => {
-      const ancestorValues = Array.from({ length: option.depth || 0 })
-        .map((_, index) => stack[index])
-        .filter(
-          (ancestor): ancestor is DashboardSelectOption => Boolean(ancestor)
-        )
-        .map((ancestor) => String(ancestor.value))
-      stack[option.depth || 0] = option
-      return { ...option, ancestorValues }
-    })
-  }, [hierarchicalOptions])
-  const filteredOptions = React.useMemo(() => {
-    if (!normalizedSearch) {
-      return optionsWithAncestors.filter(
-        (option) =>
-          option.depth === 0 ||
-          option.ancestorValues.every((ancestorValue) =>
-            expandedValues.has(ancestorValue)
-          )
-      )
-    }
-    const matchingValues = new Set<string>()
-    optionsWithAncestors.forEach((option) => {
-      const text = `${option.label} ${option.searchText || ""} ${option.value}`.toLowerCase()
-      if (text.includes(normalizedSearch)) {
-        matchingValues.add(String(option.value))
-        option.ancestorValues.forEach((ancestorValue) =>
-          matchingValues.add(ancestorValue)
-        )
-      }
-    })
-    return optionsWithAncestors.filter((option) =>
-      matchingValues.has(String(option.value))
-    )
-  }, [expandedValues, normalizedSearch, optionsWithAncestors])
+  const {
+    expandedValues,
+    filteredOptions,
+    normalizedSearch,
+    parentValues,
+    toggleExpanded,
+  } = useDashboardHierarchy(options, search, open, selectedValues)
 
   function toggleValue(nextValue: string) {
     const nextValues = selectedValues.includes(nextValue)
@@ -400,31 +396,6 @@ export function DashboardMultiSelect({
       : [...selectedValues, nextValue]
     onValueChange(nextValues)
   }
-
-  function toggleExpanded(valueToToggle: string) {
-    setExpandedValues((current) => {
-      const next = new Set(current)
-      if (next.has(valueToToggle)) next.delete(valueToToggle)
-      else next.add(valueToToggle)
-      return next
-    })
-  }
-
-  React.useEffect(() => {
-    if (!open || !selectedValues.length) return
-    const selectedValueSet = new Set(selectedValues)
-    const selectedAncestorValues = optionsWithAncestors.flatMap((option) =>
-      selectedValueSet.has(String(option.value)) ? option.ancestorValues : []
-    )
-    if (!selectedAncestorValues.length) return
-    setExpandedValues((current) => {
-      const next = new Set(current)
-      selectedAncestorValues.forEach((ancestorValue) =>
-        next.add(ancestorValue)
-      )
-      return next
-    })
-  }, [open, optionsWithAncestors, selectedValues])
 
   function clearValue(event: React.MouseEvent<HTMLElement>) {
     event.preventDefault()
@@ -499,34 +470,12 @@ export function DashboardMultiSelect({
                   Boolean(normalizedSearch) || expandedValues.has(optionValue)
                 return (
                   <div key={optionValue} className="flex items-center gap-1">
-                    {hasChildren && !normalizedSearch ? (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-xs"
-                        aria-label={t(
-                          expanded
-                            ? "common.accessibility.collapse"
-                            : "common.accessibility.expand"
-                        )}
-                        aria-expanded={expanded}
-                        title={t(
-                          expanded
-                            ? "common.accessibility.collapse"
-                            : "common.accessibility.expand"
-                        )}
-                        onClick={() => toggleExpanded(optionValue)}
-                      >
-                        <ChevronRightIcon
-                          className={cn(
-                            "size-3 transition-transform",
-                            expanded && "rotate-90"
-                          )}
-                        />
-                      </Button>
-                    ) : (
-                      <span className="size-6 shrink-0" aria-hidden="true" />
-                    )}
+                    <HierarchyExpandButton
+                      hasChildren={hasChildren}
+                      searching={Boolean(normalizedSearch)}
+                      expanded={expanded}
+                      onToggle={() => toggleExpanded(optionValue)}
+                    />
                     <ComboboxOptionButton
                       label={option.label}
                       selected={selectedValues.includes(optionValue)}
