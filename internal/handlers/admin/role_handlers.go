@@ -5,6 +5,7 @@ import (
 	"bbs-go/internal/models/constants"
 	modelReq "bbs-go/internal/models/req"
 	"bbs-go/internal/permissions"
+	"bbs-go/internal/pkg/common"
 	"bbs-go/internal/pkg/locales"
 	"bbs-go/internal/services"
 	"sort"
@@ -105,6 +106,9 @@ func RoleCreate(ctx *gin.Context) {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage(err.Error()))
 		return
 	}
+	if operator := common.GetCurrentUser(ctx); operator != nil {
+		services.OperateLogService.AddOperateLog(operator.Id, constants.OpTypeCreate, "role", t.Id, "创建角色："+t.Name, ctx.Request)
+	}
 	ginx.WriteJSON(ctx, roleBuildRoleItem(t, true))
 }
 
@@ -140,6 +144,9 @@ func RoleUpdate(ctx *gin.Context) {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage(err.Error()))
 		return
 	}
+	if operator := common.GetCurrentUser(ctx); operator != nil {
+		services.OperateLogService.AddOperateLog(operator.Id, constants.OpTypeUpdate, "role", t.Id, "更新角色："+t.Name, ctx.Request)
+	}
 	ginx.WriteJSON(ctx, roleBuildRoleItem(t, true))
 
 }
@@ -162,6 +169,9 @@ func RoleUpdatePermissions(ctx *gin.Context) {
 	if err := services.RolePermissionService.UpdateRolePermissions(t.Id, modelReq.SplitCommaInt64s(req.PermissionIds)); err != nil {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage(err.Error()))
 		return
+	}
+	if operator := common.GetCurrentUser(ctx); operator != nil {
+		services.OperateLogService.AddOperateLog(operator.Id, constants.OpTypeUpdate, "rolePermission", t.Id, "更新角色权限，权限数量："+strconv.Itoa(len(modelReq.SplitCommaInt64s(req.PermissionIds))), ctx.Request)
 	}
 	ginx.WriteJSON(ctx, roleBuildRoleItem(t, true))
 
@@ -192,6 +202,9 @@ func RoleRemove(ctx *gin.Context) {
 			"update_time": dates.NowTimestamp(),
 		})
 	}
+	if operator := common.GetCurrentUser(ctx); operator != nil {
+		services.OperateLogService.AddOperateLog(operator.Id, constants.OpTypeDelete, "role", 0, "删除角色，数量："+strconv.Itoa(len(ids)), ctx.Request)
+	}
 	ginx.WriteJSON(ctx, nil)
 
 }
@@ -205,6 +218,9 @@ func RoleUpdateSort(ctx *gin.Context) {
 	if err := services.RoleService.UpdateSort(ids); err != nil {
 		ginx.WriteJSON(ctx, err)
 		return
+	}
+	if operator := common.GetCurrentUser(ctx); operator != nil {
+		services.OperateLogService.AddOperateLog(operator.Id, constants.OpTypeUpdate, "role", 0, "更新角色排序，数量："+strconv.Itoa(len(ids)), ctx.Request)
 	}
 	ginx.WriteJSON(ctx, nil)
 

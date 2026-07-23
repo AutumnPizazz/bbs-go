@@ -13,6 +13,7 @@ import (
 	"github.com/mlogclub/simple/web"
 
 	"bbs-go/internal/models"
+	"bbs-go/internal/pkg/common"
 	"bbs-go/internal/services"
 )
 
@@ -67,6 +68,9 @@ func LinkCreate(ctx *gin.Context) {
 		ginx.WriteJSON(ctx, err)
 		return
 	}
+	if operator := common.GetCurrentUser(ctx); operator != nil {
+		services.OperateLogService.AddOperateLog(operator.Id, constants.OpTypeCreate, "link", t.Id, "创建友情链接："+t.Title, ctx.Request)
+	}
 	ginx.WriteJSON(ctx, t)
 
 }
@@ -79,6 +83,9 @@ func LinkRemove(ctx *gin.Context) {
 	}
 	for _, id := range ids {
 		services.LinkService.Delete(id)
+	}
+	if operator := common.GetCurrentUser(ctx); operator != nil {
+		services.OperateLogService.AddOperateLog(operator.Id, constants.OpTypeDelete, "link", 0, "删除友情链接，数量："+strconv.Itoa(len(ids)), ctx.Request)
 	}
 	ginx.WriteJSON(ctx, nil)
 
@@ -93,6 +100,9 @@ func LinkUpdateSort(ctx *gin.Context) {
 	if err := services.LinkService.UpdateSort(ids); err != nil {
 		ginx.WriteJSON(ctx, err)
 		return
+	}
+	if operator := common.GetCurrentUser(ctx); operator != nil {
+		services.OperateLogService.AddOperateLog(operator.Id, constants.OpTypeUpdate, "link", 0, "更新友情链接排序，数量："+strconv.Itoa(len(ids)), ctx.Request)
 	}
 	ginx.WriteJSON(ctx, nil)
 
@@ -120,6 +130,9 @@ func LinkUpdate(ctx *gin.Context) {
 	if err != nil {
 		ginx.WriteJSON(ctx, err)
 		return
+	}
+	if operator := common.GetCurrentUser(ctx); operator != nil {
+		services.OperateLogService.AddOperateLog(operator.Id, constants.OpTypeUpdate, "link", t.Id, "更新友情链接："+t.Title, ctx.Request)
 	}
 	ginx.WriteJSON(ctx, t)
 

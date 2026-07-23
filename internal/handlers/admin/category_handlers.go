@@ -13,6 +13,8 @@ import (
 	"github.com/mlogclub/simple/common/dates"
 
 	"bbs-go/internal/models"
+	"bbs-go/internal/models/constants"
+	"bbs-go/internal/pkg/common"
 	"bbs-go/internal/services"
 )
 
@@ -153,6 +155,9 @@ func CategoryCreate(ctx *gin.Context) {
 		ginx.WriteJSON(ctx, err)
 		return
 	}
+	if operator := common.GetCurrentUser(ctx); operator != nil {
+		services.OperateLogService.AddOperateLog(operator.Id, constants.OpTypeCreate, "category", t.Id, "创建分类："+t.Name, ctx.Request)
+	}
 	ginx.WriteJSON(ctx, t)
 
 }
@@ -203,6 +208,9 @@ func CategoryUpdate(ctx *gin.Context) {
 		ginx.WriteJSON(ctx, err)
 		return
 	}
+	if operator := common.GetCurrentUser(ctx); operator != nil {
+		services.OperateLogService.AddOperateLog(operator.Id, constants.OpTypeUpdate, "category", t.Id, "更新分类："+t.Name, ctx.Request)
+	}
 	ginx.WriteJSON(ctx, t)
 
 }
@@ -224,6 +232,9 @@ func CategoryUpdateSort(ctx *gin.Context) {
 		ginx.WriteJSON(ctx, err)
 		return
 	}
+	if operator := common.GetCurrentUser(ctx); operator != nil {
+		services.OperateLogService.AddOperateLog(operator.Id, constants.OpTypeUpdate, "category", 0, "更新分类排序，数量："+strconv.Itoa(len(ids)), ctx.Request)
+	}
 	ginx.WriteJSON(ctx, nil)
 
 }
@@ -239,6 +250,9 @@ func CategoryRemove(ctx *gin.Context) {
 			ginx.WriteJSON(ctx, ginx.ErrorMessage(err.Error()))
 			return
 		}
+	}
+	if operator := common.GetCurrentUser(ctx); operator != nil {
+		services.OperateLogService.AddOperateLog(operator.Id, constants.OpTypeDelete, "category", 0, "删除分类，数量："+strconv.Itoa(len(ids)), ctx.Request)
 	}
 	ginx.WriteJSON(ctx, nil)
 
