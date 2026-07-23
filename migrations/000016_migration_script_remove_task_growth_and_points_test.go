@@ -8,6 +8,16 @@ import (
 	"gorm.io/gorm"
 )
 
+func TestQuoteIdentifierForReservedConfigKey(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open("file:quote_identifier_test?mode=memory&cache=shared"), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("open test db: %v", err)
+	}
+	if got := quoteIdentifier(db, "key"); got != `"key"` {
+		t.Fatalf("expected SQLite identifier quoting, got %q", got)
+	}
+}
+
 func TestRemoveTaskNavigationItems(t *testing.T) {
 	items := []interface{}{
 		map[string]interface{}{"title": "Topics", "url": "/topics"},

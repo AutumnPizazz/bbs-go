@@ -82,8 +82,21 @@ def process_names() -> set[str]:
 
 def main() -> int:
     print("=" * 40)
-    print("         BBS-GO build and run")
+    print("         BBS-GO Docker build and run")
     print("=" * 40)
+
+    # Docker Compose is the default runtime so local startup uses the same
+    # MySQL-backed deployment as the release configuration. Use --native for
+    # the legacy Go/SQLite development process.
+    if "--native" not in sys.argv[1:]:
+        try:
+            docker = require_command("docker", "Install Docker Desktop and start its engine.")
+            run([docker, "compose", "up", "-d", "--build"], ROOT)
+        except (OSError, RuntimeError, subprocess.CalledProcessError) as error:
+            return fail(f"Docker Compose startup failed: {error}")
+        print("\nBBS-GO is running at http://127.0.0.1:3000")
+        print("Use `docker compose logs -f` to view logs and `docker compose down` to stop it.")
+        return 0
 
     if not (ROOT / "go.mod").is_file():
         return fail("the script is not located in the bbs-go project root")

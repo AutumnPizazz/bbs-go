@@ -108,7 +108,7 @@ func removeRetiredConfig(db *gorm.DB) error {
 
 func removeTaskNavigation(db *gorm.DB) error {
 	var config models.SysConfig
-	if err := db.Where("key = ?", siteNavsConfigKey).First(&config).Error; err != nil {
+	if err := db.Where(quoteIdentifier(db, "key")+" = ?", siteNavsConfigKey).First(&config).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil
 		}
@@ -124,7 +124,7 @@ func removeTaskNavigation(db *gorm.DB) error {
 	if err != nil {
 		return err
 	}
-	return db.Model(&models.SysConfig{}).Where("key = ?", siteNavsConfigKey).Updates(map[string]interface{}{
+	return db.Model(&models.SysConfig{}).Where(quoteIdentifier(db, "key")+" = ?", siteNavsConfigKey).Updates(map[string]interface{}{
 		"value": string(data),
 	}).Error
 }

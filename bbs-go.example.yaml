@@ -21,6 +21,7 @@ Logger:
 
 # 数据库连接
 DB:
+  Type: mysql
   Url: username:password@tcp(localhost:3306)/bbsgo_db?charset=utf8mb4&parseTime=True&multiStatements=true&loc=Local
   MaxIdleConns: 50
   MaxOpenConns: 200

@@ -23,10 +23,13 @@ services:
       retries: 10
 
   bbs-go:
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile
-    image: mlogclub/bbs-go:${BBSGO_IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        TARGETOS: linux
+        TARGETARCH: amd64
+    image: bbs-go:local
     restart: unless-stopped
     depends_on:
       mysql:

@@ -55,7 +55,8 @@ COPY --from=web-builder /src/web/scripts /app/scripts
 COPY docker/bbs-go-docker.yaml /app/defaults/bbs-go.yaml
 COPY docker/entrypoint.sh /app/entrypoint.sh
 
-RUN ln -s /app/data/bbs-go.yaml /app/bbs-go.yaml \
+RUN sed -i 's/\r$//' /app/entrypoint.sh \
+	&& ln -s /app/data/bbs-go.yaml /app/bbs-go.yaml \
 	&& chmod +x /app/entrypoint.sh
 
 EXPOSE 3000 8082
