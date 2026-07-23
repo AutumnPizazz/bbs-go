@@ -147,6 +147,7 @@ export function useDashboardDataPage({
     () =>
       (config.formFields || []).filter(
         (field) =>
+          field.visibleWhen?.(formValues) !== false &&
           !(
             field.name === "id" &&
             (formValues.id === undefined ||
@@ -154,7 +155,7 @@ export function useDashboardDataPage({
               formValues.id === "")
           )
       ),
-    [config.formFields, formValues.id]
+    [config.formFields, formValues]
   )
 
   const load = React.useCallback(async () => {

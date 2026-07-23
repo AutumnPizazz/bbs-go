@@ -34,7 +34,18 @@ export function DashboardDataFieldControl({
   error?: string
   onChange: (value: AdminFormValue) => void
 }) {
+  const [portalContainer, setPortalContainer] = React.useState<HTMLElement | null>(
+    null
+  )
   const [optionSearch, setOptionSearch] = React.useState("")
+
+  React.useEffect(() => {
+    setPortalContainer(
+      document.querySelector<HTMLElement>(
+        '[data-slot="dialog-content"][data-state="open"]'
+      )
+    )
+  }, [])
   const isSearchableOptions = field.type === "tree-select"
   const filteredOptions =
     isSearchableOptions && optionSearch.trim()
@@ -62,6 +73,7 @@ export function DashboardDataFieldControl({
           options={options}
           placeholder={field.label}
           disabled={disabled}
+          portalContainer={portalContainer}
           onValueChange={(nextValue) => onChange(nextValue)}
         />
       ) : field.type === "tree-select" ? (
@@ -124,6 +136,7 @@ export function DashboardDataFieldControl({
           options={options}
           placeholder={field.label}
           disabled={disabled}
+          portalContainer={portalContainer}
           onValueChange={(nextValues) => onChange(nextValues)}
         />
       ) : field.type === "icon" ? (

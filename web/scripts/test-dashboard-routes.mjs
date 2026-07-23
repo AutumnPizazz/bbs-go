@@ -145,8 +145,13 @@ assert.match(
 
 assert.match(
   usersRoute,
-  /name:\s*"categoryIds"[\s\S]*?type:\s*"multiselect"[\s\S]*?optionsEndpoint:\s*"\/api\/admin\/category\/options"/,
+  /name:\s*"categoryIds"[\s\S]*?type:\s*"multiselect"[\s\S]*?optionsEndpoint:\s*"\/api\/admin\/category\/options"[\s\S]*?visibleWhen:\s*\(values\)\s*=>\s*values\.contentAccessMode\s*===\s*"assigned_categories"/,
   "dashboard.users.tsx should use the hierarchical multi-select for accessible nodes"
+)
+assert.match(
+  dashboardSelect,
+  /PopoverPrimitive\.Portal\s+container=\{portalContainer \?\? undefined\}/,
+  "dashboard selectors should portal inside the active dialog when available"
 )
 assert.match(
   dashboardDataUtils,

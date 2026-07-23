@@ -35,6 +35,7 @@ type DashboardSelectProps = {
   className?: string
   triggerClassName?: string
   contentClassName?: string
+  portalContainer?: HTMLElement | null
   onValueChange: (value: string | undefined) => void
 }
 
@@ -201,6 +202,7 @@ export function DashboardSelect({
   className,
   triggerClassName,
   contentClassName,
+  portalContainer,
   onValueChange,
 }: DashboardSelectProps) {
   const { t } = useI18n()
@@ -279,7 +281,7 @@ export function DashboardSelect({
           )}
         </Button>
       </PopoverPrimitive.Trigger>
-      <PopoverPrimitive.Portal>
+      <PopoverPrimitive.Portal container={portalContainer ?? undefined}>
         <PopoverPrimitive.Content
           align="start"
           sideOffset={4}
@@ -354,6 +356,7 @@ export function DashboardMultiSelect({
   className,
   triggerClassName,
   contentClassName,
+  portalContainer,
   onValueChange,
 }: {
   value?: unknown
@@ -365,6 +368,7 @@ export function DashboardMultiSelect({
   className?: string
   triggerClassName?: string
   contentClassName?: string
+  portalContainer?: HTMLElement | null
   onValueChange: (value: string[]) => void
 }) {
   const { t } = useI18n()
@@ -439,7 +443,7 @@ export function DashboardMultiSelect({
           )}
         </Button>
       </PopoverPrimitive.Trigger>
-      <PopoverPrimitive.Portal>
+      <PopoverPrimitive.Portal container={portalContainer ?? undefined}>
         <PopoverPrimitive.Content
           align="start"
           sideOffset={4}

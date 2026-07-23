@@ -152,6 +152,8 @@ export default function DashboardUsersRoute() {
         label: dashboardData.label(t, "categoryIds"),
         type: "multiselect",
         optionsEndpoint: "/api/admin/category/options",
+        visibleWhen: (values) =>
+          values.contentAccessMode === "assigned_categories",
         optionLabel: dashboardData.treeOptionLabel,
         optionValue: (record) => record.id as number,
         valueFromRecord: (record) =>

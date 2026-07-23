@@ -29,6 +29,7 @@ export type DashboardDataFormField = DashboardDataOptionSource & {
   name: string
   label: string
   required?: boolean
+  visibleWhen?: (values: Record<string, AdminFormValue>) => boolean
   colSpan?: 1 | 2
   type?:
     | "text"
