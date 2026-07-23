@@ -19,6 +19,7 @@ import {
 } from "lucide-react"
 
 import { DashboardSelect } from "@/components/dashboard/dashboard-select"
+import { DashboardDataBulkDialog } from "@/components/dashboard/data"
 import {
   ConfirmDialog,
   type ConfirmDialogState,
@@ -27,6 +28,7 @@ import { useCurrentUser } from "@/components/app/app-provider"
 import { ErrorPage } from "@/components/common/error-page"
 import { DashboardPagination } from "@/components/dashboard/pagination-controls"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -43,6 +45,10 @@ import {
   type AdminFormValue,
   type AdminRecord,
 } from "@/lib/api/admin"
+import type {
+  DashboardDataBulkAction,
+  DashboardDataBulkPreview,
+} from "@/components/dashboard/data"
 import { formatDateTime } from "@/lib/format"
 import { userHasPermission } from "@/lib/auth/roles"
 import { createAdminInitialFilters } from "@/lib/dashboard/default-filters"
@@ -172,6 +178,17 @@ export default function DashboardTopicsRoute() {
   const [answerSubmitting, setAnswerSubmitting] = React.useState<string | null>(
     null
   )
+  const [selectedIds, setSelectedIds] = React.useState<Set<number>>(
+    () => new Set()
+  )
+  const [bulkState, setBulkState] = React.useState<{
+    action: DashboardDataBulkAction
+    ids: number[]
+    preview: DashboardDataBulkPreview | null
+    confirmText: string
+    submitting: boolean
+    error: string | null
+  } | null>(null)
 
   const page = Number(filters.page || 1)
   const limit = Number(filters.limit || 20)
@@ -188,6 +205,69 @@ export default function DashboardTopicsRoute() {
     currentUser,
     PERMISSIONS.DASHBOARD_TOPIC_ACCEPT_ANSWER
   )
+  const canBatchRecommend = userHasPermission(
+    currentUser,
+    PERMISSIONS.DASHBOARD_TOPIC_BATCH_RECOMMEND
+  )
+  const canBatchDelete = userHasPermission(
+    currentUser,
+    PERMISSIONS.DASHBOARD_TOPIC_BATCH_DELETE
+  )
+  const bulkActions: DashboardDataBulkAction[] = [
+    ...(canBatchRecommend
+      ? [
+          {
+            label: t("dashboard.topicBulk.recommend"),
+            endpoint: "/api/admin/topic/batch",
+            previewEndpoint: "/api/admin/topic/batch/preview",
+            permission: PERMISSIONS.DASHBOARD_TOPIC_BATCH_RECOMMEND,
+            payload: () => ({ action: "recommend" }),
+            successMessage: t("dashboard.messages.recommended"),
+          },
+        ]
+      : []),
+    ...(canBatchDelete
+      ? [
+          {
+            label: t("dashboard.topicBulk.delete"),
+            endpoint: "/api/admin/topic/batch",
+            previewEndpoint: "/api/admin/topic/batch/preview",
+            permission: PERMISSIONS.DASHBOARD_TOPIC_BATCH_DELETE,
+            payload: () => ({ action: "delete" }),
+            successMessage: t("dashboard.messages.deleted"),
+          },
+          {
+            label: t("dashboard.topicBulk.restore"),
+            endpoint: "/api/admin/topic/batch",
+            previewEndpoint: "/api/admin/topic/batch/preview",
+            permission: PERMISSIONS.DASHBOARD_TOPIC_BATCH_DELETE,
+            payload: () => ({ action: "restore" }),
+            successMessage: t("dashboard.messages.restored"),
+          },
+        ]
+      : []),
+  ]
+
+  const selectedRecords = records.filter(
+    (topic) => topic.id !== undefined && selectedIds.has(topic.id)
+  )
+  const allSelected =
+    records.length > 0 &&
+    records.every((topic) => topic.id !== undefined && selectedIds.has(topic.id))
+
+  React.useEffect(() => {
+    const availableIds = new Set(
+      records
+        .map((topic) => topic.id)
+        .filter((id): id is number => typeof id === "number")
+    )
+    setSelectedIds((current) => {
+      const next = new Set(
+        Array.from(current).filter((id) => availableIds.has(id))
+      )
+      return next.size === current.size ? current : next
+    })
+  }, [records])
 
   const load = React.useCallback(async () => {
     setLoading(true)
@@ -211,6 +291,94 @@ export default function DashboardTopicsRoute() {
   React.useEffect(() => {
     void load()
   }, [load])
+
+  function toggleSelectedTopic(topic: TopicRecord) {
+    if (topic.id === undefined) return
+    setSelectedIds((current) => {
+      const next = new Set(current)
+      if (next.has(topic.id as number)) {
+        next.delete(topic.id as number)
+      } else {
+        next.add(topic.id as number)
+      }
+      return next
+    })
+  }
+
+  function toggleAllSelectedTopics() {
+    setSelectedIds(
+      allSelected
+        ? new Set()
+        : new Set(
+            records
+              .map((topic) => topic.id)
+              .filter((id): id is number => typeof id === "number")
+          )
+    )
+  }
+
+  async function openBulkAction(action: DashboardDataBulkAction) {
+    if (!selectedRecords.length) return
+    const ids = selectedRecords
+      .map((topic) => topic.id)
+      .filter((id): id is number => typeof id === "number")
+    if (!ids.length) return
+    setBulkState({
+      action,
+      ids,
+      preview: null,
+      confirmText: "",
+      submitting: false,
+      error: null,
+    })
+    try {
+      const preview = await adminPostForm<DashboardDataBulkPreview>(
+        action.previewEndpoint,
+        { ...(action.payload?.(selectedRecords) ?? {}), ids }
+      )
+      setBulkState((current) =>
+        current ? { ...current, preview, error: null } : current
+      )
+    } catch (err) {
+      setBulkState((current) =>
+        current
+          ? {
+              ...current,
+              error:
+                err instanceof Error
+                  ? err.message
+                  : t("dashboard.errors.actionFailed"),
+            }
+          : current
+      )
+    }
+  }
+
+  async function performBulkAction() {
+    if (!bulkState?.preview) return
+    const current = bulkState
+    setBulkState({ ...current, submitting: true, error: null })
+    try {
+      await adminPostForm(current.action.endpoint, {
+        ...(current.action.payload?.(selectedRecords) ?? {}),
+        ids: current.ids,
+        confirmText: current.confirmText,
+      })
+      msgSuccess(current.action.successMessage || t("dashboard.messages.actionDone"))
+      setBulkState(null)
+      setSelectedIds(new Set())
+      await load()
+    } catch (err) {
+      setBulkState({
+        ...current,
+        submitting: false,
+        error:
+          err instanceof Error
+            ? err.message
+            : t("dashboard.errors.actionFailed"),
+      })
+    }
+  }
 
   async function openAnswers(topic: TopicRecord) {
     if (!topic.id) return
@@ -407,6 +575,29 @@ export default function DashboardTopicsRoute() {
           </Button>
         </div>
 
+        {bulkActions.length > 0 && selectedRecords.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-2 border-t pt-3">
+            <Checkbox
+              checked={allSelected}
+              aria-label={t("dashboard.bulk.selectAll")}
+              onCheckedChange={toggleAllSelectedTopics}
+            />
+            <span className="mr-1 text-sm font-medium">
+              {t("dashboard.bulk.selected", { count: selectedRecords.length })}
+            </span>
+            {bulkActions.map((action) => (
+              <Button
+                key={action.label}
+                type="button"
+                variant="outline"
+                onClick={() => void openBulkAction(action)}
+              >
+                {action.label}
+              </Button>
+            ))}
+          </div>
+        ) : null}
+
         {error ? (
           <div className="rounded-md border border-destructive/25 bg-destructive/10 px-3 py-2 text-sm text-destructive">
             {error}
@@ -435,6 +626,9 @@ export default function DashboardTopicsRoute() {
                   sticky: canSticky,
                   acceptAnswer: canAcceptAnswer,
                 }}
+                selectable={bulkActions.length > 0}
+                selected={topic.id !== undefined && selectedIds.has(topic.id)}
+                onSelect={() => toggleSelectedTopic(topic)}
                 onAction={(action) => runAction(topic, action)}
                 onOpenAnswers={() => void openAnswers(topic)}
               />
@@ -468,6 +662,21 @@ export default function DashboardTopicsRoute() {
           if (!open) setConfirmState(null)
         }}
       />
+      <DashboardDataBulkDialog
+        action={bulkState?.action || null}
+        selectedCount={bulkState?.ids.length || 0}
+        preview={bulkState?.preview || null}
+        confirmText={bulkState?.confirmText || ""}
+        submitting={Boolean(bulkState?.submitting)}
+        error={bulkState?.error || null}
+        onConfirmTextChange={(value) =>
+          setBulkState((current) =>
+            current ? { ...current, confirmText: value } : current
+          )
+        }
+        onClose={() => setBulkState(null)}
+        onConfirm={() => void performBulkAction()}
+      />
       <AnswerDialog
         topic={answerTopic}
         answers={answers}
@@ -483,6 +692,9 @@ export default function DashboardTopicsRoute() {
 function TopicFeedItem({
   topic,
   permissions,
+  selectable,
+  selected,
+  onSelect,
   onAction,
   onOpenAnswers,
 }: {
@@ -494,6 +706,9 @@ function TopicFeedItem({
     sticky: boolean
     acceptAnswer: boolean
   }
+  selectable: boolean
+  selected: boolean
+  onSelect: () => void
   onAction: (action: TopicAction) => void
   onOpenAnswers: () => void
 }) {
@@ -519,6 +734,14 @@ function TopicFeedItem({
     <article className="grid gap-3 p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
+          {selectable ? (
+            <Checkbox
+              className="mt-1 shrink-0"
+              checked={selected}
+              aria-label={`${t("dashboard.bulk.selectRow")} ${String(topic.id || "")}`}
+              onCheckedChange={onSelect}
+            />
+          ) : null}
           <a
             href={userUrl || "#"}
             target={userUrl ? "_blank" : undefined}

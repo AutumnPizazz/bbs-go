@@ -3,19 +3,26 @@
 import * as React from "react"
 
 import type { AdminFormValue } from "@/lib/api/admin"
+import { adminPostForm } from "@/lib/api/admin"
 import type { PermissionCode } from "@/lib/auth/permissions.generated"
 import { useCurrentUser } from "@/components/app/app-provider"
 import { ErrorPage } from "@/components/common/error-page"
 import { ConfirmDialog } from "@/components/dashboard/confirm-dialog"
 import { userHasPermission } from "@/lib/auth/roles"
 import { useI18n } from "@/lib/i18n/provider"
+import { msgSuccess } from "@/lib/toast"
 
+import { DashboardDataBulkDialog } from "./dashboard-data-bulk-dialog"
 import { DashboardDataDetailDialog } from "./dashboard-data-detail-dialog"
 import { DashboardDataFormDialog } from "./dashboard-data-form-dialog"
 import { DashboardDataPasswordDialog } from "./dashboard-data-password-dialog"
 import { DashboardDataTable } from "./dashboard-data-table"
 import { DashboardDataToolbar } from "./dashboard-data-toolbar"
-import type { DashboardDataPageConfig } from "./dashboard-data-types"
+import type {
+  DashboardDataBulkAction,
+  DashboardDataBulkPreview,
+  DashboardDataPageConfig,
+} from "./dashboard-data-types"
 import { useDashboardDataPage } from "./use-dashboard-data-page"
 
 export function DashboardDataPage({
@@ -32,6 +39,9 @@ export function DashboardDataPage({
     () => ({
       ...config,
       rowActions: config.rowActions?.filter((action) =>
+        canUse(action.permission)
+      ),
+      bulkActions: config.bulkActions?.filter((action) =>
         canUse(action.permission)
       ),
     }),
@@ -59,6 +69,137 @@ export function DashboardDataPage({
     },
   })
 
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(
+    () => new Set()
+  )
+  const [bulkState, setBulkState] = React.useState<{
+    action: DashboardDataBulkAction
+    ids: Array<string | number>
+    selectedCount: number
+    preview: DashboardDataBulkPreview | null
+    confirmText: string
+    submitting: boolean
+    error: string | null
+  } | null>(null)
+  const selectableRecords = state.displayRecords.filter(
+    (record) => record.id !== undefined && record.id !== null
+  )
+  const selectedRecords = selectableRecords.filter((record) =>
+    selectedIds.has(String(record.id))
+  )
+  const allSelected =
+    selectableRecords.length > 0 &&
+    selectableRecords.every((record) => selectedIds.has(String(record.id)))
+
+  React.useEffect(() => {
+    const availableIds = new Set(
+      selectableRecords.map((record) => String(record.id))
+    )
+    setSelectedIds((current) => {
+      const next = new Set(
+        Array.from(current).filter((id) => availableIds.has(id))
+      )
+      return next.size === current.size ? current : next
+    })
+  }, [state.displayRecords])
+
+  function toggleSelectedRecord(record: Record<string, unknown>) {
+    if (record.id === undefined || record.id === null) return
+    const id = String(record.id)
+    setSelectedIds((current) => {
+      const next = new Set(current)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }
+
+  function toggleAllSelected() {
+    setSelectedIds(
+      allSelected
+        ? new Set()
+        : new Set(selectableRecords.map((record) => String(record.id)))
+    )
+  }
+
+  function bulkIds(records: Array<Record<string, unknown>>) {
+    return records
+      .map((record) => record.id)
+      .filter(
+        (id): id is string | number =>
+          typeof id === "string" || typeof id === "number"
+      )
+  }
+
+  async function openBulkAction(action: DashboardDataBulkAction) {
+    if (!selectedRecords.length) return
+    const ids = bulkIds(selectedRecords)
+    if (!ids.length) return
+    setBulkState({
+      action,
+      ids,
+      selectedCount: ids.length,
+      preview: null,
+      confirmText: "",
+      submitting: false,
+      error: null,
+    })
+    try {
+      const data = await adminPostForm<DashboardDataBulkPreview>(
+        action.previewEndpoint,
+        { ...(action.payload?.(selectedRecords) ?? {}), ids }
+      )
+      setBulkState((current) =>
+        current ? { ...current, preview: data, error: null } : current
+      )
+    } catch (err) {
+      setBulkState((current) =>
+        current
+          ? {
+              ...current,
+              error:
+                err instanceof Error
+                  ? err.message
+                  : t("dashboard.errors.actionFailed"),
+            }
+          : current
+      )
+    }
+  }
+
+  async function performBulkAction() {
+    if (!bulkState?.preview) return
+    const current = bulkState
+    setBulkState({ ...current, submitting: true, error: null })
+    try {
+      await adminPostForm(current.action.endpoint, {
+        ...(current.action.payload?.(
+          selectedRecords.filter((record) =>
+            current.ids.includes(record.id as string | number)
+          )
+        ) ?? {}),
+        ids: current.ids,
+        confirmText: current.confirmText,
+      })
+      msgSuccess(current.action.successMessage || t("dashboard.messages.actionDone"))
+      setBulkState(null)
+      setSelectedIds(new Set())
+      await state.load()
+    } catch (err) {
+      setBulkState({
+        ...current,
+        submitting: false,
+        error:
+          err instanceof Error
+            ? err.message
+            : t("dashboard.errors.actionFailed"),
+      })
+    }
+  }
+
   if (!canView) {
     return <ErrorPage statusCode={403} />
   }
@@ -84,6 +225,12 @@ export function DashboardDataPage({
         onRefresh={() => void state.load()}
         onCreate={state.openCreate}
         onSaveFilters={state.saveFilters}
+        bulkActions={visibleConfig.bulkActions?.map((action) => ({
+          label: action.label,
+          onClick: () => void openBulkAction(action),
+        }))}
+        selectedCount={selectedRecords.length}
+        selectedLabel={(count) => t("dashboard.bulk.selected", { count })}
       />
 
       <DashboardDataTable
@@ -105,6 +252,8 @@ export function DashboardDataPage({
           view: t("dashboard.actions.view"),
           edit: t("dashboard.actions.edit"),
           delete: t("dashboard.actions.delete"),
+          selectAll: t("dashboard.bulk.selectAll"),
+          selectRow: t("dashboard.bulk.selectRow"),
         }}
         onPageChange={(nextPage) => state.updateFilter("page", nextPage)}
         onLimitChange={(nextLimit) =>
@@ -128,6 +277,11 @@ export function DashboardDataPage({
         onDelete={state.requestDelete}
         isTreeRecordCollapsed={state.isTreeRecordCollapsed}
         onToggleTreeRecord={state.toggleTreeRecord}
+        selectable={Boolean(visibleConfig.bulkActions?.length)}
+        selectedIds={selectedIds}
+        allSelected={allSelected}
+        onToggleRecord={toggleSelectedRecord}
+        onToggleAll={toggleAllSelected}
       />
 
       <DashboardDataFormDialog
@@ -180,6 +334,22 @@ export function DashboardDataPage({
         onOpenChange={(open) => {
           if (!open) state.setConfirmState(null)
         }}
+      />
+
+      <DashboardDataBulkDialog
+        action={bulkState?.action || null}
+        selectedCount={bulkState?.selectedCount || 0}
+        preview={bulkState?.preview || null}
+        confirmText={bulkState?.confirmText || ""}
+        submitting={Boolean(bulkState?.submitting)}
+        error={bulkState?.error || null}
+        onConfirmTextChange={(value) =>
+          setBulkState((current) =>
+            current ? { ...current, confirmText: value } : current
+          )
+        }
+        onClose={() => setBulkState(null)}
+        onConfirm={() => void performBulkAction()}
       />
     </div>
   )

@@ -16,6 +16,7 @@ import {
 import type { AdminRecord } from "@/lib/api/admin"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import { DashboardPagination } from "@/components/dashboard/pagination-controls"
 
 import type { DashboardDataPageConfig } from "./dashboard-data-types"
@@ -49,6 +50,11 @@ export function DashboardDataTable({
   onDelete,
   isTreeRecordCollapsed,
   onToggleTreeRecord,
+  selectable,
+  selectedIds,
+  allSelected,
+  onToggleRecord,
+  onToggleAll,
 }: {
   config: DashboardDataPageConfig
   records: AdminRecord[]
@@ -68,6 +74,8 @@ export function DashboardDataTable({
     view: string
     edit: string
     delete: string
+    selectAll: string
+    selectRow: string
   }
   onPageChange: (page: number) => void
   onLimitChange: (limit: number) => void
@@ -86,6 +94,11 @@ export function DashboardDataTable({
   onDelete: (record: AdminRecord) => void
   isTreeRecordCollapsed?: (record: AdminRecord) => boolean
   onToggleTreeRecord?: (record: AdminRecord) => void
+  selectable?: boolean
+  selectedIds?: Set<string>
+  allSelected?: boolean
+  onToggleRecord?: (record: AdminRecord) => void
+  onToggleAll?: () => void
 }) {
   const [draggingIndex, setDraggingIndex] = React.useState<number | null>(null)
   const [dragOverIndex, setDragOverIndex] = React.useState<number | null>(null)
@@ -99,7 +112,7 @@ export function DashboardDataTable({
     Boolean(config.sortEndpoint && canSort) ||
     Boolean(config.rowActions?.length) ||
     Boolean(config.renderRowActions)
-  const colSpan = config.columns.length + (hasActions ? 1 : 0)
+  const colSpan = config.columns.length + (hasActions ? 1 : 0) + (selectable ? 1 : 0)
 
   return (
     <div className="overflow-hidden rounded-lg border bg-[var(--dashboard-panel)] shadow-xs">
@@ -107,6 +120,21 @@ export function DashboardDataTable({
         <table className="w-full min-w-[980px] text-sm">
           <thead className="bg-[var(--dashboard-panel-muted)] text-muted-foreground">
             <tr>
+              {selectable ? (
+                <th className="h-10 w-12 px-3 text-left">
+                  <Checkbox
+                    checked={
+                      allSelected
+                        ? true
+                        : selectedIds?.size
+                          ? "indeterminate"
+                          : false
+                    }
+                    aria-label={labels.selectAll}
+                    onCheckedChange={() => onToggleAll?.()}
+                  />
+                </th>
+              ) : null}
               {config.columns.map((column) => (
                 <th
                   key={column.key}
@@ -162,6 +190,16 @@ export function DashboardDataTable({
                       "bg-[var(--dashboard-accent-soft)]/70 outline-2 -outline-offset-2 outline-primary/45"
                   )}
                 >
+                  {selectable ? (
+                    <td className="h-11 px-3 align-middle">
+                      <Checkbox
+                        checked={selectedIds?.has(String(record.id)) ?? false}
+                        aria-label={`${labels.selectRow} ${String(record.id ?? index)}`}
+                        disabled={record.id === undefined || record.id === null}
+                        onCheckedChange={() => onToggleRecord?.(record)}
+                      />
+                    </td>
+                  ) : null}
                   {config.columns.map((column) => {
                     const isTreeIndentColumn =
                       config.treeIndentKey === column.key

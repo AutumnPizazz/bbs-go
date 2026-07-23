@@ -188,6 +188,17 @@ const enUS = {
       title: "Confirm action",
       ok: "Confirm",
     },
+    bulk: {
+      title: "Bulk action",
+      selected: "{count} selected",
+      selectAll: "Select all visible rows",
+      selectRow: "Select row",
+      scope: "Review the current scope for {count} selected records before continuing.",
+      eligible: "{count} records are eligible for this action.",
+      ineligible: "{count} records will be skipped.",
+      confirmationLabel: "Type the confirmation text exactly",
+      confirm: "Run bulk action",
+    },
     resetPassword: {
       title: "Password Reset Successfully",
       newPassword: "New Password",
@@ -202,6 +213,9 @@ const enUS = {
       ban7Days: "Ban 7 days",
       banForever: "Ban forever",
       remove: "Remove ban",
+      batchBan7Days: "Ban selected for 7 days",
+      batchBanForever: "Ban selected forever",
+      batchRemove: "Remove ban from selected",
       permanent: "Permanent",
       reasonTemporary: "Dashboard temporary moderation",
       reasonPermanent: "Dashboard permanent moderation",
@@ -210,6 +224,8 @@ const enUS = {
       confirmRemove: "Remove this user's ban?",
       banned: "User ban updated",
       removed: "User ban removed",
+      batchBanned: "Selected user bans updated",
+      batchRemoved: "Selected user bans removed",
     },
     userAccess: {
       all: "All categories",
@@ -230,6 +246,8 @@ const enUS = {
       process: "Process",
       markProcessed: "Mark Processed",
       markIgnored: "Mark Ignored",
+      batchProcess: "Process selected",
+      batchIgnore: "Ignore selected",
       openTarget: "Open Target",
     },
     reportConfirm: {
@@ -260,6 +278,11 @@ const enUS = {
       voteParticipants: "{count} participants",
       voteExpired: "Voting ended",
       voteExpiredAt: "Ends at: {time}",
+    },
+    topicBulk: {
+      recommend: "Feature selected",
+      delete: "Delete selected",
+      restore: "Restore selected",
     },
     voteTypes: {
       single: "Single choice",

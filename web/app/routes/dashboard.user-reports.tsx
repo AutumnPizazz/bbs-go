@@ -45,6 +45,10 @@ export default function DashboardUserReportsRoute() {
     currentUser,
     PERMISSIONS.DASHBOARD_USER_REPORT_PROCESS
   )
+  const canBatchProcess = userHasPermission(
+    currentUser,
+    PERMISSIONS.DASHBOARD_USER_REPORT_BATCH_PROCESS
+  )
 
   async function openProcessReport(record: AdminRecord) {
     setProcessingLoading(true)
@@ -160,6 +164,26 @@ export default function DashboardUserReportsRoute() {
         render: (record) => dashboardData.dateCell(record.createTime),
       },
     ],
+    bulkActions: canBatchProcess
+      ? [
+          {
+            label: t("dashboard.reportActions.batchProcess"),
+            endpoint: "/api/admin/user-report/batch",
+            previewEndpoint: "/api/admin/user-report/batch/preview",
+            permission: PERMISSIONS.DASHBOARD_USER_REPORT_BATCH_PROCESS,
+            payload: () => ({ action: "process" }),
+            successMessage: t("dashboard.messages.reportProcessed"),
+          },
+          {
+            label: t("dashboard.reportActions.batchIgnore"),
+            endpoint: "/api/admin/user-report/batch",
+            previewEndpoint: "/api/admin/user-report/batch/preview",
+            permission: PERMISSIONS.DASHBOARD_USER_REPORT_BATCH_PROCESS,
+            payload: () => ({ action: "ignore" }),
+            successMessage: t("dashboard.messages.reportIgnored"),
+          },
+        ]
+      : [],
     renderRowActions: (record) =>
       canProcess && Number(record.processStatus || 0) === 0 ? (
         <Button

@@ -48,12 +48,12 @@ type VoteCastReq struct {
 }
 
 type EditTopicReq struct {
-	CategoryId    int64     `json:"categoryId" form:"categoryId"`
-	Title         string    `json:"title" form:"title"`
-	Content       string    `json:"content" form:"content"`
-	HideContent   string    `json:"hideContent" form:"hideContent"`
-	Tags          []string  `json:"tags" form:"tags"`
-	AttachmentIds []string  `json:"attachmentIds" form:"attachmentIds"` // 附件 ID 列表（UUID），全量替换
+	CategoryId    int64    `json:"categoryId" form:"categoryId"`
+	Title         string   `json:"title" form:"title"`
+	Content       string   `json:"content" form:"content"`
+	HideContent   string   `json:"hideContent" form:"hideContent"`
+	Tags          []string `json:"tags" form:"tags"`
+	AttachmentIds []string `json:"attachmentIds" form:"attachmentIds"` // 附件 ID 列表（UUID），全量替换
 }
 
 type ImageDTO struct {
@@ -115,6 +115,19 @@ type AdminUserForbiddenReq struct {
 	UserId int64  `json:"userId" form:"userId"`
 	Days   int    `json:"days" form:"days"`
 	Reason string `json:"reason" form:"reason"`
+}
+
+type AdminBatchReq struct {
+	Ids           string `json:"ids" form:"ids"`
+	Action        string `json:"action" form:"action"`
+	ConfirmText   string `json:"confirmText" form:"confirmText"`
+	Days          int    `json:"days" form:"days"`
+	Reason        string `json:"reason" form:"reason"`
+	ProcessStatus int    `json:"processStatus" form:"processStatus"`
+}
+
+func (r AdminBatchReq) ParsedIds() []int64 {
+	return SplitCommaInt64s(r.Ids)
 }
 
 type AdminPasswordUpdateReq struct {

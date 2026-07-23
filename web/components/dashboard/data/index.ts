@@ -1,5 +1,8 @@
 export { DashboardDataPage } from "./dashboard-data-page"
+export { DashboardDataBulkDialog } from "./dashboard-data-bulk-dialog"
 export type {
+  DashboardDataBulkAction,
+  DashboardDataBulkPreview,
   DashboardDataColumn,
   DashboardDataDetailField,
   DashboardDataFilter,

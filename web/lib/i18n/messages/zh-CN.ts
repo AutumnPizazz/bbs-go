@@ -188,6 +188,17 @@ const zhCN = {
       title: "确认操作",
       ok: "确认",
     },
+    bulk: {
+      title: "批量操作",
+      selected: "已选择 {count} 条",
+      selectAll: "选择当前可见记录",
+      selectRow: "选择记录",
+      scope: "继续前请检查 {count} 条已选记录的当前可操作范围。",
+      eligible: "其中 {count} 条符合操作条件。",
+      ineligible: "其中 {count} 条将被跳过。",
+      confirmationLabel: "请准确输入确认文本",
+      confirm: "执行批量操作",
+    },
     resetPassword: {
       title: "密码重置成功",
       newPassword: "新密码",
@@ -202,6 +213,9 @@ const zhCN = {
       ban7Days: "禁言7天",
       banForever: "永久禁言",
       remove: "解除禁言",
+      batchBan7Days: "批量禁言7天",
+      batchBanForever: "批量永久禁言",
+      batchRemove: "批量解除禁言",
       permanent: "永久",
       reasonTemporary: "后台临时处置",
       reasonPermanent: "后台永久处置",
@@ -210,6 +224,8 @@ const zhCN = {
       confirmRemove: "确认解除该用户禁言？",
       banned: "禁言状态已更新",
       removed: "已解除禁言",
+      batchBanned: "已更新所选用户禁言状态",
+      batchRemoved: "已解除所选用户禁言",
     },
     userAccess: {
       all: "全部节点",
@@ -230,6 +246,8 @@ const zhCN = {
       process: "处理",
       markProcessed: "标记为已处理",
       markIgnored: "标记为忽略",
+      batchProcess: "批量标记处理",
+      batchIgnore: "批量标记忽略",
       openTarget: "进入内容详情",
     },
     reportConfirm: {
@@ -260,6 +278,11 @@ const zhCN = {
       voteParticipants: "{count} 人参与",
       voteExpired: "投票已结束",
       voteExpiredAt: "截止时间：{time}",
+    },
+    topicBulk: {
+      recommend: "批量推荐",
+      delete: "批量删除",
+      restore: "批量恢复",
     },
     voteTypes: {
       single: "单选",

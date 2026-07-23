@@ -1,6 +1,12 @@
 "use client"
 
-import { BookmarkIcon, PlusIcon, RefreshCwIcon, SearchIcon } from "lucide-react"
+import {
+  BookmarkIcon,
+  ListChecksIcon,
+  PlusIcon,
+  RefreshCwIcon,
+  SearchIcon,
+} from "lucide-react"
 
 import type { AdminFormValue } from "@/lib/api/admin"
 import { Button } from "@/components/ui/button"
@@ -26,6 +32,9 @@ export function DashboardDataToolbar({
   onRefresh,
   onCreate,
   onSaveFilters,
+  bulkActions,
+  selectedCount,
+  selectedLabel,
 }: {
   filters?: DashboardDataFilter[]
   values: Record<string, AdminFormValue>
@@ -41,6 +50,9 @@ export function DashboardDataToolbar({
   onRefresh: () => void
   onCreate: () => void
   onSaveFilters: () => void
+  bulkActions?: Array<{ label: string; onClick: () => void }>
+  selectedCount: number
+  selectedLabel: (count: number) => string
 }) {
   return (
     <div className="rounded-lg border bg-[var(--dashboard-panel)] p-3 text-card-foreground shadow-xs">
@@ -76,6 +88,26 @@ export function DashboardDataToolbar({
           </Button>
         ) : null}
       </div>
+
+      {selectedCount > 0 && bulkActions?.length ? (
+        <div className="mt-3 flex flex-wrap items-center gap-2 border-t pt-3">
+          <span className="mr-1 inline-flex items-center gap-1.5 text-sm font-medium">
+            <ListChecksIcon className="size-4" />
+            {selectedLabel(selectedCount)}
+          </span>
+          {bulkActions.map((action) => (
+            <Button
+              key={action.label}
+              type="button"
+              variant="outline"
+              onClick={action.onClick}
+            >
+              <ListChecksIcon />
+              {action.label}
+            </Button>
+          ))}
+        </div>
+      ) : null}
 
       {error ? (
         <div className="mt-3 rounded-md border border-destructive/25 bg-destructive/10 px-3 py-2 text-sm text-destructive">

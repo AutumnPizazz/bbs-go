@@ -221,6 +221,40 @@ export default function DashboardUsersRoute() {
         confirm: t("dashboard.confirmResetPassword"),
       },
     ],
+    bulkActions: [
+      {
+        label: t("dashboard.forbidden.batchBan7Days"),
+        endpoint: "/api/admin/user/batch",
+        previewEndpoint: "/api/admin/user/batch/preview",
+        permission: PERMISSIONS.DASHBOARD_USER_BATCH_FORBIDDEN,
+        payload: () => ({
+          action: "forbid",
+          days: 7,
+          reason: t("dashboard.forbidden.reasonTemporary"),
+        }),
+        successMessage: t("dashboard.forbidden.batchBanned"),
+      },
+      {
+        label: t("dashboard.forbidden.batchBanForever"),
+        endpoint: "/api/admin/user/batch",
+        previewEndpoint: "/api/admin/user/batch/preview",
+        permission: PERMISSIONS.DASHBOARD_USER_BATCH_FORBIDDEN_FOREVER,
+        payload: () => ({
+          action: "forbid",
+          days: -1,
+          reason: t("dashboard.forbidden.reasonPermanent"),
+        }),
+        successMessage: t("dashboard.forbidden.batchBanned"),
+      },
+      {
+        label: t("dashboard.forbidden.batchRemove"),
+        endpoint: "/api/admin/user/batch",
+        previewEndpoint: "/api/admin/user/batch/preview",
+        permission: PERMISSIONS.DASHBOARD_USER_BATCH_FORBIDDEN,
+        payload: () => ({ action: "removeForbidden" }),
+        successMessage: t("dashboard.forbidden.batchRemoved"),
+      },
+    ],
   }
 
   return <DashboardDataPage config={config} />

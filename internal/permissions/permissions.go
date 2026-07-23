@@ -41,12 +41,14 @@ func (p PermissionDefinition) IsValid() bool {
 var (
 	PermissionDashboardView = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.view", GroupName: GroupWorkspace, SortNo: 10, NameEn: "Dashboard Access", NameZh: "进入后台"}
 
-	PermissionTopicView         = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.topic.view", GroupName: GroupContent, SortNo: 100, NameEn: "View Topics", NameZh: "查看话题"}
-	PermissionTopicRecommend    = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.topic.recommend", GroupName: GroupContent, SortNo: 110, NameEn: "Recommend Topics", NameZh: "推荐话题"}
-	PermissionTopicSticky       = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.topic.sticky", GroupName: GroupContent, SortNo: 115, NameEn: "Sticky Topics", NameZh: "置顶话题"}
-	PermissionTopicDelete       = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.topic.delete", GroupName: GroupContent, SortNo: 130, NameEn: "Delete Topics", NameZh: "删除话题"}
-	PermissionTopicSolve        = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.topic.solve", GroupName: GroupContent, SortNo: 140, NameEn: "Solve Topics", NameZh: "标记问答解决"}
-	PermissionTopicAcceptAnswer = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.topic.acceptAnswer", GroupName: GroupContent, SortNo: 150, NameEn: "Manage Accepted Answers", NameZh: "管理采纳答案"}
+	PermissionTopicView           = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.topic.view", GroupName: GroupContent, SortNo: 100, NameEn: "View Topics", NameZh: "查看话题"}
+	PermissionTopicRecommend      = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.topic.recommend", GroupName: GroupContent, SortNo: 110, NameEn: "Recommend Topics", NameZh: "推荐话题"}
+	PermissionTopicSticky         = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.topic.sticky", GroupName: GroupContent, SortNo: 115, NameEn: "Sticky Topics", NameZh: "置顶话题"}
+	PermissionTopicBatchRecommend = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.topic.batch.recommend", GroupName: GroupContent, SortNo: 125, NameEn: "Batch Recommend Topics", NameZh: "批量推荐话题"}
+	PermissionTopicDelete         = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.topic.delete", GroupName: GroupContent, SortNo: 130, NameEn: "Delete Topics", NameZh: "删除话题"}
+	PermissionTopicBatchDelete    = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.topic.batch.delete", GroupName: GroupContent, SortNo: 135, NameEn: "Batch Delete or Restore Topics", NameZh: "批量删除或恢复话题"}
+	PermissionTopicSolve          = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.topic.solve", GroupName: GroupContent, SortNo: 140, NameEn: "Solve Topics", NameZh: "标记问答解决"}
+	PermissionTopicAcceptAnswer   = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.topic.acceptAnswer", GroupName: GroupContent, SortNo: 150, NameEn: "Manage Accepted Answers", NameZh: "管理采纳答案"}
 
 	PermissionCommentView   = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.comment.view", GroupName: GroupContent, SortNo: 300, NameEn: "View Comments", NameZh: "查看评论"}
 	PermissionCommentDelete = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.comment.delete", GroupName: GroupContent, SortNo: 310, NameEn: "Delete Comments", NameZh: "删除评论"}
@@ -66,14 +68,16 @@ var (
 	PermissionTagCreate = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.tag.create", GroupName: GroupContent, SortNo: 610, NameEn: "Create Tags", NameZh: "创建标签"}
 	PermissionTagUpdate = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.tag.update", GroupName: GroupContent, SortNo: 620, NameEn: "Update Tags", NameZh: "编辑标签"}
 
-	PermissionUserView             = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.user.view", GroupName: GroupCommunity, SortNo: 700, NameEn: "View Users", NameZh: "查看用户"}
-	PermissionUserCreate           = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.user.create", GroupName: GroupCommunity, SortNo: 710, NameEn: "Create Users", NameZh: "创建用户"}
-	PermissionUserUpdate           = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.user.update", GroupName: GroupCommunity, SortNo: 720, NameEn: "Update Users", NameZh: "编辑用户"}
-	PermissionUserForbidden        = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.user.forbidden", GroupName: GroupCommunity, SortNo: 730, NameEn: "Forbid Users", NameZh: "禁言用户"}
-	PermissionUserForbiddenForever = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.user.forbiddenForever", GroupName: GroupCommunity, SortNo: 735, NameEn: "Forbid Users Permanently", NameZh: "永久禁言用户"}
-	PermissionUserUpdatePassword   = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.user.updatePassword", GroupName: GroupCommunity, SortNo: 740, NameEn: "Update Own Password", NameZh: "修改自己的密码"}
-	PermissionUserResetPassword    = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.user.resetPassword", GroupName: GroupCommunity, SortNo: 750, NameEn: "Reset User Password", NameZh: "重置用户密码"}
-	PermissionUserAccessScope      = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.user.accessScope", GroupName: GroupCommunity, SortNo: 760, NameEn: "Manage User Content Scope", NameZh: "管理用户内容范围"}
+	PermissionUserView                  = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.user.view", GroupName: GroupCommunity, SortNo: 700, NameEn: "View Users", NameZh: "查看用户"}
+	PermissionUserCreate                = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.user.create", GroupName: GroupCommunity, SortNo: 710, NameEn: "Create Users", NameZh: "创建用户"}
+	PermissionUserUpdate                = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.user.update", GroupName: GroupCommunity, SortNo: 720, NameEn: "Update Users", NameZh: "编辑用户"}
+	PermissionUserForbidden             = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.user.forbidden", GroupName: GroupCommunity, SortNo: 730, NameEn: "Forbid Users", NameZh: "禁言用户"}
+	PermissionUserForbiddenForever      = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.user.forbiddenForever", GroupName: GroupCommunity, SortNo: 735, NameEn: "Forbid Users Permanently", NameZh: "永久禁言用户"}
+	PermissionUserBatchForbidden        = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.user.batch.forbidden", GroupName: GroupCommunity, SortNo: 737, NameEn: "Batch Forbid Users", NameZh: "批量禁言用户"}
+	PermissionUserBatchForbiddenForever = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.user.batch.forbiddenForever", GroupName: GroupCommunity, SortNo: 738, NameEn: "Batch Forbid Users Permanently", NameZh: "批量永久禁言用户"}
+	PermissionUserUpdatePassword        = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.user.updatePassword", GroupName: GroupCommunity, SortNo: 740, NameEn: "Update Own Password", NameZh: "修改自己的密码"}
+	PermissionUserResetPassword         = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.user.resetPassword", GroupName: GroupCommunity, SortNo: 750, NameEn: "Reset User Password", NameZh: "重置用户密码"}
+	PermissionUserAccessScope           = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.user.accessScope", GroupName: GroupCommunity, SortNo: 760, NameEn: "Manage User Content Scope", NameZh: "管理用户内容范围"}
 
 	PermissionSettingView            = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.setting.view", GroupName: GroupSystem, SortNo: 1100, NameEn: "View Settings", NameZh: "查看设置"}
 	PermissionSettingUpdate          = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.setting.update", GroupName: GroupSystem, SortNo: 1110, NameEn: "Update Settings", NameZh: "编辑设置"}
@@ -88,9 +92,10 @@ var (
 	PermissionRoleSort             = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.role.sort", GroupName: GroupSystem, SortNo: 1240, NameEn: "Sort Roles", NameZh: "排序角色"}
 	PermissionRolePermissionUpdate = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.role.permission.update", GroupName: GroupSystem, SortNo: 1250, NameEn: "Update Role Permissions", NameZh: "编辑角色权限"}
 
-	PermissionUserReportView    = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.userReport.view", GroupName: GroupCommunity, SortNo: 790, NameEn: "View User Reports", NameZh: "查看用户举报"}
-	PermissionUserReportUpdate  = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.userReport.update", GroupName: GroupCommunity, SortNo: 792, NameEn: "Update User Reports", NameZh: "编辑用户举报"}
-	PermissionUserReportProcess = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.userReport.process", GroupName: GroupCommunity, SortNo: 795, NameEn: "Process User Reports", NameZh: "处理用户举报"}
+	PermissionUserReportView         = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.userReport.view", GroupName: GroupCommunity, SortNo: 790, NameEn: "View User Reports", NameZh: "查看用户举报"}
+	PermissionUserReportUpdate       = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.userReport.update", GroupName: GroupCommunity, SortNo: 792, NameEn: "Update User Reports", NameZh: "编辑用户举报"}
+	PermissionUserReportProcess      = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.userReport.process", GroupName: GroupCommunity, SortNo: 795, NameEn: "Process User Reports", NameZh: "处理用户举报"}
+	PermissionUserReportBatchProcess = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.userReport.batch.process", GroupName: GroupCommunity, SortNo: 797, NameEn: "Batch Process User Reports", NameZh: "批量处理用户举报"}
 
 	PermissionOperateLogView = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.operateLog.view", GroupName: GroupSystem, SortNo: 1310, NameEn: "View Operation Logs", NameZh: "查看操作日志"}
 
@@ -134,7 +139,9 @@ var Permissions = []PermissionDefinition{
 	PermissionTopicView,
 	PermissionTopicRecommend,
 	PermissionTopicSticky,
+	PermissionTopicBatchRecommend,
 	PermissionTopicDelete,
+	PermissionTopicBatchDelete,
 	PermissionTopicSolve,
 	PermissionTopicAcceptAnswer,
 	PermissionCommentView,
@@ -156,6 +163,8 @@ var Permissions = []PermissionDefinition{
 	PermissionUserUpdate,
 	PermissionUserForbidden,
 	PermissionUserForbiddenForever,
+	PermissionUserBatchForbidden,
+	PermissionUserBatchForbiddenForever,
 	PermissionUserUpdatePassword,
 	PermissionUserResetPassword,
 	PermissionUserAccessScope,
@@ -173,6 +182,7 @@ var Permissions = []PermissionDefinition{
 	PermissionUserReportView,
 	PermissionUserReportUpdate,
 	PermissionUserReportProcess,
+	PermissionUserReportBatchProcess,
 	PermissionOperateLogView,
 	PermissionFavoriteView,
 	PermissionFavoriteManage,

@@ -67,6 +67,24 @@ export type DashboardDataRowAction = {
   successMessage?: string
 }
 
+export type DashboardDataBulkPreview = {
+  action?: string
+  requestedCount?: number
+  eligibleCount?: number
+  ineligibleCount?: number
+  eligibleIds?: Array<string | number>
+  confirmText?: string
+}
+
+export type DashboardDataBulkAction = {
+  label: string
+  endpoint: string
+  previewEndpoint: string
+  permission?: PermissionCode
+  payload?: (records: AdminRecord[]) => Record<string, AdminFormValue>
+  successMessage?: string
+}
+
 export type DashboardDataDetailField = {
   key: string
   label: string
@@ -101,6 +119,7 @@ export type DashboardDataPageConfig = {
   detailFields?: DashboardDataDetailField[]
   formFields?: DashboardDataFormField[]
   rowActions?: DashboardDataRowAction[]
+  bulkActions?: DashboardDataBulkAction[]
   pageSize?: number
   listResult?: "page" | "array"
   refreshKey?: string | number
