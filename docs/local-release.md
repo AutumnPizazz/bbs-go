@@ -66,3 +66,19 @@ docker pull node:24-alpine
 ```
 
 `blkio throttle` 和 `cgroup v1 is deprecated` 属于 Docker 环境提示，不是构建失败原因。
+
+## 制作实例快照包
+
+当前论坛已经使用 MySQL 且安装完成后，可以制作包含数据库、配置、搜索索引和上传文件的私密实例包：
+
+```shell
+go run ./cmd/package-release -instance -version v1.0.0
+```
+
+命令会先构建镜像，再短暂停止 BBS-GO 写入，导出一致的 MySQL 快照并复制持久文件，完成后自动重新启动论坛。默认输出：
+
+```text
+dist/bbs-go-instance-v1.0.0-linux-amd64.zip
+```
+
+实例包可能包含用户信息、OAuth、SMTP、OSS 等密钥，只能通过可信渠道传输。目标设备解压后，Windows 双击 `deploy.cmd`，Linux 执行 `./deploy.sh`。部署脚本发现同名容器或数据卷时会拒绝覆盖。

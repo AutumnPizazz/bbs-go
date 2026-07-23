@@ -4,6 +4,8 @@ import (
 	"archive/zip"
 	"bufio"
 	"bytes"
+	"compress/gzip"
+	crand "crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -53,6 +55,7 @@ func run() error {
 	version := flag.String("version", defaultVersion, "release version")
 	platform := flag.String("platform", "linux/amd64", "target platform: linux/amd64 or linux/arm64")
 	output := flag.String("output", "", "output ZIP path")
+	instance := flag.Bool("instance", false, "include the current MySQL database, configuration, index, and uploads")
 	flag.Parse()
 
 	if !versionPattern.MatchString(*version) {
@@ -75,7 +78,11 @@ func run() error {
 	arch := strings.ReplaceAll(*platform, "/", "-")
 	outputPath := *output
 	if outputPath == "" {
-		outputPath = filepath.Join(root, "dist", fmt.Sprintf("bbs-go-%s-%s.zip", *version, arch))
+		name := fmt.Sprintf("bbs-go-%s-%s.zip", *version, arch)
+		if *instance {
+			name = fmt.Sprintf("bbs-go-instance-%s-%s.zip", *version, arch)
+		}
+		outputPath = filepath.Join(root, "dist", name)
 	} else if !filepath.IsAbs(outputPath) {
 		outputPath = filepath.Join(root, outputPath)
 	}
@@ -108,7 +115,14 @@ func run() error {
 		return err
 	}
 
-	if err := writeRelease(root, outputPath, imagesPath, *version, *platform, appImage); err != nil {
+	var instanceDir string
+	if *instance {
+		instanceDir, err = snapshotInstance(root, tempDir)
+		if err != nil {
+			return err
+		}
+	}
+	if err := writeRelease(root, outputPath, imagesPath, instanceDir, *version, *platform, appImage); err != nil {
 		_ = os.Remove(outputPath)
 		return err
 	}
@@ -172,7 +186,120 @@ func commandQuiet(dir, name string, args ...string) error {
 	return nil
 }
 
-func writeRelease(root, outputPath, imagesPath, version, platform, appImage string) error {
+func snapshotInstance(root, tempRoot string) (string, error) {
+	dataDir := filepath.Join(root, "docker-data", "data")
+	configPath := filepath.Join(dataDir, "bbs-go.yaml")
+	if !fileExists(configPath) {
+		return "", fmt.Errorf("instance config not found: %s", configPath)
+	}
+	instanceDir := filepath.Join(tempRoot, "instance")
+	if err := os.MkdirAll(filepath.Join(instanceDir, "mysql-init"), 0o755); err != nil {
+		return "", err
+	}
+	fmt.Println("$ docker compose stop bbs-go")
+	if err := command(root, "docker", "compose", "stop", "bbs-go"); err != nil {
+		return "", err
+	}
+	restart := true
+	defer func() {
+		if restart {
+			_ = command(root, "docker", "compose", "up", "-d", "bbs-go")
+		}
+	}()
+	if err := command(root, "docker", "compose", "up", "-d", "mysql"); err != nil {
+		return "", err
+	}
+	if err := waitForService(root, "mysql", "healthy", 120*time.Second); err != nil {
+		return "", err
+	}
+
+	if err := dumpMySQL(root, filepath.Join(instanceDir, "mysql-init", "001-bbsgo.sql.gz")); err != nil {
+		return "", err
+	}
+	if err := copyTree(dataDir, filepath.Join(instanceDir, "runtime", "data")); err != nil {
+		return "", err
+	}
+	uploadsDir := filepath.Join(root, "docker-data", "uploads")
+	if fileExistsOrDir(uploadsDir) {
+		if err := copyTree(uploadsDir, filepath.Join(instanceDir, "runtime", "uploads")); err != nil {
+			return "", err
+		}
+	} else if err := os.MkdirAll(filepath.Join(instanceDir, "runtime", "uploads"), 0o755); err != nil {
+		return "", err
+	}
+	if err := os.MkdirAll(filepath.Join(instanceDir, "runtime", "logs"), 0o755); err != nil {
+		return "", err
+	}
+	readyScript, err := os.ReadFile(filepath.Join(root, "deploy", "instance-init-ready.sh"))
+	if err != nil {
+		return "", err
+	}
+	if err := os.WriteFile(filepath.Join(instanceDir, "mysql-init", "999-ready.sh"), readyScript, 0o755); err != nil {
+		return "", err
+	}
+	restart = false
+	if err := command(root, "docker", "compose", "up", "-d", "bbs-go"); err != nil {
+		return "", err
+	}
+	return instanceDir, nil
+}
+
+func waitForService(root, service, want string, timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		containerID, err := commandOutput(root, "docker", "compose", "ps", "-q", service)
+		if err == nil && containerID != "" {
+			status, inspectErr := commandOutput(root, "docker", "inspect", "--format", "{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}", containerID)
+			if inspectErr == nil && status == want {
+				return nil
+			}
+		}
+		time.Sleep(time.Second)
+	}
+	return fmt.Errorf("service %s did not become %s within %s", service, want, timeout)
+}
+
+func dumpMySQL(root, outputPath string) error {
+	dumpCommand := `exec mysqldump --user="$MYSQL_USER" --password="$MYSQL_PASSWORD" ` +
+		`--single-transaction --quick --routines --triggers --events --hex-blob ` +
+		`--set-gtid-purged=OFF --no-tablespaces --default-character-set=utf8mb4 "$MYSQL_DATABASE"`
+	cmd := exec.Command("docker", "compose", "exec", "-T", "mysql", "sh", "-c", dumpCommand)
+	cmd.Dir = root
+	stderr := &bytes.Buffer{}
+	cmd.Stderr = stderr
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return err
+	}
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+	out, err := os.Create(outputPath)
+	if err != nil {
+		_ = cmd.Wait()
+		return err
+	}
+	gz := gzip.NewWriter(out)
+	_, copyErr := io.Copy(gz, stdout)
+	closeErr := gz.Close()
+	fileCloseErr := out.Close()
+	waitErr := cmd.Wait()
+	if copyErr != nil {
+		return copyErr
+	}
+	if closeErr != nil {
+		return closeErr
+	}
+	if fileCloseErr != nil {
+		return fileCloseErr
+	}
+	if waitErr != nil {
+		return fmt.Errorf("mysqldump failed: %s: %w", strings.TrimSpace(stderr.String()), waitErr)
+	}
+	return nil
+}
+
+func writeRelease(root, outputPath, imagesPath, instanceDir, version, platform, appImage string) error {
 	output, err := os.OpenFile(outputPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
 	if err != nil {
 		return err
@@ -198,10 +325,19 @@ func writeRelease(root, outputPath, imagesPath, version, platform, appImage stri
 	}
 
 	prefix := fmt.Sprintf("bbs-go-%s/", version)
+	if instanceDir != "" {
+		prefix = fmt.Sprintf("bbs-go-instance-%s/", version)
+	}
 	if err := addFile(archive, prefix+"docker-images.tar", imagesPath, zip.Store); err != nil {
 		return err
 	}
-	compose, err := os.ReadFile(filepath.Join(root, "deploy", "docker-compose.yml"))
+	composeFile := "docker-compose.yml"
+	readmeFile := "README.md"
+	if instanceDir != "" {
+		composeFile = "instance-compose.yml"
+		readmeFile = "INSTANCE_README.md"
+	}
+	compose, err := os.ReadFile(filepath.Join(root, "deploy", composeFile))
 	if err != nil {
 		return err
 	}
@@ -210,7 +346,7 @@ func writeRelease(root, outputPath, imagesPath, version, platform, appImage stri
 		return err
 	}
 	envTemplate = bytes.ReplaceAll(envTemplate, []byte("replace-with-image:v1.0.0"), []byte(appImage))
-	readme, err := os.ReadFile(filepath.Join(root, "deploy", "README.md"))
+	readme, err := os.ReadFile(filepath.Join(root, "deploy", readmeFile))
 	if err != nil {
 		return err
 	}
@@ -220,6 +356,11 @@ func writeRelease(root, outputPath, imagesPath, version, platform, appImage stri
 		prefix + "README.md":          readme,
 	} {
 		if err := addBytes(archive, name, data); err != nil {
+			return err
+		}
+	}
+	if instanceDir != "" {
+		if err := addInstanceFiles(archive, prefix, root, instanceDir, appImage); err != nil {
 			return err
 		}
 	}
@@ -244,7 +385,7 @@ func writeRelease(root, outputPath, imagesPath, version, platform, appImage stri
 		FormatVersion: 1, Version: version, Platform: platform,
 		AppImage: appImage, MySQLImage: mysqlImage,
 		CreatedAt: time.Now().UTC().Format(time.RFC3339), SourceRevision: revision,
-		SourceDirty: statusErr != nil || status != "", ContainsInstanceData: false,
+		SourceDirty: statusErr != nil || status != "", ContainsInstanceData: instanceDir != "",
 		ImagesSHA256: imagesDigest,
 	}
 	manifestData, err := json.MarshalIndent(metadata, "", "  ")
@@ -255,6 +396,103 @@ func writeRelease(root, outputPath, imagesPath, version, platform, appImage stri
 		return err
 	}
 	return closeArchive()
+}
+
+func addInstanceFiles(archive *zip.Writer, prefix, root, instanceDir, appImage string) error {
+	if err := addTree(archive, prefix, instanceDir); err != nil {
+		return err
+	}
+	password, err := randomHex(32)
+	if err != nil {
+		return err
+	}
+	rootPassword, err := randomHex(32)
+	if err != nil {
+		return err
+	}
+	env := fmt.Sprintf("BBSGO_IMAGE=%s\nBBSGO_HTTP_PORT=3000\nBBSGO_MYSQL_DATABASE=bbsgo\nBBSGO_MYSQL_USER=bbsgo\nBBSGO_MYSQL_PASSWORD=%s\nBBSGO_MYSQL_ROOT_PASSWORD=%s\nTZ=Asia/Shanghai\n", appImage, password, rootPassword)
+	if err := addBytes(archive, prefix+".env", []byte(env)); err != nil {
+		return err
+	}
+	for source, target := range map[string]string{
+		"instance-deploy.ps1": "deploy.ps1",
+		"instance-deploy.cmd": "deploy.cmd",
+		"instance-deploy.sh":  "deploy.sh",
+	} {
+		data, err := os.ReadFile(filepath.Join(root, "deploy", source))
+		if err != nil {
+			return err
+		}
+		if err := addBytes(archive, prefix+target, data); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func addTree(archive *zip.Writer, prefix, root string) error {
+	return filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.Mode().IsRegular() {
+			return nil
+		}
+		relative, err := filepath.Rel(root, path)
+		if err != nil {
+			return err
+		}
+		return addFile(archive, prefix+filepath.ToSlash(relative), path, zip.Deflate)
+	})
+}
+
+func copyTree(source, destination string) error {
+	return filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		relative, err := filepath.Rel(source, path)
+		if err != nil {
+			return err
+		}
+		target := filepath.Join(destination, relative)
+		if info.IsDir() {
+			return os.MkdirAll(target, 0o755)
+		}
+		if !info.Mode().IsRegular() {
+			return nil
+		}
+		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
+			return err
+		}
+		input, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		output, err := os.OpenFile(target, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, info.Mode().Perm())
+		if err != nil {
+			_ = input.Close()
+			return err
+		}
+		_, copyErr := io.Copy(output, input)
+		inputCloseErr := input.Close()
+		outputCloseErr := output.Close()
+		if copyErr != nil {
+			return copyErr
+		}
+		if inputCloseErr != nil {
+			return inputCloseErr
+		}
+		return outputCloseErr
+	})
+}
+
+func randomHex(size int) (string, error) {
+	data := make([]byte, size)
+	if _, err := crand.Read(data); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(data), nil
 }
 
 func gitSourceFiles(root string) ([]string, error) {
@@ -341,4 +579,9 @@ func fileSHA256(path string) (string, error) {
 func fileExists(path string) bool {
 	info, err := os.Stat(path)
 	return err == nil && !info.IsDir()
+}
+
+func fileExistsOrDir(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
 }
