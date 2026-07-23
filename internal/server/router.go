@@ -53,7 +53,7 @@ func newRouter() *gin.Engine {
 	app.Use(middleware.AttachmentMiddleware)
 
 	registerAPIRoutes(app.Group("/api", middleware.InstallMiddleware, middleware.AuthMiddleware))
-	registerAdminRoutes(app.Group("/api/admin", middleware.InstallMiddleware, middleware.AuthMiddleware, middleware.AdminMiddleware))
+	registerAdminRoutes(app.Group("/api/admin", middleware.InstallMiddleware, middleware.AuthMiddleware, middleware.AdminMiddleware, middleware.CSRFMiddleware))
 
 	app.StaticFS("/res", ginx.StaticFiles(respath.ResDir()))
 	ginx.HandleSPA(app, ginx.SPAOptions{
@@ -234,6 +234,12 @@ func registerAdminRoutes(group *gin.RouterGroup) {
 	commonGroup := group.Group("/common")
 	commonGroup.GET("/overview", adminHandlers.CommonOverview)
 
+	commentGroup := group.Group("/comment")
+	commentGroup.POST("/list", adminHandlers.CommentList)
+	commentGroup.POST("/delete", adminHandlers.CommentRemove)
+	commentGroup.GET("/:id", adminHandlers.CommentDetail)
+	commentGroup.DELETE("/:id", adminHandlers.CommentRemove)
+
 	userGroup := group.Group("/user")
 	userGroup.GET("/synccount", adminHandlers.UserSynccount)
 	userGroup.POST("/list", adminHandlers.UserList)
@@ -262,6 +268,7 @@ func registerAdminRoutes(group *gin.RouterGroup) {
 	topicGroup.POST("/list", adminHandlers.TopicList)
 	topicGroup.POST("/recommend", adminHandlers.TopicRecommend)
 	topicGroup.DELETE("/recommend", adminHandlers.TopicRemoveRecommend)
+	topicGroup.POST("/sticky", adminHandlers.TopicSticky)
 	topicGroup.POST("/delete", adminHandlers.TopicRemove)
 	topicGroup.POST("/undelete", adminHandlers.TopicUndelete)
 	topicGroup.POST("/accept_answer", adminHandlers.TopicAcceptAnswer)
@@ -283,6 +290,7 @@ func registerAdminRoutes(group *gin.RouterGroup) {
 	sysConfigGroup.POST("/list", adminHandlers.SysConfigList)
 	sysConfigGroup.GET("/configs", adminHandlers.SysConfigConfigs)
 	sysConfigGroup.POST("/save", adminHandlers.SysConfigSave)
+	sysConfigGroup.POST("/save-sensitive", adminHandlers.SysConfigSaveSensitive)
 	sysConfigGroup.GET("/:id", adminHandlers.SysConfigDetail)
 
 	searchGroup := group.Group("/search")
@@ -310,6 +318,7 @@ func registerAdminRoutes(group *gin.RouterGroup) {
 	userReportGroup.POST("/create", adminHandlers.UserReportCreate)
 	userReportGroup.POST("/update", adminHandlers.UserReportUpdate)
 	userReportGroup.POST("/process", adminHandlers.UserReportProcess)
+	userReportGroup.POST("/action", adminHandlers.UserReportAction)
 	userReportGroup.GET("/:id", adminHandlers.UserReportDetail)
 
 	voteGroup := group.Group("/vote")

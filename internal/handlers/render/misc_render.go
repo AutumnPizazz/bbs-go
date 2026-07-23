@@ -185,6 +185,7 @@ func BuildLoginSuccess(ctx *gin.Context, user *models.User, redirect string) *we
 		return web.JsonError(err)
 	}
 	ginx.SetCookieKV(ctx, constants.CookieTokenKey, token, ginx.CookieHTTPOnly(true), ginx.CookieExpires(365*24*time.Hour))
+	ginx.SetCookieKV(ctx, constants.CookieCSRFTokenKey, strs.UUID(), ginx.CookieExpires(365*24*time.Hour))
 	return web.NewEmptyRspBuilder().
 		Put("token", token).
 		Put("user", BuildUserProfile(user)).

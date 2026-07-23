@@ -3,6 +3,7 @@ package admin
 import (
 	"bbs-go/internal/models/constants"
 	"bbs-go/internal/models/resp"
+	"bbs-go/internal/pkg/common"
 	"bbs-go/internal/pkg/locales"
 	"strconv"
 	"strings"
@@ -50,6 +51,7 @@ func TagList(ctx *gin.Context) {
 }
 
 func TagCreate(ctx *gin.Context) {
+	operator := common.GetCurrentUser(ctx)
 	t := &models.Tag{}
 	err := ginx.Bind(ctx, t)
 	if err != nil {
@@ -75,11 +77,15 @@ func TagCreate(ctx *gin.Context) {
 		ginx.WriteJSON(ctx, err)
 		return
 	}
+	if operator != nil {
+		services.OperateLogService.AddOperateLog(operator.Id, constants.OpTypeCreate, "tag", t.Id, "创建标签："+t.Name, ctx.Request)
+	}
 	ginx.WriteJSON(ctx, t)
 
 }
 
 func TagUpdate(ctx *gin.Context) {
+	operator := common.GetCurrentUser(ctx)
 	id, err := params.FormValueInt64(ctx, "id")
 	if err != nil {
 		ginx.WriteJSON(ctx, err)
@@ -111,6 +117,9 @@ func TagUpdate(ctx *gin.Context) {
 	if err != nil {
 		ginx.WriteJSON(ctx, err)
 		return
+	}
+	if operator != nil {
+		services.OperateLogService.AddOperateLog(operator.Id, constants.OpTypeUpdate, "tag", t.Id, "更新标签："+t.Name, ctx.Request)
 	}
 	ginx.WriteJSON(ctx, t)
 

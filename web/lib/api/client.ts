@@ -85,6 +85,19 @@ function forwardServerHeaders(
 
   const token = request.headers.get("x-user-token")
   if (token) headers.set("x-user-token", token)
+
+  const csrfToken = request.headers.get("x-csrf-token")
+  if (csrfToken) headers.set("x-csrf-token", csrfToken)
+}
+
+function browserCookie(name: string) {
+  if (isServer()) return ""
+  const prefix = `${name}=`
+  return document.cookie
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(prefix))
+    ?.slice(prefix.length) || ""
 }
 
 function isPlainObjectBody(
@@ -109,6 +122,18 @@ export async function apiFetch<T>(
   const url = buildUrl(path, fetchOptions.params)
   const headers = new Headers(fetchOptions.headers)
   forwardServerHeaders(headers, request, url)
+
+  const method = (fetchOptions.method || "GET").toUpperCase()
+  if (
+    !isServer() &&
+    method !== "GET" &&
+    method !== "HEAD" &&
+    method !== "OPTIONS" &&
+    !headers.has("X-CSRF-Token")
+  ) {
+    const csrfToken = browserCookie("bbsgo_csrf")
+    if (csrfToken) headers.set("X-CSRF-Token", decodeURIComponent(csrfToken))
+  }
 
   const token = fetchOptions.token
   if (token) {

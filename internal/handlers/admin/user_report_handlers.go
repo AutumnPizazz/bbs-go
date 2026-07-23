@@ -2,10 +2,12 @@ package admin
 
 import (
 	"bbs-go/internal/models"
+	"bbs-go/internal/models/constants"
 	"bbs-go/internal/pkg/common"
 	"bbs-go/internal/pkg/errs"
 	"bbs-go/internal/pkg/idcodec"
 	"bbs-go/internal/services"
+	"fmt"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -25,7 +27,7 @@ func UserReportDetail(ctx *gin.Context) {
 	}
 
 	t := services.UserReportService.Get(id)
-	if t == nil {
+	if t == nil || !userReportTargetAccessible(common.GetCurrentUser(ctx), t) {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage("Not found, id="+strconv.FormatInt(id, 10)))
 		return
 	}
@@ -34,7 +36,12 @@ func UserReportDetail(ctx *gin.Context) {
 }
 
 func UserReportList(ctx *gin.Context) {
-	list, paging := services.UserReportService.FindPageByCnd(params.NewPagedSqlCnd(ctx,
+	allowed := services.ContentAccessService.GetAllowedCategoryIds(common.GetCurrentUser(ctx))
+	if len(allowed) == 0 {
+		ginx.WriteJSON(ctx, ginx.ErrorMessage("no content categories are assigned to this administrator"))
+		return
+	}
+	cnd := params.NewPagedSqlCnd(ctx,
 		params.QueryFilter{
 			ParamName: "dataType",
 			Op:        params.Eq,
@@ -47,7 +54,10 @@ func UserReportList(ctx *gin.Context) {
 			ParamName: "processStatus",
 			Op:        params.Eq,
 		},
-	).Desc("id"))
+	).Desc("id")
+	cnd.Where("(data_type = ? AND data_id IN (SELECT id FROM t_topic WHERE category_id IN (?))) OR (data_type = ? AND data_id IN (SELECT id FROM t_comment WHERE entity_type = ? AND entity_id IN (SELECT id FROM t_topic WHERE category_id IN (?)))) OR data_type = ?",
+		constants.EntityTopic, allowed, constants.EntityComment, constants.EntityTopic, allowed, constants.EntityUser)
+	list, paging := services.UserReportService.FindPageByCnd(cnd)
 	ginx.WriteJSON(ctx, &web.PageResult{Results: list, Page: paging})
 }
 
@@ -100,8 +110,106 @@ func UserReportProcess(ctx *gin.Context) {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage(err.Error()))
 		return
 	}
+	services.OperateLogService.AddOperateLog(user.Id, constants.OpTypeUpdate, "userReport", t.Id,
+		fmt.Sprintf("更新举报处理状态：%d", processStatus), ctx.Request)
 	ginx.WriteJSON(ctx, t)
 
+}
+
+func UserReportAction(ctx *gin.Context) {
+	user := common.GetCurrentUser(ctx)
+	if user == nil {
+		ginx.WriteJSON(ctx, errs.NotLogin())
+		return
+	}
+	id, _ := params.GetInt64(ctx, "id")
+	if id <= 0 {
+		ginx.WriteJSON(ctx, ginx.ErrorMessage("id is required"))
+		return
+	}
+	report := services.UserReportService.Get(id)
+	if report == nil || !userReportTargetAccessible(user, report) {
+		ginx.WriteJSON(ctx, ginx.ErrorMessage("report not found"))
+		return
+	}
+	action, _ := params.Get(ctx, "action")
+	if action == "" {
+		ginx.WriteJSON(ctx, ginx.ErrorMessage("action is required"))
+		return
+	}
+
+	var err error
+	switch action {
+	case "delete":
+		switch report.DataType {
+		case constants.EntityTopic:
+			err = services.TopicService.Delete(report.DataId, user.Id, ctx.Request)
+		case constants.EntityComment:
+			err = services.CommentService.DeleteByAdmin(user, report.DataId, ctx.Request)
+		default:
+			err = ginx.ErrorMessage("delete action is not supported for this report")
+		}
+	case "restore":
+		if report.DataType != constants.EntityTopic {
+			err = ginx.ErrorMessage("restore action is only supported for topic reports")
+		} else {
+			err = services.TopicService.Undelete(report.DataId)
+			if err == nil {
+				services.OperateLogService.AddOperateLog(user.Id, constants.OpTypeUpdate, constants.EntityTopic, report.DataId, "从举报处置中恢复话题", ctx.Request)
+			}
+		}
+	case "forbid":
+		if report.DataType != constants.EntityUser {
+			err = ginx.ErrorMessage("forbid action is only supported for user reports")
+		} else {
+			days, _ := params.GetInt(ctx, "days")
+			if days == 0 {
+				days = 7
+			}
+			if !services.PermissionService.CanForbiddenUser(user, days) {
+				err = errs.NoPermission()
+			} else {
+				err = services.UserService.Forbidden(user.Id, report.DataId, days, report.Reason, ctx.Request)
+			}
+		}
+	case "removeForbidden":
+		if report.DataType != constants.EntityUser {
+			err = ginx.ErrorMessage("removeForbidden action is only supported for user reports")
+		} else {
+			services.UserService.RemoveForbidden(user.Id, report.DataId, ctx.Request)
+		}
+	default:
+		err = ginx.ErrorMessage("unsupported report action")
+	}
+	if err != nil {
+		ginx.WriteJSON(ctx, err)
+		return
+	}
+	if err := services.UserReportService.Updates(report.Id, map[string]interface{}{
+		"process_status": 1, "process_time": dates.NowTimestamp(), "process_user_id": user.Id,
+	}); err != nil {
+		ginx.WriteJSON(ctx, err)
+		return
+	}
+	services.OperateLogService.AddOperateLog(user.Id, constants.OpTypeUpdate, "userReport", report.Id,
+		"举报处置动作："+action, ctx.Request)
+	ginx.WriteJSON(ctx, services.UserReportService.Get(report.Id))
+}
+
+func userReportTargetAccessible(user *models.User, report *models.UserReport) bool {
+	if user == nil || report == nil {
+		return false
+	}
+	switch report.DataType {
+	case constants.EntityTopic:
+		return services.ContentAccessService.CanAccessTopicCategory(user, services.TopicService.Get(report.DataId))
+	case constants.EntityComment:
+		return canAccessCommentScope(user, services.CommentService.Get(report.DataId))
+	case constants.EntityUser:
+		return true
+	default:
+		return false
+	}
 }
 
 func buildUserReportDetail(report *models.UserReport) map[string]interface{} {
@@ -140,6 +248,11 @@ func buildUserReportTarget(report *models.UserReport) map[string]interface{} {
 			target["entityId"] = comment.EntityId
 			target["quoteId"] = comment.QuoteId
 			target["status"] = comment.Status
+			if comment.EntityType == constants.EntityTopic {
+				target["url"] = "/topic/" + idcodec.Encode(comment.EntityId)
+			} else if parent := services.CommentService.Get(comment.EntityId); parent != nil && parent.EntityType == constants.EntityTopic {
+				target["url"] = "/topic/" + idcodec.Encode(parent.EntityId)
+			}
 			return target
 		}
 	case "user":

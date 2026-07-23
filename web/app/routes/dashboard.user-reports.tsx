@@ -37,6 +37,9 @@ export default function DashboardUserReportsRoute() {
   const [submittingStatus, setSubmittingStatus] = React.useState<number | null>(
     null
   )
+  const [submittingAction, setSubmittingAction] = React.useState<string | null>(
+    null
+  )
   const [reloadKey, setReloadKey] = React.useState(0)
   const canProcess = userHasPermission(
     currentUser,
@@ -80,6 +83,27 @@ export default function DashboardUserReportsRoute() {
       )
     } finally {
       setSubmittingStatus(null)
+    }
+  }
+
+  async function submitReportAction(action: string, days?: number) {
+    if (!processingReport?.id || !canProcess) return
+    setSubmittingAction(action)
+    try {
+      await adminPostForm("/api/admin/user-report/action", {
+        id: processingReport.id as number,
+        action,
+        ...(days ? { days } : {}),
+      })
+      msgSuccess(t("dashboard.messages.reportProcessed"))
+      setProcessingReport(null)
+      setReloadKey((current) => current + 1)
+    } catch (err) {
+      msgError(
+        err instanceof Error ? err.message : t("dashboard.errors.actionFailed")
+      )
+    } finally {
+      setSubmittingAction(null)
     }
   }
 
@@ -156,8 +180,11 @@ export default function DashboardUserReportsRoute() {
       <ReportProcessDialog
         record={processingReport}
         submittingStatus={submittingStatus}
+        submittingAction={submittingAction}
+        canProcess={canProcess}
         onClose={() => setProcessingReport(null)}
         onSubmitStatus={(status) => void submitReportStatus(status)}
+        onSubmitAction={(action, days) => void submitReportAction(action, days)}
       />
     </>
   )
@@ -166,13 +193,19 @@ export default function DashboardUserReportsRoute() {
 function ReportProcessDialog({
   record,
   submittingStatus,
+  submittingAction,
+  canProcess,
   onClose,
   onSubmitStatus,
+  onSubmitAction,
 }: {
   record: ReportDetailRecord | null
   submittingStatus: number | null
+  submittingAction: string | null
+  canProcess: boolean
   onClose: () => void
   onSubmitStatus: (status: 1 | 2) => void
+  onSubmitAction: (action: string, days?: number) => void
 }) {
   const { t } = useI18n()
   const target =
@@ -229,10 +262,50 @@ function ReportProcessDialog({
               </a>
             </Button>
           ) : null}
+          {canProcess && record?.dataType === "topic" && Number(target?.status) === 0 ? (
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={Boolean(submittingStatus || submittingAction)}
+              onClick={() => onSubmitAction("delete")}
+            >
+              {t("dashboard.actions.delete")}
+            </Button>
+          ) : null}
+          {canProcess && record?.dataType === "topic" && Number(target?.status) === 1 ? (
+            <Button
+              type="button"
+              variant="outline"
+              disabled={Boolean(submittingStatus || submittingAction)}
+              onClick={() => onSubmitAction("restore")}
+            >
+              {t("dashboard.actions.undelete")}
+            </Button>
+          ) : null}
+          {canProcess && record?.dataType === "comment" && Number(target?.status) === 0 ? (
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={Boolean(submittingStatus || submittingAction)}
+              onClick={() => onSubmitAction("delete")}
+            >
+              {t("dashboard.actions.delete")}
+            </Button>
+          ) : null}
+          {canProcess && record?.dataType === "user" ? (
+            <Button
+              type="button"
+              variant="outline"
+              disabled={Boolean(submittingStatus || submittingAction)}
+              onClick={() => onSubmitAction("forbid", 7)}
+            >
+              {t("component.userCenterSidebar.forbidden7Days")}
+            </Button>
+          ) : null}
           <Button
             type="button"
             variant="outline"
-            disabled={Boolean(submittingStatus)}
+            disabled={Boolean(submittingStatus || submittingAction)}
             onClick={() => onSubmitStatus(2)}
           >
             {submittingStatus === 2
@@ -241,7 +314,7 @@ function ReportProcessDialog({
           </Button>
           <Button
             type="button"
-            disabled={Boolean(submittingStatus)}
+            disabled={Boolean(submittingStatus || submittingAction)}
             onClick={() => onSubmitStatus(1)}
           >
             {submittingStatus === 1

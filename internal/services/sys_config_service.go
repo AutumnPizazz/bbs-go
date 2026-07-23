@@ -5,6 +5,7 @@ import (
 	"bbs-go/internal/models/dto"
 	"bbs-go/internal/pkg/locales"
 	"bbs-go/internal/pkg/msg"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -32,6 +33,34 @@ const (
 	maxScriptInjectionCodeLen = 20 * 1024
 	maxScriptInjectionNameLen = 200
 )
+
+var adminConfigKeys = map[string]struct{}{
+	constants.SysConfigSiteTitle: {}, constants.SysConfigSiteDescription: {}, constants.SysConfigBaseURL: {},
+	constants.SysConfigSiteKeywords: {}, constants.SysConfigSiteLogo: {}, constants.SysConfigSiteNavs: {},
+	constants.SysConfigSiteNotification: {}, constants.SysConfigAboutPageConfig: {}, constants.SysConfigFooterLinks: {},
+	constants.SysConfigRecommendTags: {}, constants.SysConfigUrlRedirect: {}, constants.SysConfigDefaultCategoryId: {},
+	constants.SysConfigTopicCaptcha: {}, constants.SysConfigUserObserveSeconds: {}, constants.SysConfigTokenExpireDays: {},
+	constants.SysConfigEnableHideContent: {}, constants.SysConfigModules: {}, constants.SysConfigLoginConfig: {},
+	constants.SysConfigUploadConfig: {}, constants.SysConfigAttachmentConfig: {}, constants.SysConfigScriptInjections: {},
+	constants.SysConfigTopicListStyle: {}, constants.SysConfigNotificationTypes: {},
+}
+
+var sensitiveAdminConfigKeys = map[string]struct{}{
+	constants.SysConfigLoginConfig:  {},
+	constants.SysConfigUploadConfig: {},
+}
+
+var sensitiveConfigPaths = map[string]struct{}{
+	"loginConfig.weixinLogin.appSecret":      {},
+	"loginConfig.googleLogin.clientSecret":   {},
+	"loginConfig.githubLogin.clientSecret":   {},
+	"uploadConfig.aliyunOss.accessKeyId":     {},
+	"uploadConfig.aliyunOss.accessKeySecret": {},
+	"uploadConfig.tencentCos.secretId":       {},
+	"uploadConfig.tencentCos.secretKey":      {},
+	"uploadConfig.awsS3.accessKeyId":         {},
+	"uploadConfig.awsS3.accessKeySecret":     {},
+}
 
 func newSysConfigService() *sysConfigService {
 	return &sysConfigService{}
@@ -69,41 +98,231 @@ func (s *sysConfigService) GetAll() []models.SysConfig {
 }
 
 func (s *sysConfigService) SetAll(configStr string) error {
-	json := gjson.Parse(configStr)
-	configs, ok := json.Value().(map[string]interface{})
-	if !ok {
+	configs, err := decodeAdminConfig(configStr, false)
+	if err != nil {
+		return err
+	}
+	return s.saveConfigValues(configs)
+}
+
+// SetSensitive updates OAuth and storage credentials without returning their
+// values. Blank credential fields keep the stored value; clearSensitive is the
+// explicit operation required to remove one.
+func (s *sysConfigService) SetSensitive(configStr string) error {
+	var input map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(configStr), &input); err != nil || input == nil {
 		return errors.New(locales.Get("settings.invalid_format"))
 	}
+	clearPaths := []string{}
+	if raw, ok := input["clearSensitive"]; ok {
+		if err := json.Unmarshal(raw, &clearPaths); err != nil {
+			return errors.New("clearSensitive must be an array")
+		}
+		for _, path := range clearPaths {
+			if _, ok := sensitiveConfigPaths[path]; !ok {
+				return fmt.Errorf("unknown sensitive config path: %s", path)
+			}
+		}
+		delete(input, "clearSensitive")
+	}
+	if len(input) == 0 {
+		return errors.New("sensitive configuration is required")
+	}
+	for key := range input {
+		if _, ok := sensitiveAdminConfigKeys[key]; !ok {
+			return fmt.Errorf("configuration key is not sensitive or not writable: %s", key)
+		}
+	}
 
-	if siteNavs := json.Get(constants.SysConfigSiteNavs); siteNavs.Exists() {
-		if err := validateSiteNavs(siteNavs.String()); err != nil {
-			return err
+	for _, key := range []string{constants.SysConfigLoginConfig, constants.SysConfigUploadConfig} {
+		raw, ok := input[key]
+		if !ok {
+			continue
+		}
+		var object map[string]json.RawMessage
+		if err := json.Unmarshal(raw, &object); err != nil || object == nil {
+			return fmt.Errorf("%s must be an object", key)
+		}
+		if key == constants.SysConfigLoginConfig {
+			var cfg dto.LoginConfig
+			if err := json.Unmarshal(raw, &cfg); err != nil {
+				return fmt.Errorf("invalid login configuration: %w", err)
+			}
+		} else {
+			var cfg dto.UploadConfig
+			if err := json.Unmarshal(raw, &cfg); err != nil {
+				return fmt.Errorf("invalid upload configuration: %w", err)
+			}
 		}
 	}
-	if aboutPageConfig := json.Get(constants.SysConfigAboutPageConfig); aboutPageConfig.Exists() {
-		if err := validateAboutPageConfig(aboutPageConfig.String()); err != nil {
+
+	configs := make(map[string]string, len(input))
+	for key, raw := range input {
+		stored := cache.SysConfigCache.GetStr(key)
+		merged, err := mergeSensitiveConfig(stored, string(raw), key, clearPaths)
+		if err != nil {
 			return err
 		}
+		configs[key] = merged
 	}
-	if footerLinks := json.Get(constants.SysConfigFooterLinks); footerLinks.Exists() {
-		if err := validateFooterLinks(footerLinks.String()); err != nil {
-			return err
+	return s.saveConfigValues(configs)
+}
+
+func decodeAdminConfig(configStr string, allowSensitive bool) (map[string]string, error) {
+	var input map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(configStr), &input); err != nil || input == nil {
+		return nil, errors.New(locales.Get("settings.invalid_format"))
+	}
+	configs := make(map[string]string, len(input))
+	for key, raw := range input {
+		if _, ok := adminConfigKeys[key]; !ok {
+			return nil, fmt.Errorf("unknown sys config key: %s", key)
+		}
+		if _, sensitive := sensitiveAdminConfigKeys[key]; sensitive && !allowSensitive {
+			return nil, fmt.Errorf("sensitive configuration requires a separate permission: %s", key)
+		}
+		value, err := rawConfigValue(raw)
+		if err != nil {
+			return nil, fmt.Errorf("invalid value for %s: %w", key, err)
+		}
+		configs[key] = value
+	}
+	if value, ok := configs[constants.SysConfigSiteNavs]; ok {
+		if err := validateSiteNavs(value); err != nil {
+			return nil, err
 		}
 	}
-	if scriptInjections := json.Get(constants.SysConfigScriptInjections); scriptInjections.Exists() {
-		if err := validateScriptInjections(scriptInjections.String()); err != nil {
-			return err
+	if value, ok := configs[constants.SysConfigAboutPageConfig]; ok {
+		if err := validateAboutPageConfig(value); err != nil {
+			return nil, err
 		}
 	}
+	if value, ok := configs[constants.SysConfigFooterLinks]; ok {
+		if err := validateFooterLinks(value); err != nil {
+			return nil, err
+		}
+	}
+	if value, ok := configs[constants.SysConfigScriptInjections]; ok {
+		if err := validateScriptInjections(value); err != nil {
+			return nil, err
+		}
+	}
+	return configs, nil
+}
+
+func rawConfigValue(raw json.RawMessage) (string, error) {
+	var value interface{}
+	if err := json.Unmarshal(raw, &value); err != nil {
+		return "", err
+	}
+	if text, ok := value.(string); ok {
+		return text, nil
+	}
+	return string(raw), nil
+}
+
+func (s *sysConfigService) saveConfigValues(configs map[string]string) error {
 	return sqls.DB().Transaction(func(tx *gorm.DB) error {
-		for k := range configs {
-			v := json.Get(k).String()
-			if err := s.setSingle(tx, k, v, "", ""); err != nil {
+		for key, value := range configs {
+			if err := s.setSingle(tx, key, value, "", ""); err != nil {
 				return err
 			}
 		}
 		return nil
 	})
+}
+
+func mergeSensitiveConfig(existing, incoming, root string, clearPaths []string) (string, error) {
+	var current, next map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(existing), &current); err != nil || current == nil {
+		current = map[string]json.RawMessage{}
+	}
+	if err := json.Unmarshal([]byte(incoming), &next); err != nil || next == nil {
+		return "", errors.New("invalid sensitive configuration")
+	}
+	mergeSensitiveMaps(current, next, root, clearPaths)
+	for _, path := range clearPaths {
+		if strings.HasPrefix(path, root+".") {
+			setSensitivePath(current, strings.Split(strings.TrimPrefix(path, root+"."), "."), json.RawMessage(`""`))
+		}
+	}
+	var normalized interface{}
+	if root == constants.SysConfigLoginConfig {
+		var cfg dto.LoginConfig
+		if err := marshalMapInto(nextMap(current), &cfg); err != nil {
+			return "", err
+		}
+		normalized = cfg
+	} else {
+		var cfg dto.UploadConfig
+		if err := marshalMapInto(nextMap(current), &cfg); err != nil {
+			return "", err
+		}
+		normalized = cfg
+	}
+	encoded, err := json.Marshal(normalized)
+	return string(encoded), err
+}
+
+func nextMap(value map[string]json.RawMessage) map[string]json.RawMessage { return value }
+
+func marshalMapInto(value map[string]json.RawMessage, target interface{}) error {
+	encoded, err := json.Marshal(value)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(encoded, target)
+}
+
+func mergeSensitiveMaps(current, incoming map[string]json.RawMessage, path string, clearPaths []string) {
+	for key, value := range incoming {
+		fullPath := path + "." + key
+		var currentObject, incomingObject map[string]json.RawMessage
+		if json.Unmarshal(value, &incomingObject) == nil && incomingObject != nil {
+			if json.Unmarshal(current[key], &currentObject) != nil || currentObject == nil {
+				currentObject = map[string]json.RawMessage{}
+			}
+			mergeSensitiveMaps(currentObject, incomingObject, fullPath, clearPaths)
+			encoded, _ := json.Marshal(currentObject)
+			current[key] = encoded
+			continue
+		}
+		if _, sensitive := sensitiveConfigPaths[fullPath]; sensitive && isBlankJSON(value) && !containsConfigString(clearPaths, fullPath) {
+			continue
+		}
+		current[key] = value
+	}
+}
+
+func setSensitivePath(current map[string]json.RawMessage, parts []string, value json.RawMessage) {
+	if len(parts) == 0 {
+		return
+	}
+	if len(parts) == 1 {
+		current[parts[0]] = value
+		return
+	}
+	var child map[string]json.RawMessage
+	if json.Unmarshal(current[parts[0]], &child) != nil || child == nil {
+		child = map[string]json.RawMessage{}
+	}
+	setSensitivePath(child, parts[1:], value)
+	encoded, _ := json.Marshal(child)
+	current[parts[0]] = encoded
+}
+
+func isBlankJSON(raw json.RawMessage) bool {
+	var value string
+	return json.Unmarshal(raw, &value) == nil && strings.TrimSpace(value) == ""
+}
+
+func containsConfigString(values []string, wanted string) bool {
+	for _, value := range values {
+		if value == wanted {
+			return true
+		}
+	}
+	return false
 }
 
 // Set 设置配置，如果配置不存在，那么创建
@@ -328,6 +547,25 @@ func (s *sysConfigService) GetLoginConfig() dto.LoginConfig {
 	return loginConfig
 }
 
+func (s *sysConfigService) GetLoginConfigAdmin() dto.LoginConfigAdmin {
+	cfg := s.GetLoginConfig()
+	return dto.LoginConfigAdmin{
+		PasswordLogin: cfg.PasswordLogin,
+		WeixinLogin: dto.WeixinLoginAdmin{
+			Enabled: cfg.WeixinLogin.Enabled, AppId: cfg.WeixinLogin.AppId,
+			AppSecretConfigured: strings.TrimSpace(cfg.WeixinLogin.AppSecret) != "",
+		},
+		GoogleLogin: dto.OAuthLoginAdmin{
+			Enabled: cfg.GoogleLogin.Enabled, ClientId: cfg.GoogleLogin.ClientId,
+			ClientSecretConfigured: strings.TrimSpace(cfg.GoogleLogin.ClientSecret) != "",
+		},
+		GithubLogin: dto.OAuthLoginAdmin{
+			Enabled: cfg.GithubLogin.Enabled, ClientId: cfg.GithubLogin.ClientId,
+			ClientSecretConfigured: strings.TrimSpace(cfg.GithubLogin.ClientSecret) != "",
+		},
+	}
+}
+
 func (s *sysConfigService) GetUploadConfig() dto.UploadConfig {
 	str := cache.SysConfigCache.GetStr(constants.SysConfigUploadConfig)
 	var uploadConfig dto.UploadConfig
@@ -335,6 +573,30 @@ func (s *sysConfigService) GetUploadConfig() dto.UploadConfig {
 		slog.Warn("上传配置错误", slog.Any("err", err))
 	}
 	return uploadConfig
+}
+
+func (s *sysConfigService) GetUploadConfigAdmin() dto.UploadConfigAdmin {
+	cfg := s.GetUploadConfig()
+	return dto.UploadConfigAdmin{
+		EnableUploadMethod: cfg.EnableUploadMethod,
+		AliyunOss: dto.AliyunOssUploadConfigAdmin{
+			Host: cfg.AliyunOss.Host, Bucket: cfg.AliyunOss.Bucket, Endpoint: cfg.AliyunOss.Endpoint,
+			AccessKeyIdConfigured:     strings.TrimSpace(cfg.AliyunOss.AccessKeyId) != "",
+			AccessKeySecretConfigured: strings.TrimSpace(cfg.AliyunOss.AccessKeySecret) != "",
+			StyleSplitter:             cfg.AliyunOss.StyleSplitter, StyleAvatar: cfg.AliyunOss.StyleAvatar,
+			StylePreview: cfg.AliyunOss.StylePreview, StyleSmall: cfg.AliyunOss.StyleSmall, StyleDetail: cfg.AliyunOss.StyleDetail,
+		},
+		TencentCos: dto.TencentCosUploadConfigAdmin{
+			Bucket: cfg.TencentCos.Bucket, Region: cfg.TencentCos.Region,
+			SecretIdConfigured:  strings.TrimSpace(cfg.TencentCos.SecretId) != "",
+			SecretKeyConfigured: strings.TrimSpace(cfg.TencentCos.SecretKey) != "",
+		},
+		AwsS3: dto.AwsS3UploadConfigAdmin{
+			Region: cfg.AwsS3.Region, Bucket: cfg.AwsS3.Bucket,
+			AccessKeyIdConfigured:     strings.TrimSpace(cfg.AwsS3.AccessKeyId) != "",
+			AccessKeySecretConfigured: strings.TrimSpace(cfg.AwsS3.AccessKeySecret) != "",
+		},
+	}
 }
 
 // GetAttachmentConfig 附件配置（帖子附件）

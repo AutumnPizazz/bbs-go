@@ -81,6 +81,14 @@ export default function DashboardUsersRoute() {
             : t("dashboard.boolean.no"),
       },
       {
+        key: "forbiddenEndTime",
+        label: dashboardData.label(t, "forbiddenEndTime"),
+        render: (record) =>
+          Number(record.forbiddenEndTime) === -1
+            ? t("dashboard.forbidden.permanent")
+            : dashboardData.dateCell(record.forbiddenEndTime),
+      },
+      {
         key: "createTime",
         label: dashboardData.label(t, "createTime"),
         render: (record) => dashboardData.dateCell(record.createTime),
@@ -170,6 +178,41 @@ export default function DashboardUsersRoute() {
       },
     ],
     rowActions: [
+      {
+        label: t("dashboard.forbidden.ban7Days"),
+        endpoint: "/api/admin/user/forbidden",
+        permission: PERMISSIONS.DASHBOARD_USER_FORBIDDEN,
+        payload: (record) => ({
+          userId: record.id as number,
+          days: 7,
+          reason: t("dashboard.forbidden.reasonTemporary"),
+        }),
+        confirm: t("dashboard.forbidden.confirm7Days"),
+        successMessage: t("dashboard.forbidden.banned"),
+        visible: (record) => !record.forbidden,
+      },
+      {
+        label: t("dashboard.forbidden.banForever"),
+        endpoint: "/api/admin/user/forbidden",
+        permission: PERMISSIONS.DASHBOARD_USER_FORBIDDEN_FOREVER,
+        payload: (record) => ({
+          userId: record.id as number,
+          days: -1,
+          reason: t("dashboard.forbidden.reasonPermanent"),
+        }),
+        confirm: t("dashboard.forbidden.confirmForever"),
+        successMessage: t("dashboard.forbidden.banned"),
+        visible: (record) => !record.forbidden,
+      },
+      {
+        label: t("dashboard.forbidden.remove"),
+        endpoint: "/api/admin/user/forbidden",
+        permission: PERMISSIONS.DASHBOARD_USER_FORBIDDEN,
+        payload: (record) => ({ userId: record.id as number, days: 0 }),
+        confirm: t("dashboard.forbidden.confirmRemove"),
+        successMessage: t("dashboard.forbidden.removed"),
+        visible: (record) => Boolean(record.forbidden),
+      },
       {
         label: t("dashboard.actions.resetPassword"),
         endpoint: "/api/admin/user/reset_password",

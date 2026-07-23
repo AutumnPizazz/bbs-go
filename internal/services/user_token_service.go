@@ -74,6 +74,7 @@ func (s *userTokenService) Signout(ctx *gin.Context) error {
 		return err
 	}
 	ginx.RemoveCookie(ctx, constants.CookieTokenKey)
+	ginx.RemoveCookie(ctx, constants.CookieCSRFTokenKey)
 	return nil
 }
 

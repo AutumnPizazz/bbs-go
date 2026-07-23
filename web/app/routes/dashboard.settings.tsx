@@ -123,6 +123,7 @@ type SitemapGenerateStatus = {
 
 const SETTINGS_ENDPOINT = "/api/admin/sys-config/configs"
 const SAVE_ENDPOINT = "/api/admin/sys-config/save"
+const SENSITIVE_SAVE_ENDPOINT = "/api/admin/sys-config/save-sensitive"
 const SEARCH_REINDEX_ENDPOINT = "/api/admin/search/reindex"
 const SEARCH_REINDEX_STATUS_ENDPOINT = "/api/admin/search/reindex/status"
 const SITEMAP_GENERATE_ENDPOINT = "/api/admin/seo/sitemap/generate"
@@ -466,12 +467,16 @@ export default function DashboardSettingsRoute() {
 
   async function saveSection(
     section: string,
-    payload: Record<string, SettingValue>
+    payload: Record<string, SettingValue>,
+    sensitive = false
   ) {
     if (!canUpdate) return
     setSavingSection(section)
     try {
-      await adminPostJson(SAVE_ENDPOINT, payload)
+      await adminPostJson(
+        sensitive ? SENSITIVE_SAVE_ENDPOINT : SAVE_ENDPOINT,
+        payload
+      )
       await loadConfig({ silent: true })
       msgSuccess(t("dashboard.messages.saved"))
     } catch (err) {
@@ -641,9 +646,9 @@ export default function DashboardSettingsRoute() {
               s={s}
               update={update}
               onSave={() =>
-                void saveSection("login", {
+              void saveSection("login", {
                   loginConfig: settings.loginConfig,
-                })
+                }, true)
               }
             />
           </TabsContent>
@@ -655,9 +660,9 @@ export default function DashboardSettingsRoute() {
               s={s}
               update={update}
               onSave={() =>
-                void saveSection("upload", {
+              void saveSection("upload", {
                   uploadConfig: settings.uploadConfig,
-                })
+                }, true)
               }
             />
           </TabsContent>

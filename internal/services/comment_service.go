@@ -1,6 +1,7 @@
 package services
 
 import (
+	"bbs-go/internal/cache"
 	"bbs-go/internal/models/constants"
 	"bbs-go/internal/models/req"
 	"bbs-go/internal/permissions"
@@ -10,6 +11,7 @@ import (
 	"bbs-go/internal/pkg/locales"
 	"errors"
 	"log/slog"
+	"net/http"
 	"strings"
 
 	"bbs-go/internal/pkg/params"
@@ -95,6 +97,114 @@ func (s *commentService) DeleteByUser(user *models.User, id int64) error {
 		return errs.NoPermission()
 	}
 	return s.Delete(id)
+}
+
+// DeleteByAdmin removes a comment and its replies while keeping topic/comment
+// counters and the accepted-answer relationship consistent.
+func (s *commentService) DeleteByAdmin(operator *models.User, id int64, r *http.Request) error {
+	if operator == nil {
+		return errs.NotLogin()
+	}
+	if err := s.deleteCommentTree(operator.Id, id, r); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *commentService) deleteCommentTree(operatorId, id int64, r *http.Request) error {
+	root := s.Get(id)
+	if root == nil || root.Status == constants.StatusDeleted {
+		return errors.New("comment not found")
+	}
+
+	deletedUsers := make(map[int64]struct{})
+	var deletedIds []int64
+	var collect func(*gorm.DB, int64) error
+	collect = func(db *gorm.DB, commentId int64) error {
+		comment := repositories.CommentRepository.Get(db, commentId)
+		if comment == nil || comment.Status == constants.StatusDeleted {
+			return nil
+		}
+		deletedIds = append(deletedIds, comment.Id)
+		deletedUsers[comment.UserId] = struct{}{}
+		children := repositories.CommentRepository.Find(db, sqls.NewCnd().
+			Eq("entity_type", constants.EntityComment).
+			Eq("entity_id", comment.Id).
+			Eq("status", constants.StatusOk))
+		for index := range children {
+			if err := collect(db, children[index].Id); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	err := sqls.WithTransaction(func(ctx *sqls.TxContext) error {
+		if err := collect(ctx.Tx, id); err != nil {
+			return err
+		}
+		if len(deletedIds) == 0 {
+			return errors.New("comment not found")
+		}
+		if err := ctx.Tx.Model(&models.Comment{}).Where("id IN ?", deletedIds).Update("status", constants.StatusDeleted).Error; err != nil {
+			return err
+		}
+
+		if root.EntityType == constants.EntityTopic {
+			if err := ctx.Tx.Model(&models.Topic{}).Where("id = ?", root.EntityId).
+				Update("comment_count", gorm.Expr("CASE WHEN comment_count > 0 THEN comment_count - 1 ELSE 0 END")).Error; err != nil {
+				return err
+			}
+			if topic := repositories.TopicRepository.Get(ctx.Tx, root.EntityId); topic != nil && topic.AcceptedCommentId > 0 {
+				for _, deletedId := range deletedIds {
+					if topic.AcceptedCommentId == deletedId {
+						if err := repositories.TopicRepository.Updates(ctx.Tx, topic.Id, map[string]interface{}{
+							"accepted_comment_id": 0, "qa_status": constants.QaStatusUnsolved, "solved_at": 0,
+						}); err != nil {
+							return err
+						}
+						break
+					}
+				}
+			}
+		} else if root.EntityType == constants.EntityComment {
+			if err := ctx.Tx.Model(&models.Comment{}).Where("id = ?", root.EntityId).
+				Update("comment_count", gorm.Expr("CASE WHEN comment_count > 0 THEN comment_count - 1 ELSE 0 END")).Error; err != nil {
+				return err
+			}
+			parent := repositories.CommentRepository.Get(ctx.Tx, root.EntityId)
+			if parent != nil && parent.EntityType == constants.EntityTopic {
+				topic := repositories.TopicRepository.Get(ctx.Tx, parent.EntityId)
+				if topic != nil && topic.AcceptedCommentId > 0 {
+					for _, deletedId := range deletedIds {
+						if topic.AcceptedCommentId == deletedId {
+							if err := repositories.TopicRepository.Updates(ctx.Tx, topic.Id, map[string]interface{}{
+								"accepted_comment_id": 0, "qa_status": constants.QaStatusUnsolved, "solved_at": 0,
+							}); err != nil {
+								return err
+							}
+							break
+						}
+					}
+				}
+			}
+		}
+		for userId := range deletedUsers {
+			if err := ctx.Tx.Model(&models.User{}).Where("id = ?", userId).
+				Update("comment_count", gorm.Expr("CASE WHEN comment_count > ? THEN comment_count - ? ELSE 0 END", 0, 1)).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	for userId := range deletedUsers {
+		cache.UserCache.Invalidate(userId)
+	}
+	OperateLogService.AddOperateLog(operatorId, constants.OpTypeDelete, constants.EntityComment, id, "删除评论及其回复", r)
+	return nil
 }
 
 // Publish 发表评论

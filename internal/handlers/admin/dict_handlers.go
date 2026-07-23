@@ -3,6 +3,8 @@ package admin
 import (
 	"bbs-go/internal/handlers/render"
 	"bbs-go/internal/models"
+	"bbs-go/internal/models/constants"
+	"bbs-go/internal/pkg/common"
 	"bbs-go/internal/services"
 	"strconv"
 
@@ -40,6 +42,7 @@ func DictList(ctx *gin.Context) {
 }
 
 func DictCreate(ctx *gin.Context) {
+	operator := common.GetCurrentUser(ctx)
 	t := &models.Dict{}
 	if err := ginx.Bind(ctx, t); err != nil {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage(err.Error()))
@@ -53,11 +56,15 @@ func DictCreate(ctx *gin.Context) {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage(err.Error()))
 		return
 	}
+	if operator != nil {
+		services.OperateLogService.AddOperateLog(operator.Id, constants.OpTypeCreate, "dict", t.Id, "创建字典项："+t.Name, ctx.Request)
+	}
 	ginx.WriteJSON(ctx, t)
 
 }
 
 func DictUpdate(ctx *gin.Context) {
+	operator := common.GetCurrentUser(ctx)
 	id, err := params.FormValueInt64(ctx, "id")
 	if err != nil {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage(err.Error()))
@@ -79,11 +86,15 @@ func DictUpdate(ctx *gin.Context) {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage(err.Error()))
 		return
 	}
+	if operator != nil {
+		services.OperateLogService.AddOperateLog(operator.Id, constants.OpTypeUpdate, "dict", t.Id, "更新字典项："+t.Name, ctx.Request)
+	}
 	ginx.WriteJSON(ctx, t)
 
 }
 
 func DictRemove(ctx *gin.Context) {
+	operator := common.GetCurrentUser(ctx)
 	ids := params.GetInt64Arr(ctx, "ids")
 	if len(ids) == 0 {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage("delete ids is empty"))
@@ -91,12 +102,16 @@ func DictRemove(ctx *gin.Context) {
 	}
 	for _, id := range ids {
 		services.DictService.Delete(id)
+		if operator != nil {
+			services.OperateLogService.AddOperateLog(operator.Id, constants.OpTypeDelete, "dict", id, "删除字典项", ctx.Request)
+		}
 	}
 	ginx.WriteJSON(ctx, nil)
 
 }
 
 func DictUpdateSort(ctx *gin.Context) {
+	operator := common.GetCurrentUser(ctx)
 	var ids []int64
 	if err := ginx.BindJSON(ctx, &ids); err != nil {
 		ginx.WriteJSON(ctx, err)
@@ -105,6 +120,9 @@ func DictUpdateSort(ctx *gin.Context) {
 	if err := services.DictService.UpdateSort(ids); err != nil {
 		ginx.WriteJSON(ctx, err)
 		return
+	}
+	if operator != nil {
+		services.OperateLogService.AddOperateLog(operator.Id, constants.OpTypeUpdate, "dict", 0, "更新字典项排序", ctx.Request)
 	}
 	ginx.WriteJSON(ctx, nil)
 

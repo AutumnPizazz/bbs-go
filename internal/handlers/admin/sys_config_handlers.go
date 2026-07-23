@@ -1,8 +1,10 @@
 package admin
 
 import (
+	"encoding/json"
 	"io"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -15,6 +17,7 @@ import (
 	"bbs-go/internal/cache"
 	"bbs-go/internal/models/constants"
 	"bbs-go/internal/models/dto"
+	"bbs-go/internal/pkg/common"
 	"bbs-go/internal/services"
 )
 
@@ -62,8 +65,8 @@ func SysConfigConfigs(ctx *gin.Context) {
 		EnableHideContent:  services.SysConfigService.IsEnableHideContent(),
 		Modules:            services.SysConfigService.GetModules(),
 		NotificationTypes:  services.SysConfigService.GetNotificationTypes(),
-		LoginConfig:        services.SysConfigService.GetLoginConfig(),
-		UploadConfig:       services.SysConfigService.GetUploadConfig(),
+		LoginConfig:        services.SysConfigService.GetLoginConfigAdmin(),
+		UploadConfig:       services.SysConfigService.GetUploadConfigAdmin(),
 		AttachmentConfig:   services.SysConfigService.GetAttachmentConfig(),
 		ScriptInjections:   services.SysConfigService.GetScriptInjections(),
 	}
@@ -84,6 +87,41 @@ func SysConfigSave(ctx *gin.Context) {
 		ginx.WriteJSON(ctx, err)
 		return
 	}
+	if operator := common.GetCurrentUser(ctx); operator != nil {
+		services.OperateLogService.AddOperateLog(operator.Id, constants.OpTypeUpdate, constants.EntitySysConfig, 0,
+			"更新普通系统设置：keys="+strings.Join(configKeys(body), ","), ctx.Request)
+	}
 	ginx.WriteJSON(ctx, nil)
 
+}
+
+func SysConfigSaveSensitive(ctx *gin.Context) {
+	body, err := io.ReadAll(ctx.Request.Body)
+	if err != nil {
+		ginx.WriteJSON(ctx, err)
+		return
+	}
+	if err := services.SysConfigService.SetSensitive(string(body)); err != nil {
+		ginx.WriteJSON(ctx, err)
+		return
+	}
+	if operator := common.GetCurrentUser(ctx); operator != nil {
+		services.OperateLogService.AddOperateLog(operator.Id, constants.OpTypeUpdate, constants.EntitySysConfig, 0,
+			"更新敏感系统设置（不记录配置值）：keys="+strings.Join(configKeys(body), ","), ctx.Request)
+	}
+	ginx.WriteJSON(ctx, nil)
+}
+
+func configKeys(body []byte) []string {
+	var values map[string]json.RawMessage
+	if err := json.Unmarshal(body, &values); err != nil {
+		return nil
+	}
+	keys := make([]string, 0, len(values))
+	for key := range values {
+		if key != "clearSensitive" {
+			keys = append(keys, key)
+		}
+	}
+	return keys
 }

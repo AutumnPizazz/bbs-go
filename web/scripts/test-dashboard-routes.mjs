@@ -30,6 +30,9 @@ const dedicatedRoutes = {
   "dashboard.links.tsx": {
     expectedDefaultExport: "DashboardLinksRoute",
   },
+  "dashboard.comments.tsx": {
+    expectedDefaultExport: "DashboardCommentsRoute",
+  },
   "dashboard.roles.tsx": {
     expectedDefaultExport: "DashboardRolesRoute",
   },
@@ -77,12 +80,6 @@ assert.equal(
 )
 
 assert.equal(
-  existsSync(resolve(routesDir, "dashboard.comments.tsx")),
-  false,
-  "dashboard.comments.tsx should be removed because comments are not managed in dashboard"
-)
-
-assert.equal(
   existsSync(resolve(dashboardDataDir, "dashboard-data-page-configs.tsx")),
   false,
   "dashboard-data-page-configs.tsx should be removed after moving configs into route modules"
@@ -93,11 +90,13 @@ for (const sourcePath of [
   resolve(dashboardComponentsDir, "dashboard-overview.tsx"),
 ]) {
   const source = readFileSync(sourcePath, "utf8")
-  assert.equal(
-    source.includes("/dashboard/comments"),
-    false,
-    `${sourcePath} should not link to dashboard comments`
-  )
+  if (sourcePath.endsWith("dashboard-overview.tsx")) {
+    assert.equal(
+      source.includes("/dashboard/comments"),
+      false,
+      `${sourcePath} should not link to dashboard comments`
+    )
+  }
 }
 
 const categoriesRoute = readFileSync(resolve(routesDir, "dashboard.categories.tsx"), "utf8")

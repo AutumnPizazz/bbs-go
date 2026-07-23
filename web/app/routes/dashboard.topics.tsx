@@ -7,6 +7,8 @@ import {
   LightbulbIcon,
   MessageCircleIcon,
   HeartIcon,
+  PinIcon,
+  PinOffIcon,
   RotateCcwIcon,
   RefreshCwIcon,
   SearchIcon,
@@ -28,6 +30,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
   adminDelete,
   adminList,
   adminPostForm,
@@ -38,7 +47,7 @@ import { formatDateTime } from "@/lib/format"
 import { userHasPermission } from "@/lib/auth/roles"
 import { createAdminInitialFilters } from "@/lib/dashboard/default-filters"
 import { useI18n } from "@/lib/i18n/provider"
-import { msgSuccess } from "@/lib/toast"
+import { msgError, msgSuccess } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { PERMISSIONS } from "@/lib/auth/permissions.generated"
 
@@ -50,7 +59,9 @@ type TopicRecord = AdminRecord & {
   content?: string
   type?: number
   status?: number
+  sticky?: boolean
   qaStatus?: string
+  acceptedCommentId?: number
   recommend?: boolean
   createTime?: number
   viewCount?: number
@@ -93,6 +104,8 @@ type TopicAction =
   | "delete"
   | "solved"
   | "unsolved"
+  | "sticky"
+  | "unsticky"
 
 function topicTypeLabel(t: ReturnType<typeof useI18n>["t"], type?: number) {
   if (type === 2) return t("dashboard.topicFeed.typeQa")
@@ -115,6 +128,8 @@ function topicActionSuccessMessage(
     delete: "dashboard.messages.deleted",
     solved: "dashboard.messages.markedSolved",
     unsolved: "dashboard.messages.markedUnsolved",
+    sticky: "dashboard.messages.stickied",
+    unsticky: "dashboard.messages.unstickied",
   }
 
   return t(messageKeys[action])
@@ -151,6 +166,12 @@ export default function DashboardTopicsRoute() {
   const [error, setError] = React.useState<string | null>(null)
   const [confirmState, setConfirmState] =
     React.useState<ConfirmDialogState>(null)
+  const [answerTopic, setAnswerTopic] = React.useState<TopicRecord | null>(null)
+  const [answers, setAnswers] = React.useState<AdminRecord[]>([])
+  const [answersLoading, setAnswersLoading] = React.useState(false)
+  const [answerSubmitting, setAnswerSubmitting] = React.useState<string | null>(
+    null
+  )
 
   const page = Number(filters.page || 1)
   const limit = Number(filters.limit || 20)
@@ -162,6 +183,11 @@ export default function DashboardTopicsRoute() {
   )
   const canDelete = userHasPermission(currentUser, PERMISSIONS.DASHBOARD_TOPIC_DELETE)
   const canSolve = userHasPermission(currentUser, PERMISSIONS.DASHBOARD_TOPIC_SOLVE)
+  const canSticky = userHasPermission(currentUser, PERMISSIONS.DASHBOARD_TOPIC_STICKY)
+  const canAcceptAnswer = userHasPermission(
+    currentUser,
+    PERMISSIONS.DASHBOARD_TOPIC_ACCEPT_ANSWER
+  )
 
   const load = React.useCallback(async () => {
     setLoading(true)
@@ -186,6 +212,57 @@ export default function DashboardTopicsRoute() {
     void load()
   }, [load])
 
+  async function openAnswers(topic: TopicRecord) {
+    if (!topic.id) return
+    setAnswerTopic(topic)
+    setAnswers([])
+    setAnswersLoading(true)
+    try {
+      const data = await adminList<AdminRecord>("/api/admin/comment/list", {
+        entityType: "topic",
+        entityId: topic.id,
+        status: 0,
+        page: 1,
+        limit: 50,
+      })
+      setAnswers(data.results || [])
+    } catch (err) {
+      msgError(
+        err instanceof Error ? err.message : t("dashboard.errors.loadFailed")
+      )
+    } finally {
+      setAnswersLoading(false)
+    }
+  }
+
+  async function updateAcceptedAnswer(commentId: number | null) {
+    if (!answerTopic?.id || !canAcceptAnswer) return
+    const actionKey = commentId === null ? "unaccept" : String(commentId)
+    setAnswerSubmitting(actionKey)
+    try {
+      if (commentId === null) {
+        await adminPostForm("/api/admin/topic/unaccept_answer", {
+          id: answerTopic.id,
+        })
+        msgSuccess(t("dashboard.messages.answerUnaccepted"))
+      } else {
+        await adminPostForm("/api/admin/topic/accept_answer", {
+          id: answerTopic.id,
+          commentId,
+        })
+        msgSuccess(t("dashboard.messages.answerAccepted"))
+      }
+      setAnswerTopic(null)
+      await load()
+    } catch (err) {
+      msgError(
+        err instanceof Error ? err.message : t("dashboard.errors.actionFailed")
+      )
+    } finally {
+      setAnswerSubmitting(null)
+    }
+  }
+
   function updateFilter(name: string, value: AdminFormValue) {
     setFilters((current) => ({
       ...current,
@@ -202,6 +279,8 @@ export default function DashboardTopicsRoute() {
       delete: canDelete,
       solved: canSolve,
       unsolved: canSolve,
+      sticky: canSticky,
+      unsticky: canSticky,
     }
     if (!allowed[action]) return
 
@@ -230,6 +309,8 @@ export default function DashboardTopicsRoute() {
       delete: "/api/admin/topic/delete",
       solved: "/api/admin/topic/mark_solved",
       unsolved: "/api/admin/topic/mark_unsolved",
+      sticky: "/api/admin/topic/sticky",
+      unsticky: "/api/admin/topic/sticky",
     }
 
     setError(null)
@@ -237,7 +318,11 @@ export default function DashboardTopicsRoute() {
       if (action === "unrecommend") {
         await adminDelete(endpoints[action], { id })
       } else {
-        await adminPostForm(endpoints[action], { id })
+        await adminPostForm(endpoints[action], {
+          id,
+          ...(action === "sticky" ? { sticky: true } : {}),
+          ...(action === "unsticky" ? { sticky: false } : {}),
+        })
       }
       msgSuccess(topicActionSuccessMessage(t, action))
       await load()
@@ -347,8 +432,11 @@ export default function DashboardTopicsRoute() {
                   recommend: canRecommend,
                   delete: canDelete,
                   solve: canSolve,
+                  sticky: canSticky,
+                  acceptAnswer: canAcceptAnswer,
                 }}
                 onAction={(action) => runAction(topic, action)}
+                onOpenAnswers={() => void openAnswers(topic)}
               />
             ))
           ) : (
@@ -380,6 +468,14 @@ export default function DashboardTopicsRoute() {
           if (!open) setConfirmState(null)
         }}
       />
+      <AnswerDialog
+        topic={answerTopic}
+        answers={answers}
+        loading={answersLoading}
+        submitting={answerSubmitting}
+        onClose={() => setAnswerTopic(null)}
+        onSelect={(commentId) => void updateAcceptedAnswer(commentId)}
+      />
     </div>
   )
 }
@@ -388,14 +484,18 @@ function TopicFeedItem({
   topic,
   permissions,
   onAction,
+  onOpenAnswers,
 }: {
   topic: TopicRecord
   permissions: {
     recommend: boolean
     delete: boolean
     solve: boolean
+    sticky: boolean
+    acceptAnswer: boolean
   }
   onAction: (action: TopicAction) => void
+  onOpenAnswers: () => void
 }) {
   const { t } = useI18n()
   const body = compactText(topic.summary)
@@ -578,6 +678,12 @@ function TopicFeedItem({
               {t("dashboard.actions.view")}
             </a>
           </Button>
+          {topic.type === 2 && permissions.acceptAnswer ? (
+            <Button size="sm" variant="outline" onClick={onOpenAnswers}>
+              <MessageCircleIcon />
+              {t("dashboard.actions.viewAnswers")}
+            </Button>
+          ) : null}
           {permissions.recommend && topic.status === 0 && topic.recommend ? (
             <Button
               size="sm"
@@ -596,6 +702,18 @@ function TopicFeedItem({
             >
               <StarIcon />
               {t("dashboard.actions.recommend")}
+            </Button>
+          ) : null}
+          {permissions.sticky && topic.status === 0 && topic.sticky ? (
+            <Button size="sm" variant="outline" onClick={() => onAction("unsticky")}>
+              <PinOffIcon />
+              {t("dashboard.actions.unsticky")}
+            </Button>
+          ) : null}
+          {permissions.sticky && topic.status === 0 && !topic.sticky ? (
+            <Button size="sm" variant="outline" onClick={() => onAction("sticky")}>
+              <PinIcon />
+              {t("dashboard.actions.sticky")}
             </Button>
           ) : null}
           {permissions.delete && topic.status === 1 ? (
@@ -666,6 +784,84 @@ function TopicTag({
     >
       {children}
     </span>
+  )
+}
+
+function AnswerDialog({
+  topic,
+  answers,
+  loading,
+  submitting,
+  onClose,
+  onSelect,
+}: {
+  topic: TopicRecord | null
+  answers: AdminRecord[]
+  loading: boolean
+  submitting: string | null
+  onClose: () => void
+  onSelect: (commentId: number | null) => void
+}) {
+  const { t } = useI18n()
+  const acceptedId = Number(topic?.acceptedCommentId || 0)
+
+  return (
+    <Dialog open={Boolean(topic)} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>{t("dashboard.answerDialog.title")}</DialogTitle>
+          <DialogDescription>
+            {topic?.title || t("dashboard.topicFeed.untitled")}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid max-h-[60vh] gap-3 overflow-auto">
+          {loading ? (
+            <div className="py-8 text-center text-sm text-muted-foreground">
+              {t("dashboard.loading")}
+            </div>
+          ) : answers.length ? (
+            answers.map((answer) => {
+              const id = Number(answer.id || 0)
+              const isAccepted = id > 0 && id === acceptedId
+              return (
+                <div
+                  key={String(answer.id)}
+                  className="grid gap-2 rounded-md border p-3"
+                >
+                  <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                    <span>#{String(answer.id || "-")}</span>
+                    <span>{formatDateTime(answer.createTime as number) || "-"}</span>
+                  </div>
+                  <p className="whitespace-pre-wrap text-sm leading-6">
+                    {String(answer.content || "-")}
+                  </p>
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={isAccepted ? "outline" : "default"}
+                      disabled={Boolean(submitting)}
+                      onClick={() => onSelect(isAccepted ? null : id)}
+                    >
+                      {submitting === String(id) ||
+                      (isAccepted && submitting === "unaccept")
+                        ? t("dashboard.actions.save")
+                        : isAccepted
+                          ? t("dashboard.actions.unacceptAnswer")
+                          : t("dashboard.actions.acceptAnswer")}
+                    </Button>
+                  </div>
+                </div>
+              )
+            })
+          ) : (
+            <div className="py-8 text-center text-sm text-muted-foreground">
+              {t("dashboard.answerDialog.empty")}
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }
 

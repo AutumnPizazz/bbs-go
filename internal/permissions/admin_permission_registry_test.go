@@ -80,19 +80,64 @@ func TestAdminPermissionRegistryRejectsUnknownAdminPath(t *testing.T) {
 	}
 }
 
-func TestAdminPermissionRegistryRejectsCommentManagementPaths(t *testing.T) {
+func TestAdminPermissionRegistryProtectsCommentManagementPaths(t *testing.T) {
 	paths := []struct {
 		method string
 		path   string
 	}{
 		{method: "GET", path: "/api/admin/comment/1"},
 		{method: "POST", path: "/api/admin/comment/list"},
+		{method: "POST", path: "/api/admin/comment/delete"},
 		{method: "DELETE", path: "/api/admin/comment/1"},
 	}
 
 	for _, path := range paths {
-		if code, ok := GetAdminPermissionCode(path.method, path.path); ok {
-			t.Fatalf("expected %s %s to be rejected, got %s", path.method, path.path, code)
+		if code, ok := GetAdminPermissionCode(path.method, path.path); !ok || code == "" {
+			t.Fatalf("expected %s %s to be protected", path.method, path.path)
+		}
+	}
+}
+
+func TestAdminPermissionRegistryCoversEveryRegisteredAdminRoute(t *testing.T) {
+	routes := []struct {
+		method string
+		path   string
+	}{
+		{"GET", "/api/admin/common/overview"},
+		{"POST", "/api/admin/comment/list"}, {"POST", "/api/admin/comment/delete"}, {"GET", "/api/admin/comment/1"}, {"DELETE", "/api/admin/comment/1"},
+		{"GET", "/api/admin/role/roles"}, {"GET", "/api/admin/role/permissions"}, {"GET", "/api/admin/role/1"},
+		{"POST", "/api/admin/role/list"}, {"POST", "/api/admin/role/create"}, {"POST", "/api/admin/role/update"},
+		{"POST", "/api/admin/role/update_permissions"}, {"POST", "/api/admin/role/delete"}, {"POST", "/api/admin/role/update_sort"},
+		{"GET", "/api/admin/dict-type/1"}, {"POST", "/api/admin/dict-type/list"}, {"POST", "/api/admin/dict-type/create"},
+		{"POST", "/api/admin/dict-type/update"}, {"POST", "/api/admin/dict-type/delete"},
+		{"GET", "/api/admin/dict/1"}, {"GET", "/api/admin/dict/dicts"}, {"POST", "/api/admin/dict/list"},
+		{"POST", "/api/admin/dict/create"}, {"POST", "/api/admin/dict/update"}, {"POST", "/api/admin/dict/delete"}, {"POST", "/api/admin/dict/update_sort"},
+		{"GET", "/api/admin/user/1"}, {"GET", "/api/admin/user/synccount"}, {"POST", "/api/admin/user/list"},
+		{"POST", "/api/admin/user/create"}, {"POST", "/api/admin/user/update"}, {"POST", "/api/admin/user/forbidden"},
+		{"POST", "/api/admin/user/update_password"}, {"POST", "/api/admin/user/reset_password"},
+		{"GET", "/api/admin/tag/1"}, {"GET", "/api/admin/tag/autocomplete"}, {"GET", "/api/admin/tag/tags"},
+		{"POST", "/api/admin/tag/list"}, {"POST", "/api/admin/tag/create"}, {"POST", "/api/admin/tag/update"},
+		{"GET", "/api/admin/favorite/1"}, {"POST", "/api/admin/favorite/list"}, {"POST", "/api/admin/favorite/create"}, {"POST", "/api/admin/favorite/update"},
+		{"GET", "/api/admin/topic/1"}, {"POST", "/api/admin/topic/list"}, {"POST", "/api/admin/topic/recommend"}, {"DELETE", "/api/admin/topic/recommend"},
+		{"POST", "/api/admin/topic/sticky"},
+		{"POST", "/api/admin/topic/delete"}, {"POST", "/api/admin/topic/undelete"}, {"POST", "/api/admin/topic/accept_answer"}, {"POST", "/api/admin/topic/unaccept_answer"},
+		{"POST", "/api/admin/topic/mark_solved"}, {"POST", "/api/admin/topic/mark_unsolved"},
+		{"GET", "/api/admin/category/1"}, {"GET", "/api/admin/category/options"}, {"POST", "/api/admin/category/list"},
+		{"POST", "/api/admin/category/create"}, {"POST", "/api/admin/category/update"}, {"POST", "/api/admin/category/update_sort"}, {"POST", "/api/admin/category/delete"},
+		{"GET", "/api/admin/sys-config/1"}, {"GET", "/api/admin/sys-config/configs"}, {"POST", "/api/admin/sys-config/list"},
+		{"POST", "/api/admin/sys-config/save"}, {"POST", "/api/admin/sys-config/save-sensitive"},
+		{"GET", "/api/admin/search/reindex/status"}, {"POST", "/api/admin/search/reindex"}, {"GET", "/api/admin/seo/sitemap/status"}, {"POST", "/api/admin/seo/sitemap/generate"},
+		{"GET", "/api/admin/link/1"}, {"POST", "/api/admin/link/list"}, {"POST", "/api/admin/link/create"}, {"POST", "/api/admin/link/update"}, {"POST", "/api/admin/link/delete"}, {"POST", "/api/admin/link/update_sort"},
+		{"GET", "/api/admin/operate-log/1"}, {"POST", "/api/admin/operate-log/list"},
+		{"GET", "/api/admin/user-report/1"}, {"POST", "/api/admin/user-report/list"}, {"POST", "/api/admin/user-report/create"}, {"POST", "/api/admin/user-report/update"}, {"POST", "/api/admin/user-report/process"}, {"POST", "/api/admin/user-report/action"},
+		{"GET", "/api/admin/vote/1"}, {"POST", "/api/admin/vote/list"}, {"POST", "/api/admin/vote/create"}, {"POST", "/api/admin/vote/update"}, {"POST", "/api/admin/vote/delete"},
+		{"GET", "/api/admin/vote-option/1"}, {"POST", "/api/admin/vote-option/list"}, {"POST", "/api/admin/vote-option/create"}, {"POST", "/api/admin/vote-option/update"}, {"POST", "/api/admin/vote-option/delete"},
+		{"GET", "/api/admin/vote-record/1"}, {"POST", "/api/admin/vote-record/list"}, {"POST", "/api/admin/vote-record/create"}, {"POST", "/api/admin/vote-record/update"}, {"POST", "/api/admin/vote-record/delete"},
+	}
+
+	for _, route := range routes {
+		if codes, ok := GetAdminPermissionCodes(route.method, route.path); !ok || len(codes) == 0 {
+			t.Errorf("missing permission rule for %s %s", route.method, route.path)
 		}
 	}
 }

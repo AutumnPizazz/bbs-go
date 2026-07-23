@@ -1,7 +1,9 @@
 package ginx
 
 import (
+	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -64,23 +66,33 @@ func SetCookieKV(ctx *gin.Context, name, value string, opts ...CookieOption) {
 	if options.expires > 0 {
 		maxAge = int(options.expires.Seconds())
 	}
-	ctx.SetCookie(name, value, maxAge, "/", "", false, options.httpOnly)
+	secure := options.secure || ctx.Request.TLS != nil || strings.EqualFold(ctx.GetHeader("X-Forwarded-Proto"), "https")
+	ctx.SetSameSite(http.SameSiteLaxMode)
+	ctx.SetCookie(name, value, maxAge, "/", "", secure, options.httpOnly)
 }
 
 func RemoveCookie(ctx *gin.Context, name string) {
-	ctx.SetCookie(name, "", -1, "/", "", false, true)
+	ctx.SetSameSite(http.SameSiteLaxMode)
+	ctx.SetCookie(name, "", -1, "/", "", ctx.Request.TLS != nil || strings.EqualFold(ctx.GetHeader("X-Forwarded-Proto"), "https"), true)
 }
 
 type CookieOption func(*cookieOptions)
 
 type cookieOptions struct {
 	httpOnly bool
+	secure   bool
 	expires  time.Duration
 }
 
 func CookieHTTPOnly(enabled bool) CookieOption {
 	return func(opts *cookieOptions) {
 		opts.httpOnly = enabled
+	}
+}
+
+func CookieSecure(enabled bool) CookieOption {
+	return func(opts *cookieOptions) {
+		opts.secure = enabled
 	}
 }
 

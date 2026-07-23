@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -148,6 +149,32 @@ func TopicRemoveRecommend(ctx *gin.Context) {
 
 }
 
+func TopicSticky(ctx *gin.Context) {
+	id, err := params.FormValueInt64(ctx, "id")
+	if err != nil {
+		ginx.WriteJSON(ctx, err)
+		return
+	}
+	user := common.GetCurrentUser(ctx)
+	topic := services.TopicService.Get(id)
+	if user == nil {
+		ginx.WriteJSON(ctx, errs.NotLogin())
+		return
+	}
+	if !services.ContentAccessService.CanAccessTopicCategory(user, topic) {
+		ginx.WriteJSON(ctx, errs.ContentAccessDenied())
+		return
+	}
+	sticky := params.FormValueBoolDefault(ctx, "sticky", false)
+	if err := services.TopicService.SetSticky(id, sticky); err != nil {
+		ginx.WriteJSON(ctx, err)
+		return
+	}
+	services.OperateLogService.AddOperateLog(user.Id, constants.OpTypeUpdate, constants.EntityTopic, id,
+		fmt.Sprintf("%s话题置顶", map[bool]string{true: "设置", false: "取消"}[sticky]), ctx.Request)
+	ginx.WriteJSON(ctx, nil)
+}
+
 func TopicRemove(ctx *gin.Context) {
 	id, err := params.FormValueInt64(ctx, "id")
 	if err != nil {
@@ -214,6 +241,8 @@ func TopicAcceptAnswer(ctx *gin.Context) {
 		ginx.WriteJSON(ctx, err)
 		return
 	}
+	services.OperateLogService.AddOperateLog(user.Id, constants.OpTypeUpdate, constants.EntityTopic, req.Id,
+		fmt.Sprintf("采纳答案评论：%d", req.CommentId), ctx.Request)
 	ginx.WriteJSON(ctx, nil)
 
 }
@@ -237,6 +266,8 @@ func TopicUnacceptAnswer(ctx *gin.Context) {
 		ginx.WriteJSON(ctx, err)
 		return
 	}
+	services.OperateLogService.AddOperateLog(user.Id, constants.OpTypeUpdate, constants.EntityTopic, id,
+		"取消采纳答案", ctx.Request)
 	ginx.WriteJSON(ctx, nil)
 
 }

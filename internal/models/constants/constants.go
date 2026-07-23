@@ -6,6 +6,7 @@ const (
 	UploadMaxM                   = 10
 	UploadMaxBytes         int64 = 1024 * 1024 * 1024 * UploadMaxM
 	CookieTokenKey               = "bbsgo_token"
+	CookieCSRFTokenKey           = "bbsgo_csrf"
 	TopicListPageSize            = 30 // 帖子列表分页大小
 )
 
@@ -54,6 +55,7 @@ const (
 	EntityTopic      = "topic"
 	EntityComment    = "comment"
 	EntityUser       = "user"
+	EntitySysConfig  = "sysConfig"
 	EntityAttachment = "attachment"
 )
 
@@ -158,5 +160,5 @@ const (
 
 // 模块
 const (
-	ModuleTopic   = "topic"
+	ModuleTopic = "topic"
 )

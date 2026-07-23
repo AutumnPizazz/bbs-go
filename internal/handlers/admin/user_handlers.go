@@ -43,6 +43,7 @@ func userBuildUserItem(user *models.User, buildRoleIds bool) map[string]interfac
 		Put("username", user.Username.String).
 		Put("contentAccessMode", mode).
 		Put("categoryIds", services.ContentAccessService.GetAssignedCategoryIds(user.Id)).
+		Put("forbiddenEndTime", user.ForbiddenEndTime).
 		Put("forbidden", user.IsForbidden())
 	if buildRoleIds {
 		b.Put("roleIds", services.UserRoleService.GetUserRoleIds(user.Id))

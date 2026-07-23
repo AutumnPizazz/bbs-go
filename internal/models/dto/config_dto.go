@@ -23,8 +23,8 @@ type SysConfigAdminResponse struct {
 	EnableHideContent  bool                        `json:"enableHideContent"`
 	Modules            ModulesConfig               `json:"modules"`
 	NotificationTypes  map[string]NoticeTypeConfig `json:"notificationTypes"` // 各消息类型站内信开关
-	LoginConfig        LoginConfig                 `json:"loginConfig"`       // 登录配置
-	UploadConfig       UploadConfig                `json:"uploadConfig"`      // 上传配置
+	LoginConfig        LoginConfigAdmin            `json:"loginConfig"`       // 登录配置（敏感值仅返回是否已配置）
+	UploadConfig       UploadConfigAdmin           `json:"uploadConfig"`      // 上传配置（敏感值仅返回是否已配置）
 	AttachmentConfig   AttachmentConfig            `json:"attachmentConfig"`  // 附件配置
 	ScriptInjections   []ScriptInjection           `json:"scriptInjections"`  // head脚本注入
 }
@@ -102,8 +102,8 @@ type NoticeTypeConfig struct {
 //
 //	模块配置
 type ModulesConfig struct {
-	Topic   bool `json:"topic"`
-	QA      bool `json:"qa"`
+	Topic bool `json:"topic"`
+	QA    bool `json:"qa"`
 }
 
 // LoginConfig 登录配置
@@ -133,6 +133,27 @@ type LoginConfig struct {
 	} `json:"githubLogin"`
 }
 
+// LoginConfigAdmin is the dashboard-safe representation of LoginConfig.
+// Credential values are deliberately absent from this response.
+type LoginConfigAdmin struct {
+	PasswordLogin EnabledConfig    `json:"passwordLogin"`
+	WeixinLogin   WeixinLoginAdmin `json:"weixinLogin"`
+	GoogleLogin   OAuthLoginAdmin  `json:"googleLogin"`
+	GithubLogin   OAuthLoginAdmin  `json:"githubLogin"`
+}
+
+type WeixinLoginAdmin struct {
+	Enabled             bool   `json:"enabled"`
+	AppId               string `json:"appId"`
+	AppSecretConfigured bool   `json:"appSecretConfigured"`
+}
+
+type OAuthLoginAdmin struct {
+	Enabled                bool   `json:"enabled"`
+	ClientId               string `json:"clientId,omitempty"`
+	ClientSecretConfigured bool   `json:"clientSecretConfigured"`
+}
+
 // IsAllDisabled 是否禁用了所有登录方式
 func (c *LoginConfig) IsAllDisabled() bool {
 	return !c.PasswordLogin.Enabled && !c.WeixinLogin.Enabled && !c.GoogleLogin.Enabled && !c.GithubLogin.Enabled
@@ -152,6 +173,42 @@ type UploadConfig struct {
 	AliyunOss          AliyunOssUploadConfig  `json:"aliyunOss"`
 	TencentCos         TencentCosUploadConfig `json:"tencentCos"`
 	AwsS3              AwsS3UploadConfig      `json:"awsS3"`
+}
+
+// UploadConfigAdmin keeps provider metadata while exposing only credential
+// configuration status to dashboard clients.
+type UploadConfigAdmin struct {
+	EnableUploadMethod UploadMethod                `json:"enableUploadMethod"`
+	AliyunOss          AliyunOssUploadConfigAdmin  `json:"aliyunOss"`
+	TencentCos         TencentCosUploadConfigAdmin `json:"tencentCos"`
+	AwsS3              AwsS3UploadConfigAdmin      `json:"awsS3"`
+}
+
+type AliyunOssUploadConfigAdmin struct {
+	Host                      string `json:"host"`
+	Bucket                    string `json:"bucket"`
+	Endpoint                  string `json:"endpoint"`
+	AccessKeyIdConfigured     bool   `json:"accessKeyIdConfigured"`
+	AccessKeySecretConfigured bool   `json:"accessKeySecretConfigured"`
+	StyleSplitter             string `json:"styleSplitter"`
+	StyleAvatar               string `json:"styleAvatar"`
+	StylePreview              string `json:"stylePreview"`
+	StyleSmall                string `json:"styleSmall"`
+	StyleDetail               string `json:"styleDetail"`
+}
+
+type TencentCosUploadConfigAdmin struct {
+	Bucket              string `json:"bucket"`
+	Region              string `json:"region"`
+	SecretIdConfigured  bool   `json:"secretIdConfigured"`
+	SecretKeyConfigured bool   `json:"secretKeyConfigured"`
+}
+
+type AwsS3UploadConfigAdmin struct {
+	Region                    string `json:"region"`
+	Bucket                    string `json:"bucket"`
+	AccessKeyIdConfigured     bool   `json:"accessKeyIdConfigured"`
+	AccessKeySecretConfigured bool   `json:"accessKeySecretConfigured"`
 }
 
 type AliyunOssUploadConfig struct {

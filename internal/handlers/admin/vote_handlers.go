@@ -2,6 +2,7 @@ package admin
 
 import (
 	"bbs-go/internal/models"
+	"bbs-go/internal/models/constants"
 	"bbs-go/internal/pkg/common"
 	"bbs-go/internal/pkg/errs"
 	"bbs-go/internal/services"
@@ -34,9 +35,9 @@ func VoteDetail(ctx *gin.Context) {
 func VoteList(ctx *gin.Context) {
 	user := common.GetCurrentUser(ctx)
 	list, paging := services.VoteService.FindPageByCnd(params.NewPagedSqlCnd(ctx,
-		params.QueryFilter{
-			ParamName: "id",
-		},
+		params.QueryFilter{ParamName: "id", Op: params.Eq},
+		params.QueryFilter{ParamName: "topicId", Op: params.Eq},
+		params.QueryFilter{ParamName: "userId", Op: params.Eq},
 	).Where("topic_id IN (?)", services.ContentAccessService.AllowedTopicSubquery(user)).Desc("id"))
 	ginx.WriteJSON(ctx, &web.PageResult{Results: list, Page: paging})
 
@@ -56,6 +57,9 @@ func VoteCreate(ctx *gin.Context) {
 	if err := services.VoteService.Create(t); err != nil {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage(err.Error()))
 		return
+	}
+	if user := common.GetCurrentUser(ctx); user != nil {
+		services.OperateLogService.AddOperateLog(user.Id, constants.OpTypeCreate, "vote", t.Id, "创建投票："+t.Title, ctx.Request)
 	}
 	ginx.WriteJSON(ctx, t)
 
@@ -82,6 +86,9 @@ func VoteUpdate(ctx *gin.Context) {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage(err.Error()))
 		return
 	}
+	if user := common.GetCurrentUser(ctx); user != nil {
+		services.OperateLogService.AddOperateLog(user.Id, constants.OpTypeUpdate, "vote", t.Id, "更新投票："+t.Title, ctx.Request)
+	}
 	ginx.WriteJSON(ctx, t)
 
 }
@@ -99,6 +106,9 @@ func VoteRemove(ctx *gin.Context) {
 			return
 		}
 		services.VoteService.Delete(id)
+		if user := common.GetCurrentUser(ctx); user != nil {
+			services.OperateLogService.AddOperateLog(user.Id, constants.OpTypeDelete, "vote", id, "删除投票", ctx.Request)
+		}
 	}
 	ginx.WriteJSON(ctx, nil)
 

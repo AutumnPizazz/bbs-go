@@ -68,6 +68,33 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             url: "/dashboard/links",
             permission: PERMISSIONS.DASHBOARD_LINK_VIEW,
           },
+          {
+            title: t("dashboard.nav.comments"),
+            url: "/dashboard/comments",
+            permission: PERMISSIONS.DASHBOARD_COMMENT_VIEW,
+          },
+          {
+            title: t("dashboard.nav.tags"),
+            url: "/dashboard/tags",
+            permission: PERMISSIONS.DASHBOARD_TAG_VIEW,
+          },
+          {
+            title: t("dashboard.nav.votes"),
+            url: "/dashboard/votes",
+            permission: PERMISSIONS.DASHBOARD_VOTE_VIEW,
+            items: [
+              {
+                title: t("dashboard.nav.votes"),
+                url: "/dashboard/votes",
+                permission: PERMISSIONS.DASHBOARD_VOTE_VIEW,
+              },
+              {
+                title: t("dashboard.nav.voteOptions"),
+                url: "/dashboard/vote-options",
+                permission: PERMISSIONS.DASHBOARD_VOTE_OPTION_VIEW,
+              },
+            ],
+          },
         ],
       },
       {
@@ -86,6 +113,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             url: "/dashboard/user-reports",
             permission: PERMISSIONS.DASHBOARD_USER_REPORT_VIEW,
           },
+          {
+            title: t("dashboard.nav.favorites"),
+            url: "/dashboard/favorites",
+            permission: PERMISSIONS.DASHBOARD_FAVORITE_VIEW,
+          },
         ],
       },
       {
@@ -103,6 +135,33 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             title: t("dashboard.nav.roles"),
             url: "/dashboard/roles",
             permission: PERMISSIONS.DASHBOARD_ROLE_VIEW,
+          },
+          {
+            title: t("dashboard.nav.operateLogs"),
+            url: "/dashboard/operate-logs",
+            permission: PERMISSIONS.DASHBOARD_OPERATE_LOG_VIEW,
+          },
+          {
+            title: t("dashboard.nav.dictionaries"),
+            url: "/dashboard/dictionaries",
+            permission: PERMISSIONS.DASHBOARD_DICT_TYPE_VIEW,
+            items: [
+              {
+                title: t("dashboard.nav.dictionaryTypes"),
+                url: "/dashboard/dictionaries",
+                permission: PERMISSIONS.DASHBOARD_DICT_TYPE_VIEW,
+              },
+              {
+                title: t("dashboard.nav.dictionaryItems"),
+                url: "/dashboard/dictionary-items",
+                permission: PERMISSIONS.DASHBOARD_DICT_VIEW,
+              },
+            ],
+          },
+          {
+            title: t("dashboard.nav.voteRecords"),
+            url: "/dashboard/vote-records",
+            permission: PERMISSIONS.DASHBOARD_VOTE_RECORD_VIEW,
           },
         ],
       },
