@@ -35,9 +35,8 @@ export function userLinkCell(record: Record<string, unknown>, value: unknown) {
 }
 
 export function treeOptionLabel(record: Record<string, unknown>) {
-  const depth = Number(record.__dashboardOptionDepth || 0)
   const text = String(record.title || record.name || record.id)
-  return `${"  ".repeat(depth)}${depth ? "└ " : ""}${text}`
+  return text
 }
 
 export function normalDeletedOptions(t: TFunction) {

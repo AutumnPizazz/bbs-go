@@ -219,6 +219,8 @@ export function useDashboardDataPage({
           options: optionRecords.map((record) => ({
             label: source.optionLabel(record),
             value: source.optionValue(record),
+            depth: Number(record.__dashboardOptionDepth || 0),
+            searchText: String(record.__dashboardOptionPath || ""),
           })),
         }
       })

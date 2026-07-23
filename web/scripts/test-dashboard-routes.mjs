@@ -101,11 +101,57 @@ for (const sourcePath of [
 }
 
 const categoriesRoute = readFileSync(resolve(routesDir, "dashboard.categories.tsx"), "utf8")
+const usersRoute = readFileSync(resolve(routesDir, "dashboard.users.tsx"), "utf8")
+const dashboardSelect = readFileSync(
+  resolve(dashboardComponentsDir, "dashboard-select.tsx"),
+  "utf8"
+)
+const dashboardDataUtils = readFileSync(
+  resolve(dashboardDataDir, "dashboard-data-utils.tsx"),
+  "utf8"
+)
 
 assert.equal(
   /(?:name|key):\s*"type"/.test(categoriesRoute),
   false,
   "dashboard.categories.tsx should not expose the retired category type"
+)
+
+assert.match(
+  dashboardSelect,
+  /expandedValues/,
+  "dashboard select should track expanded parent nodes"
+)
+assert.match(
+  dashboardSelect,
+  /aria-expanded/,
+  "dashboard select should expose parent expansion state"
+)
+assert.match(
+  dashboardSelect,
+  /option\.ancestorValues/,
+  "dashboard select should preserve ancestors while filtering"
+)
+assert.match(
+  dashboardSelect,
+  /selectedAncestorValues[\s\S]*?setExpandedValues/,
+  "dashboard multi-select should expand ancestors of selected nodes"
+)
+assert.match(
+  dashboardSelect,
+  /selected=\{selectedValues\.includes\(optionValue\)\}[\s\S]*?depth=\{option\.depth\}/,
+  "dashboard multi-select should render selectable hierarchical options"
+)
+
+assert.match(
+  usersRoute,
+  /name:\s*"categoryIds"[\s\S]*?type:\s*"multiselect"[\s\S]*?optionsEndpoint:\s*"\/api\/admin\/category\/options"/,
+  "dashboard.users.tsx should use the hierarchical multi-select for accessible nodes"
+)
+assert.match(
+  dashboardDataUtils,
+  /childrenByParent[\s\S]*?record\.parentId[\s\S]*?flattenFlat/,
+  "dashboard option normalization should rebuild flat parentId category data"
 )
 
 assert.equal(

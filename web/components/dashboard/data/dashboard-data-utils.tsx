@@ -49,6 +49,7 @@ export const DASHBOARD_DATA_KEY = "__dashboardKey"
 export const DASHBOARD_DATA_HAS_CHILDREN_KEY = "__dashboardHasChildren"
 export const DASHBOARD_DATA_PARENT_KEY = "__dashboardParentKey"
 export const DASHBOARD_DATA_OPTION_DEPTH_KEY = "__dashboardOptionDepth"
+export const DASHBOARD_DATA_OPTION_PATH_KEY = "__dashboardOptionPath"
 
 export const DASHBOARD_DATA_ICON_OPTIONS = [
   { value: "LayoutDashboard", Icon: LayoutDashboardIcon },
@@ -127,28 +128,101 @@ export function isValidDashboardDataHttpUrl(value: string) {
 }
 
 export function normalizeDashboardDataOptionRecords(data: unknown) {
-  function flatten(records: AdminRecord[], depth = 0): AdminRecord[] {
+  function flattenNested(
+    records: AdminRecord[],
+    depth = 0,
+    ancestors: string[] = []
+  ): AdminRecord[] {
     return records.flatMap((record) => {
       const children = Array.isArray(record.children)
         ? (record.children as AdminRecord[])
         : []
+      const label = String(record.name ?? record.title ?? record.id ?? "")
+      const path = [...ancestors, label]
       return [
-        { ...record, [DASHBOARD_DATA_OPTION_DEPTH_KEY]: depth },
-        ...flatten(children, depth + 1),
+        {
+          ...record,
+          [DASHBOARD_DATA_OPTION_DEPTH_KEY]: depth,
+          [DASHBOARD_DATA_OPTION_PATH_KEY]: path.join(" / "),
+        },
+        ...flattenNested(children, depth + 1, path),
       ]
     })
   }
 
-  if (Array.isArray(data)) return flatten(data as AdminRecord[])
-  if (
+  let records: AdminRecord[] = []
+  if (Array.isArray(data)) {
+    records = data as AdminRecord[]
+  } else if (
     data &&
     typeof data === "object" &&
     "results" in data &&
     Array.isArray((data as { results?: unknown }).results)
   ) {
-    return flatten((data as { results: AdminRecord[] }).results)
+    records = (data as { results: AdminRecord[] }).results
+  } else {
+    return []
   }
-  return []
+
+  const recordIds = new Set(
+    records
+      .map((record) => record.id)
+      .filter((id): id is string | number => id !== undefined && id !== null)
+      .map(String)
+  )
+  const hasNestedChildren = records.some(
+    (record) => Array.isArray(record.children) && record.children.length > 0
+  )
+  const hasParentLinks = records.some(
+    (record) =>
+      record.parentId !== undefined &&
+      record.parentId !== null &&
+      recordIds.has(String(record.parentId))
+  )
+
+  if (hasNestedChildren || !hasParentLinks) return flattenNested(records)
+
+  const childrenByParent = new Map<string, AdminRecord[]>()
+  records.forEach((record) => {
+    const parentKey = String(record.parentId ?? 0)
+    const children = childrenByParent.get(parentKey) || []
+    children.push(record)
+    childrenByParent.set(parentKey, children)
+  })
+
+  const visited = new Set<string>()
+  function flattenFlat(
+    record: AdminRecord,
+    depth: number,
+    ancestors: string[]
+  ): AdminRecord[] {
+    const recordKey = String(record.id)
+    if (visited.has(recordKey)) return []
+    visited.add(recordKey)
+    const label = String(record.name ?? record.title ?? record.id ?? "")
+    const path = [...ancestors, label]
+    const children = childrenByParent.get(recordKey) || []
+    return [
+      {
+        ...record,
+        [DASHBOARD_DATA_OPTION_DEPTH_KEY]: depth,
+        [DASHBOARD_DATA_OPTION_PATH_KEY]: path.join(" / "),
+      },
+      ...children.flatMap((child) => flattenFlat(child, depth + 1, path)),
+    ]
+  }
+
+  const roots = records.filter(
+    (record) =>
+      record.parentId === undefined ||
+      record.parentId === null ||
+      record.parentId === 0 ||
+      !recordIds.has(String(record.parentId))
+  )
+  return [
+    ...roots.flatMap((record) => flattenFlat(record, 0, [])),
+    ...records.flatMap((record) => flattenFlat(record, 0, [])),
+  ]
 }
 
 export function flattenDashboardDataTree(

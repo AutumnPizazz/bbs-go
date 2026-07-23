@@ -8,6 +8,8 @@ import type { PermissionCode } from "@/lib/auth/permissions.generated"
 export type DashboardDataOption = {
   label: string
   value: string | number
+  depth?: number
+  searchText?: string
 }
 
 export type DashboardDataOptionSource = {
