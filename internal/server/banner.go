@@ -34,10 +34,10 @@ func renderBanner(cfg *config.Config, env string) string {
 :: BBS-GO ::  https://bbs-go.com
 
 Environment : %s
-Port        : %d
+API Port    : %d
 Language    : %s
 Installed   : %t
-Address     : http://127.0.0.1:%d
+API Address : http://127.0.0.1:%d
 
 `, env, cfg.Port, cfg.Language, cfg.Installed, cfg.Port)
 }
