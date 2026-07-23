@@ -106,6 +106,10 @@ const dashboardSelect = readFileSync(
   resolve(dashboardComponentsDir, "dashboard-select.tsx"),
   "utf8"
 )
+const dashboardDialog = readFileSync(
+  resolve(dashboardComponentsDir, "dashboard-dialog.tsx"),
+  "utf8"
+)
 const dashboardDataUtils = readFileSync(
   resolve(dashboardDataDir, "dashboard-data-utils.tsx"),
   "utf8"
@@ -152,6 +156,11 @@ assert.match(
   dashboardSelect,
   /PopoverPrimitive\.Portal\s+container=\{portalContainer \?\? undefined\}/,
   "dashboard selectors should portal inside the active dialog when available"
+)
+assert.match(
+  dashboardDialog,
+  /max-h-\[calc\(100vh-2rem\)\][\s\S]*?overflow-visible/,
+  "dashboard dialogs should allow selector popovers to overflow the dialog frame"
 )
 assert.match(
   dashboardDataUtils,
