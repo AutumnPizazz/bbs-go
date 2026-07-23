@@ -6,7 +6,7 @@ import { Trash2 } from "lucide-react"
 
 import { TagInput } from "@/components/common/tag-input"
 import { ContentEditor } from "@/components/editor/content-editor"
-import { CategoryQuickSelector } from "@/components/topic/category-selector"
+import { CategorySelector } from "@/components/topic/category-selector"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { apiFetch } from "@/lib/api/client"
@@ -236,7 +236,7 @@ export function TopicEditForm({
           <div className="form-title-name">{t("pages.topic.edit.title")}</div>
         </div>
         <div className="field">
-          <CategoryQuickSelector
+          <CategorySelector
             value={0}
             categories={availableNodes}
             onChange={(categoryId) => updateForm({ categoryId })}
@@ -307,7 +307,7 @@ export function TopicEditForm({
       </div>
 
       <div className="field">
-        <CategoryQuickSelector
+        <CategorySelector
           value={effectiveCategoryId}
           categories={availableNodes}
           onChange={(categoryId) => updateForm({ categoryId })}

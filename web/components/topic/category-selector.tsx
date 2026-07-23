@@ -16,9 +16,17 @@ type CategoryOption = Category & {
   level: number
   parentName: string
   parentId: number
+  ancestorIds: number[]
+  pathNames: string[]
 }
 
-function buildCategoryOptions(categories: Category[], level = 1, parent: Category | null = null): CategoryOption[] {
+function buildCategoryOptions(
+  categories: Category[],
+  level = 1,
+  parent: Category | null = null,
+  ancestorIds: number[] = [],
+  pathNames: string[] = []
+): CategoryOption[] {
   if (!Array.isArray(categories) || categories.length === 0) {
     return []
   }
@@ -29,8 +37,19 @@ function buildCategoryOptions(categories: Category[], level = 1, parent: Categor
       level,
       parentName: parent?.name || "",
       parentId: parent?.id ? Number(parent.id) : 0,
+      ancestorIds,
+      pathNames: [...pathNames, category.name],
     }
-    return [current, ...buildCategoryOptions(category.children || [], level + 1, category)]
+    return [
+      current,
+      ...buildCategoryOptions(
+        category.children || [],
+        level + 1,
+        category,
+        [...ancestorIds, Number(category.id)],
+        [...pathNames, category.name]
+      ),
+    ]
   })
 }
 
@@ -38,10 +57,7 @@ function formatCategoryLabel(category?: CategoryOption | null) {
   if (!category) {
     return ""
   }
-  if (category.level === 2 && category.parentName) {
-    return `${category.parentName} / ${category.name}`
-  }
-  return category.name
+  return category.pathNames.join(" / ")
 }
 
 export function CategorySelector({
@@ -64,6 +80,9 @@ export function CategorySelector({
   const { t } = useI18n()
   const [open, setOpen] = React.useState(false)
   const [keyword, setKeyword] = React.useState("")
+  const [expandedIds, setExpandedIds] = React.useState<Set<number>>(
+    () => new Set()
+  )
   const listRef = React.useRef<HTMLDivElement>(null)
   const storageKey = "bbsgo-recent-category-ids"
   const maxRecentCount = 5
@@ -83,22 +102,52 @@ export function CategorySelector({
     }
   })
 
-  const categoryList = React.useMemo(() => buildCategoryOptions(Array.isArray(categories) ? categories : []), [categories])
-  const selectedCategory = categoryList.find((category) => Number(category.id) === Number(value))
-  const triggerText = triggerLabel || formatCategoryLabel(selectedCategory) || t("pages.topic.categorySelector.choose")
-  const triggerClass = triggerFullWidth ? "h-10 w-full justify-between px-3" : "h-6 justify-between px-3"
-
+  const categoryList = React.useMemo(
+    () => buildCategoryOptions(Array.isArray(categories) ? categories : []),
+    [categories]
+  )
+  const parentIds = React.useMemo(
+    () =>
+      new Set(
+        categoryList
+          .filter((category) => category.parentId > 0)
+          .map((category) => category.parentId)
+      ),
+    [categoryList]
+  )
+  const selectedCategory = categoryList.find(
+    (category) => Number(category.id) === Number(value)
+  )
+  const triggerText =
+    triggerLabel ||
+    formatCategoryLabel(selectedCategory) ||
+    t("pages.topic.categorySelector.choose")
+  const triggerClass = triggerFullWidth
+    ? "h-10 w-full justify-between px-3"
+    : "h-6 justify-between px-3"
+  const searching = keyword.trim().length > 0
   const filteredNodes = React.useMemo(() => {
     const query = keyword.trim().toLowerCase()
     if (!query) {
-      return categoryList
+      return categoryList.filter(
+        (category) =>
+          category.ancestorIds.length === 0 ||
+          category.ancestorIds.every((id) => expandedIds.has(id))
+      )
     }
-    return categoryList.filter((category) => {
-      const name = String(category.name || "").toLowerCase()
-      const parentName = String(category.parentName || "").toLowerCase()
-      return name.includes(query) || parentName.includes(query)
+    const matchingIds = new Set<number>()
+    categoryList.forEach((category) => {
+      if (
+        category.pathNames.some((name) =>
+          String(name || "").toLowerCase().includes(query)
+        )
+      ) {
+        matchingIds.add(Number(category.id))
+        category.ancestorIds.forEach((id) => matchingIds.add(id))
+      }
     })
-  }, [keyword, categoryList])
+    return categoryList.filter((category) => matchingIds.has(Number(category.id)))
+  }, [keyword, categoryList, expandedIds])
 
   const recentNodes = React.useMemo(() => {
     if (!recentCategoryIds.length) {
@@ -118,6 +167,19 @@ export function CategorySelector({
     })
   }, [open])
 
+  React.useEffect(() => {
+    if (!open) return
+    const selected = categoryList.find(
+      (category) => Number(category.id) === Number(value)
+    )
+    if (!selected?.ancestorIds.length) return
+    setExpandedIds((current) => {
+      const next = new Set(current)
+      selected.ancestorIds.forEach((id) => next.add(id))
+      return next
+    })
+  }, [open, value, categoryList])
+
   function pushRecentNode(id: number) {
     const nextIds = recentCategoryIds.filter((item) => Number(item) !== Number(id))
     nextIds.unshift(Number(id))
@@ -130,6 +192,15 @@ export function CategorySelector({
     onChange(Number(category.id))
     pushRecentNode(Number(category.id))
     setOpen(false)
+  }
+
+  function toggleExpanded(categoryId: number) {
+    setExpandedIds((current) => {
+      const next = new Set(current)
+      if (next.has(categoryId)) next.delete(categoryId)
+      else next.add(categoryId)
+      return next
+    })
   }
 
   function onOpenChange(visible: boolean) {
@@ -181,31 +252,59 @@ export function CategorySelector({
 
               <ScrollArea className="h-72 rounded-md border">
                 <div ref={listRef} className="flex flex-col gap-1 p-2">
-                  {filteredNodes.map((node) => (
-                    <button
-                      key={node.id}
-                      type="button"
-                      data-node-id={node.id}
-                      data-selected={Number(value) === Number(node.id)}
-                      className={cn(
-                        "flex w-full items-center justify-between gap-3 rounded-lg px-3 py-1.5 text-left text-sm transition-colors hover:bg-muted/60",
-                        Number(value) === Number(node.id) && "bg-muted text-primary",
-                        node.level === 1 && "font-medium text-foreground",
-                        node.level === 2 && "pl-7 text-muted-foreground"
-                      )}
-                      onClick={() => selectCategory(node)}
-                    >
-                      <span className="flex min-w-0 flex-1 items-center">
-                        <span className="flex min-w-0 items-center gap-2">
-                          <span className={cn("truncate leading-5", node.level === 2 && "text-foreground/90")}>{node.name}</span>
-                          {node.level === 2 && node.parentName ? (
-                            <span className="truncate text-[11px] leading-4 font-normal text-muted-foreground">/ {node.parentName}</span>
+                  {filteredNodes.map((node) => {
+                    const hasChildren = parentIds.has(Number(node.id))
+                    const expanded = searching || expandedIds.has(Number(node.id))
+                    return (
+                      <div
+                        key={node.id}
+                        className="flex min-w-0 items-center gap-1"
+                        style={{ paddingLeft: `${Math.max(node.level - 1, 0) * 1.25}rem` }}
+                      >
+                        {hasChildren && !searching ? (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-xs"
+                            aria-label={t(
+                              expanded
+                                ? "pages.topic.categorySelector.collapse"
+                                : "pages.topic.categorySelector.expand"
+                            )}
+                            aria-expanded={expanded}
+                            onClick={() => toggleExpanded(Number(node.id))}
+                          >
+                            <ChevronRight
+                              className={cn("transition-transform", expanded && "rotate-90")}
+                            />
+                          </Button>
+                        ) : hasChildren ? (
+                          <span className="flex size-6 shrink-0 items-center justify-center" aria-hidden="true">
+                            <ChevronRight className="h-3 w-3 rotate-90 text-muted-foreground" />
+                          </span>
+                        ) : (
+                          <span className="size-6 shrink-0" aria-hidden="true" />
+                        )}
+                        <button
+                          type="button"
+                          data-node-id={node.id}
+                          data-selected={Number(value) === Number(node.id)}
+                          className={cn(
+                            "flex min-w-0 flex-1 items-center justify-between gap-3 rounded-lg px-3 py-1.5 text-left text-sm transition-colors hover:bg-muted/60",
+                            Number(value) === Number(node.id) && "bg-muted text-primary",
+                            node.level === 1 && "font-medium text-foreground",
+                            node.level > 1 && "text-muted-foreground"
+                          )}
+                          onClick={() => selectCategory(node)}
+                        >
+                          <span className="truncate leading-5">{node.name}</span>
+                          {Number(value) === Number(node.id) ? (
+                            <Check className="ml-2 h-4 w-4 shrink-0" />
                           ) : null}
-                        </span>
-                      </span>
-                      {Number(value) === Number(node.id) ? <Check className="ml-2 h-4 w-4 shrink-0" /> : null}
-                    </button>
-                  ))}
+                        </button>
+                      </div>
+                    )
+                  })}
                   {!filteredNodes.length ? (
                     <div className="px-2 py-6 text-center text-sm text-muted-foreground">
                       {t("pages.topic.categorySelector.empty")}

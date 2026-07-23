@@ -1088,6 +1088,8 @@ const zhCN = {
         searchPlaceholder: "搜索分类",
         recent: "最近使用",
         empty: "没有匹配的分类",
+        expand: "展开子分类",
+        collapse: "收起子分类",
       },
       detail: {
         publishedAt: "发布于",

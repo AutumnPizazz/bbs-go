@@ -14,7 +14,7 @@ import {
   type ConfirmDialogState,
 } from "@/components/common/confirm-dialog"
 import { ContentEditor } from "@/components/editor/content-editor"
-import { CategoryQuickSelector } from "@/components/topic/category-selector"
+import { CategorySelector } from "@/components/topic/category-selector"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -654,7 +654,7 @@ export function TopicCreateForm({
           <div className="form-title-name">{titleForType(form.type, t)}</div>
         </div>
         <div className="field">
-          <CategoryQuickSelector
+          <CategorySelector
             value={0}
             categories={availableNodes}
             onChange={(categoryId) => updateForm({ categoryId })}
@@ -705,7 +705,7 @@ export function TopicCreateForm({
         </div>
 
         <div className="field">
-          <CategoryQuickSelector
+          <CategorySelector
             value={effectiveCategoryId}
             categories={availableNodes}
             onChange={(categoryId) => updateForm({ categoryId })}

@@ -1103,6 +1103,8 @@ const enUS = {
         searchPlaceholder: "Search categories",
         recent: "Recently used",
         empty: "No matching categories",
+        expand: "Expand subcategories",
+        collapse: "Collapse subcategories",
       },
       detail: {
         publishedAt: "Published at",
