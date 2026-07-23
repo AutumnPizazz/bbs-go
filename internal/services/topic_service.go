@@ -153,10 +153,7 @@ func (s *topicService) Edit(userId, topicId int64, form req.EditTopicReq) error 
 	if !ContentAccessService.CanAccessTopic(viewer, topic) || !ContentAccessService.CanWriteCategory(viewer, form.CategoryId) {
 		return errs.ContentAccessDenied()
 	}
-	if !category.Type.Supports(topic.Type) {
-		return errors.New(locales.Get("topic.category_type_mismatch"))
-	}
-	if topic.Type == constants.TopicTypeTopic && form.AttachmentIds == nil && form.CategoryId != topic.CategoryId {
+	if form.AttachmentIds == nil && form.CategoryId != topic.CategoryId {
 		if err := AttachmentService.ValidateTopicAttachments(topicId, form.CategoryId); err != nil {
 			return err
 		}

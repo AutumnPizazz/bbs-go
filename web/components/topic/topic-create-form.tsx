@@ -37,7 +37,6 @@ import { formatDate } from "@/lib/format"
 import {
   findCategory,
   hasCategory,
-  filterCategoryTree,
 } from "@/lib/categories"
 import { useToastActions } from "@/lib/toast"
 
@@ -72,11 +71,6 @@ function titleForType(type: number, t: ReturnType<typeof useI18n>["t"]) {
 function publishLabelForType(type: number, t: ReturnType<typeof useI18n>["t"]) {
   if (type === 2) return t("pages.topic.create.qaBtn")
   return t("pages.topic.create.postBtn")
-}
-
-function categoryTypeMatches(topicType: number) {
-  return (node: Category) =>
-    topicType === 2 ? node.type === "qa" : node.type !== "qa"
 }
 
 function createInitialForm({
@@ -505,10 +499,7 @@ export function TopicCreateForm({
     })
   )
 
-  const availableNodes = React.useMemo(
-    () => filterCategoryTree(categories, categoryTypeMatches(form.type)),
-    [form.type, categories]
-  )
+  const availableNodes = categories
   const effectiveCategoryId = hasCategory(availableNodes, form.categoryId)
     ? form.categoryId
     : 0
@@ -581,8 +572,7 @@ export function TopicCreateForm({
         body: {
           ...form,
           categoryId: effectiveCategoryId,
-          attachmentIds:
-            form.type === 0 ? attachmentList.map((item) => item.id) : [],
+          attachmentIds: attachmentList.map((item) => item.id),
           vote: form.vote
             ? {
                 ...form.vote,
@@ -761,7 +751,7 @@ export function TopicCreateForm({
           />
         </div>
 
-        {form.type === 0 && effectiveAttachmentConfig?.enabled ? (
+        {effectiveAttachmentConfig?.enabled ? (
           <div className="field">
             <TopicAttachmentField
               value={attachmentList}

@@ -21,10 +21,13 @@ func migrate_topic_qa_init() error {
 			return err
 		}
 
-		if err := tx.Model(&models.Category{}).
-			Where("type = '' OR type IS NULL").
-			Update("type", constants.CategoryTypeNormal).Error; err != nil {
-			return err
+		// Older databases had a category type column. New installations do not.
+		if tx.Migrator().HasColumn("t_category", "type") {
+			if err := tx.Table("t_category").
+				Where("type = '' OR type IS NULL").
+				Update("type", "normal").Error; err != nil {
+				return err
+			}
 		}
 
 		return nil

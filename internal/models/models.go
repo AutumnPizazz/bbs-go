@@ -190,19 +190,18 @@ type Favorite struct {
 // Category 话题节点（支持一级 parent_id=0 / 二级 parent_id>0）
 type Category struct {
 	Model
-	ParentId                   int64                  `gorm:"not null;default:0;index:idx_category_parent_id" json:"parentId" form:"parentId"`            // 父节点ID，0=一级
-	Name                       string                 `gorm:"size:32;unique" json:"name" form:"name"`                                                     // 名称（一级全局唯一；二级同父下唯一，应用层校验）
-	Type                       constants.CategoryType `gorm:"size:16;not null;default:normal;index:idx_category_type" json:"type" form:"type"`            // 节点类型：normal/qa
-	Description                string                 `gorm:"size:1024" json:"description" form:"description"`                                            // 描述
-	Logo                       string                 `gorm:"size:1024" json:"logo" form:"logo"`                                                          // 图标
-	SortNo                     int                    `gorm:"type:int;index:idx_category_sort_no" json:"sortNo" form:"sortNo"`                            // 排序编号
-	Status                     int                    `gorm:"type:int;not null" json:"status" form:"status"`                                              // 状态
-	AttachmentPolicyConfigured bool                   `gorm:"not null;default:false" json:"attachmentPolicyConfigured" form:"attachmentPolicyConfigured"` // 是否覆盖父节点/默认策略
-	AttachmentEnabled          bool                   `gorm:"not null;default:true" json:"attachmentEnabled" form:"attachmentEnabled"`                    // 节点是否允许附件
-	AttachmentAllowedTypes     string                 `gorm:"type:text" json:"attachmentAllowedTypes" form:"attachmentAllowedTypes"`                      // 允许的扩展名，逗号或空格分隔，* 表示不限制
-	AttachmentMaxSizeMB        int                    `gorm:"type:int;not null;default:0" json:"attachmentMaxSizeMB" form:"attachmentMaxSizeMB"`          // 单个附件大小，0 表示不限制
-	AttachmentMaxCount         int                    `gorm:"type:int;not null;default:0" json:"attachmentMaxCount" form:"attachmentMaxCount"`            // 每篇帖子附件数量，0 表示不限制
-	CreateTime                 int64                  `json:"createTime" form:"createTime"`                                                               // 创建时间
+	ParentId                   int64  `gorm:"not null;default:0;index:idx_category_parent_id" json:"parentId" form:"parentId"`            // 父节点ID，0=一级
+	Name                       string `gorm:"size:32;unique" json:"name" form:"name"`                                                     // 名称（一级全局唯一；二级同父下唯一，应用层校验）
+	Description                string `gorm:"size:1024" json:"description" form:"description"`                                            // 描述
+	Logo                       string `gorm:"size:1024" json:"logo" form:"logo"`                                                          // 图标
+	SortNo                     int    `gorm:"type:int;index:idx_category_sort_no" json:"sortNo" form:"sortNo"`                            // 排序编号
+	Status                     int    `gorm:"type:int;not null" json:"status" form:"status"`                                              // 状态
+	AttachmentPolicyConfigured bool   `gorm:"not null;default:false" json:"attachmentPolicyConfigured" form:"attachmentPolicyConfigured"` // 是否覆盖父节点/默认策略
+	AttachmentEnabled          bool   `gorm:"not null;default:true" json:"attachmentEnabled" form:"attachmentEnabled"`                    // 节点是否允许附件
+	AttachmentAllowedTypes     string `gorm:"type:text" json:"attachmentAllowedTypes" form:"attachmentAllowedTypes"`                      // 允许的扩展名，逗号或空格分隔，* 表示不限制
+	AttachmentMaxSizeMB        int    `gorm:"type:int;not null;default:0" json:"attachmentMaxSizeMB" form:"attachmentMaxSizeMB"`          // 单个附件大小，0 表示不限制
+	AttachmentMaxCount         int    `gorm:"type:int;not null;default:0" json:"attachmentMaxCount" form:"attachmentMaxCount"`            // 每篇帖子附件数量，0 表示不限制
+	CreateTime                 int64  `json:"createTime" form:"createTime"`                                                               // 创建时间
 }
 
 // 话题节点

@@ -19,7 +19,6 @@ import type { TopicEditData } from "@/lib/api/topics"
 import { useI18n } from "@/lib/i18n/provider"
 import {
   findCategory,
-  filterCategoryTree,
   hasCategory,
 } from "@/lib/categories"
 import { msg, useToastActions } from "@/lib/toast"
@@ -33,11 +32,6 @@ type TopicEditFormState = {
   contentType: "html" | "markdown"
   hideContent: string
   tags: string[]
-}
-
-function categoryTypeMatches(topicType: number) {
-  return (node: Category) =>
-    topicType === 2 ? node.type === "qa" : node.type !== "qa"
 }
 
 function normalizeEditData(topic: TopicEditData): TopicEditFormState {
@@ -206,10 +200,7 @@ export function TopicEditForm({
   const [form, setForm] = React.useState<TopicEditFormState>(() =>
     normalizeEditData(topic)
   )
-  const availableNodes = React.useMemo(
-    () => filterCategoryTree(categories, categoryTypeMatches(form.type)),
-    [form.type, categories]
-  )
+  const availableNodes = categories
   const effectiveCategoryId = hasCategory(availableNodes, form.categoryId)
     ? form.categoryId
     : 0
@@ -294,8 +285,7 @@ export function TopicEditForm({
           content: form.content,
           hideContent: form.hideContent,
           tags: form.tags,
-          attachmentIds:
-            form.type === 0 ? attachmentList.map((item) => item.id) : [],
+          attachmentIds: attachmentList.map((item) => item.id),
         },
       })
       msg({
@@ -362,7 +352,7 @@ export function TopicEditForm({
         />
       </div>
 
-      {form.type === 0 && effectiveAttachmentConfig?.enabled ? (
+      {effectiveAttachmentConfig?.enabled ? (
         <div className="field">
           <TopicAttachmentField
             value={attachmentList}

@@ -74,13 +74,7 @@ func CategoryNavs(ctx *gin.Context) {
 
 func Categories(ctx *gin.Context) {
 	user := common.GetCurrentUser(ctx)
-	topicType := constants.TopicType(params.FormValueIntDefault(ctx, "type", -1))
-	var categoryList []models.Category
-	if topicType >= 0 {
-		categoryList = services.ContentAccessService.FilterCategoryTree(user, services.CategoryService.GetCategoriesByTopicType(topicType))
-	} else {
-		categoryList = services.ContentAccessService.FilterCategoryTree(user, services.CategoryService.GetCategories())
-	}
+	categoryList := services.ContentAccessService.FilterCategoryTree(user, services.CategoryService.GetCategories())
 	categories := render.BuildCategoryResponseTree(0, categoryList)
 	ginx.WriteJSON(ctx, categories)
 

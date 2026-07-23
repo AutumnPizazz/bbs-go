@@ -150,13 +150,6 @@ export function reportTargetCell(
   )
 }
 
-export function categoryTypeOptionsFor(t: TFunction) {
-  return [
-    { label: t("dashboard.categoryTypes.normal"), value: "normal" },
-    { label: t("dashboard.categoryTypes.qa"), value: "qa" },
-  ]
-}
-
 export function codeBlock(value: unknown) {
   const text =
     typeof value === "string"

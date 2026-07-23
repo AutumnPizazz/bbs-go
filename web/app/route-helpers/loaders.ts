@@ -64,9 +64,6 @@ async function getCategoryFilters({
 
   const filters = getTopicFilters(request)
   const category = await loadCategory(request, categoryId)
-  if (category?.type === "qa") {
-    return { qaStatus: filters.qaStatus }
-  }
   if (category) {
     return { sort: filters.sort || "latestPublish" }
   }

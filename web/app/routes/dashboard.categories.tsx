@@ -33,12 +33,6 @@ export default function DashboardCategoriesRoute() {
     filters: [
       { name: "name", label: dashboardData.label(t, "name") },
       {
-        name: "type",
-        label: dashboardData.label(t, "type"),
-        type: "select",
-        options: dashboardData.categoryTypeOptionsFor(t),
-      },
-      {
         name: "categoryId",
         label: dashboardData.label(t, "category"),
         type: "select",
@@ -56,14 +50,6 @@ export default function DashboardCategoriesRoute() {
     columns: [
       { key: "id", label: dashboardData.label(t, "id") },
       { key: "name", label: dashboardData.label(t, "name") },
-      {
-        key: "type",
-        label: dashboardData.label(t, "type"),
-        render: (record) =>
-          record.type === "qa"
-            ? t("dashboard.categoryTypes.qa")
-            : t("dashboard.categoryTypes.normal"),
-      },
       {
         key: "description",
         label: dashboardData.label(t, "description"),
@@ -97,13 +83,6 @@ export default function DashboardCategoriesRoute() {
         optionsEndpoint: "/api/admin/category/options",
         optionLabel: dashboardData.treeOptionLabel,
         optionValue: (record) => record.id as number,
-      },
-      {
-        name: "type",
-        label: dashboardData.label(t, "type"),
-        type: "select",
-        required: true,
-        options: dashboardData.categoryTypeOptionsFor(t),
       },
       { name: "name", label: dashboardData.label(t, "name"), required: true },
       {

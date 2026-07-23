@@ -103,6 +103,12 @@ for (const sourcePath of [
 const categoriesRoute = readFileSync(resolve(routesDir, "dashboard.categories.tsx"), "utf8")
 
 assert.equal(
+  /(?:name|key):\s*"type"/.test(categoriesRoute),
+  false,
+  "dashboard.categories.tsx should not expose the retired category type"
+)
+
+assert.equal(
   /name:\s*"parentId"[\s\S]*?type:\s*"tree-select"/.test(categoriesRoute),
   false,
   "dashboard.categories.tsx parent category form field should use DashboardSelect via type select"

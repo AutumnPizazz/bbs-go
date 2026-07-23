@@ -27,7 +27,6 @@ function resolveCategoryId(id: string) {
   return Number.isNaN(parsed) ? 0 : parsed
 }
 
-const qaStatusOptions = ["", "unsolved", "solved"]
 const sortOptions = ["latestPublish", "latestReply"]
 
 type TopicListInitialData = {
@@ -133,31 +132,22 @@ export function NodeTopicClientPage({
     categoryId > 0 && currentRootNode?.children?.length
       ? currentRootNode.children
       : []
-  const isQaNode = categoryId > 0 && currentNode?.type === "qa"
-  const isNormalNode = categoryId > 0 && currentNode && currentNode.type !== "qa"
-  const qaStatusValue = searchParams.get("qaStatus") || ""
-  const qaStatus = qaStatusOptions.includes(qaStatusValue) ? qaStatusValue : ""
+  const hasCurrentNode = categoryId > 0 && Boolean(currentNode)
   const sortValue = searchParams.get("sort") || ""
   const normalSort = sortOptions.includes(sortValue) ? sortValue : "latestPublish"
-  const currentFilters = isQaNode
+  const currentFilters = hasCurrentNode
     ? [
-        { value: "", label: t("pages.qa.filterAll") },
-        { value: "unsolved", label: t("pages.qa.filterUnsolved") },
-        { value: "solved", label: t("pages.qa.filterSolved") },
+        {
+          value: "latestPublish",
+          label: t("pages.topics.filterLatestPublish"),
+        },
+        {
+          value: "latestReply",
+          label: t("pages.topics.filterLatestReply"),
+        },
       ]
-    : isNormalNode
-      ? [
-          {
-            value: "latestPublish",
-            label: t("pages.topics.filterLatestPublish"),
-          },
-          {
-            value: "latestReply",
-            label: t("pages.topics.filterLatestReply"),
-          },
-        ]
-      : []
-  const currentFilterValue = isQaNode ? qaStatus : isNormalNode ? normalSort : ""
+    : []
+  const currentFilterValue = hasCurrentNode ? normalSort : ""
   const currentFilterLabel =
     currentFilters.find((item) => item.value === currentFilterValue)?.label || ""
   useDocumentTitle(currentNode?.name, t("pages.topics.title"))
@@ -168,14 +158,7 @@ export function NodeTopicClientPage({
 
   function switchFilter(value: string) {
     const next = new URLSearchParams(searchParams)
-    if (isQaNode) {
-      next.delete("sort")
-      if (value) {
-        next.set("qaStatus", value)
-      } else {
-        next.delete("qaStatus")
-      }
-    } else if (isNormalNode) {
+    if (hasCurrentNode) {
       next.delete("qaStatus")
       next.set("sort", value)
     }
@@ -257,15 +240,14 @@ export function NodeTopicClientPage({
               initialHasMore={initialData?.topics?.hasMore || false}
               initialLoad={!initialData?.topics}
               autoLoadOnScroll
-              resetKey={`category:${categoryId}:${currentNode?.type || ""}:${currentFilterValue}`}
+              resetKey={`category:${categoryId}:${currentFilterValue}`}
               labels={labels}
               loadPage={({ cursor }) =>
                 apiFetch<PageData<Topic>>("/api/topic/topics", {
                   params: {
                     categoryId,
                     cursor,
-                    ...(isQaNode && qaStatus ? { qaStatus } : {}),
-                    ...(isNormalNode ? { sort: normalSort } : {}),
+                    ...(hasCurrentNode ? { sort: normalSort } : {}),
                   },
                 })
               }

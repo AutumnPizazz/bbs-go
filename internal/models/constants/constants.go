@@ -111,13 +111,6 @@ const (
 	TopicTypeQA    TopicType = 2 // 问答
 )
 
-type CategoryType string
-
-const (
-	CategoryTypeNormal CategoryType = "normal"
-	CategoryTypeQA     CategoryType = "qa"
-)
-
 type QaStatus string
 
 const (
@@ -127,19 +120,6 @@ const (
 
 func IsPostTopicType(topicType TopicType) bool {
 	return topicType == TopicTypeTopic || topicType == TopicTypeQA
-}
-
-func (t CategoryType) Supports(topicType TopicType) bool {
-	categoryType := t
-	if categoryType == "" {
-		categoryType = CategoryTypeNormal
-	}
-	switch categoryType {
-	case CategoryTypeQA:
-		return topicType == TopicTypeQA
-	default:
-		return topicType == TopicTypeTopic
-	}
 }
 
 type VoteType int

@@ -213,20 +213,6 @@ func (s *categoryService) GetCategories() []models.Category {
 	return repositories.CategoryRepository.Find(sqls.DB(), sqls.NewCnd().Eq("status", constants.StatusOk).Asc("sort_no").Desc("id"))
 }
 
-func (s *categoryService) GetCategoriesByType(categoryType constants.CategoryType) []models.Category {
-	return repositories.CategoryRepository.Find(sqls.DB(), sqls.NewCnd().
-		Eq("status", constants.StatusOk).
-		Eq("type", categoryType).
-		Asc("sort_no").Desc("id"))
-}
-
-func (s *categoryService) GetCategoriesByTopicType(topicType constants.TopicType) []models.Category {
-	if topicType == constants.TopicTypeQA {
-		return s.GetCategoriesByType(constants.CategoryTypeQA)
-	}
-	return s.GetCategoriesByType(constants.CategoryTypeNormal)
-}
-
 func (s *categoryService) GetNextSortNo() int {
 	if max := s.FindOne(sqls.NewCnd().Eq("status", constants.StatusOk).Desc("sort_no")); max != nil {
 		return max.SortNo + 1
@@ -238,22 +224,6 @@ func (s *categoryService) UpdateSort(ids []int64) error {
 	return sqls.DB().Transaction(func(tx *gorm.DB) error {
 		for i, id := range ids {
 			if err := repositories.CategoryRepository.UpdateColumn(tx, id, "sort_no", i); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-}
-
-// UpdateChildrenType 将父节点下所有子节点的 type 更新为指定值（父节点编辑类型时联动）
-func (s *categoryService) UpdateChildrenType(parentId int64, categoryType constants.CategoryType) error {
-	children := s.GetChildren(parentId)
-	if len(children) == 0 {
-		return nil
-	}
-	return sqls.DB().Transaction(func(tx *gorm.DB) error {
-		for _, c := range children {
-			if err := repositories.CategoryRepository.UpdateColumn(tx, c.Id, "type", categoryType); err != nil {
 				return err
 			}
 		}

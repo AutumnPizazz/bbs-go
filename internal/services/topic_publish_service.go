@@ -163,9 +163,6 @@ func (s topicPublishService) checkParams(userId int64, form req.CreateTopicReq) 
 	if category == nil || category.Status != constants.StatusOk {
 		return errors.New(locales.Get("topic.category_not_found"))
 	}
-	if !category.Type.Supports(form.Type) {
-		return errors.New(locales.Get("topic.category_type_mismatch"))
-	}
 	if form.Type == constants.TopicTypeQA {
 		form.Vote = nil
 	}

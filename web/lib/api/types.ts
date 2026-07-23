@@ -45,7 +45,6 @@ export interface ImageInfo {
 export interface Category {
   id: number
   name: string
-  type?: "normal" | "qa" | string
   description?: string
   logo?: string
   parentId?: number

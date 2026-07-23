@@ -2,8 +2,6 @@ package admin
 
 import (
 	"bbs-go/internal/handlers/render"
-	"bbs-go/internal/models/constants"
-	"bbs-go/internal/pkg/locales"
 	"strconv"
 	"strings"
 
@@ -118,10 +116,6 @@ func CategoryList(ctx *gin.Context) {
 			Op:        params.Like,
 		},
 		params.QueryFilter{
-			ParamName: "type",
-			Op:        params.Eq,
-		},
-		params.QueryFilter{
 			ParamName: "status",
 			Op:        params.Eq,
 		},
@@ -143,17 +137,11 @@ func CategoryCreate(ctx *gin.Context) {
 	if t.ParentId < 0 {
 		t.ParentId = 0
 	}
-	// 子节点类型必须与父节点一致，直接取父节点的 type
 	if t.ParentId > 0 {
 		parent := services.CategoryService.Get(t.ParentId)
 		if parent == nil {
 			ginx.WriteJSON(ctx, ginx.ErrorMessage("parent category not found"))
 			return
-		}
-		t.Type = parent.Type
-	} else {
-		if t.Type == "" {
-			t.Type = constants.CategoryTypeNormal
 		}
 	}
 	if err := services.CategoryService.ValidateAttachmentPolicy(t); err != nil {
@@ -198,26 +186,10 @@ func CategoryUpdate(ctx *gin.Context) {
 		t.ParentId = 0
 	}
 
-	// 子节点类型必须与父节点一致，直接取父节点的 type，忽略表单传入
 	if t.ParentId > 0 {
 		parent := services.CategoryService.Get(t.ParentId)
 		if parent == nil {
 			ginx.WriteJSON(ctx, ginx.ErrorMessage("parent category not found"))
-			return
-		}
-		if t.Type != parent.Type {
-			ginx.WriteJSON(ctx, ginx.ErrorMessage(locales.Get("topic.category.child_type_must_match_parent")))
-			return
-		}
-		t.Type = parent.Type
-	} else {
-		// 一级节点：校验 type 必填，且编辑时联动更新所有子节点类型
-		if strings.TrimSpace(string(t.Type)) == "" {
-			ginx.WriteJSON(ctx, ginx.ErrorMessage("param: type required"))
-			return
-		}
-		if err := services.CategoryService.UpdateChildrenType(id, t.Type); err != nil {
-			ginx.WriteJSON(ctx, err)
 			return
 		}
 	}

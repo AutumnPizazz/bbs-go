@@ -230,10 +230,6 @@ const zhCN = {
       once: "一次性",
       daily: "每日",
     },
-    categoryTypes: {
-      normal: "话题",
-      qa: "问答",
-    },
     categoryAttachment: {
       inherit: "继承上级或默认配置",
       custom: "使用本节点配置",

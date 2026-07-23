@@ -230,10 +230,6 @@ const enUS = {
       once: "One-time",
       daily: "Daily",
     },
-    categoryTypes: {
-      normal: "Topic",
-      qa: "Q&A",
-    },
     categoryAttachment: {
       inherit: "Inherit parent or default policy",
       custom: "Use this category's policy",
