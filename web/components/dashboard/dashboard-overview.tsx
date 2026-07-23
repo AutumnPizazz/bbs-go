@@ -27,6 +27,10 @@ type OverviewMetricKey =
   | "totalTopics"
   | "todayUsers"
   | "todayTopics"
+  | "todayComments"
+  | "activeUsers"
+  | "forbiddenUsers"
+  | "failedTasks"
 
 type PendingKey =
   | "pendingReports"
@@ -102,6 +106,10 @@ function normalizeOverview(data: AdminRecord | null): OverviewData | null {
       totalTopics: toNumber(metrics.totalTopics),
       todayUsers: toNumber(metrics.todayUsers),
       todayTopics: toNumber(metrics.todayTopics),
+      todayComments: toNumber(metrics.todayComments),
+      activeUsers: toNumber(metrics.activeUsers),
+      forbiddenUsers: toNumber(metrics.forbiddenUsers),
+      failedTasks: toNumber(metrics.failedTasks),
     },
     pending: {
       pendingReports: toNumber(pending.pendingReports),
@@ -151,6 +159,10 @@ export function DashboardOverview() {
     { key: "totalTopics", icon: MessageSquareIcon },
     { key: "todayUsers", icon: UsersIcon },
     { key: "todayTopics", icon: GaugeIcon },
+    { key: "todayComments", icon: MessageSquareIcon },
+    { key: "activeUsers", icon: UsersIcon },
+    { key: "forbiddenUsers", icon: AlertCircleIcon },
+    { key: "failedTasks", icon: AlertCircleIcon },
   ]
 
   const pendingItems: Array<{
@@ -254,7 +266,7 @@ export function DashboardOverview() {
           </div>
 
           <div className="mt-6 grid gap-3 md:grid-cols-3">
-            {metricCards.slice(0, 3).map(({ key, icon: Icon }) => (
+            {metricCards.slice(0, 4).map(({ key, icon: Icon }) => (
               <div key={key} className="rounded-md border bg-background/45 p-3">
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-xs font-medium text-muted-foreground">
@@ -326,7 +338,7 @@ export function DashboardOverview() {
           )}
 
           <div className="mt-4 grid grid-cols-2 gap-3">
-            {metricCards.slice(3).map(({ key, icon: Icon }) => (
+            {metricCards.slice(4).map(({ key, icon: Icon }) => (
               <div key={key} className="rounded-md border bg-background/45 p-3">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Icon className="size-3.5" />

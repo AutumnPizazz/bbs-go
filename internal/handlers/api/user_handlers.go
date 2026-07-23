@@ -236,7 +236,7 @@ func UserMessages(ctx *gin.Context) {
 		cursor, _ = params.GetInt64(ctx, "cursor")
 	)
 
-	cnd := sqls.NewCnd().Eq("user_id", user.Id).Desc("id")
+	cnd := sqls.NewCnd().Eq("user_id", user.Id).Where("status <> ?", msg.StatusDeleted).Desc("id")
 	if cursor > 0 {
 		cnd.Lt("id", cursor)
 	}

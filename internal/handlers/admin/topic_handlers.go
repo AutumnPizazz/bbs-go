@@ -126,6 +126,9 @@ func TopicRecommend(ctx *gin.Context) {
 		ginx.WriteJSON(ctx, err)
 		return
 	}
+	if operator := common.GetCurrentUser(ctx); operator != nil {
+		services.OperateLogService.AddOperateLog(operator.Id, constants.OpTypeUpdate, constants.EntityTopic, id, "设置话题推荐", ctx.Request)
+	}
 	ginx.WriteJSON(ctx, nil)
 
 }
@@ -144,6 +147,9 @@ func TopicRemoveRecommend(ctx *gin.Context) {
 	if err != nil {
 		ginx.WriteJSON(ctx, err)
 		return
+	}
+	if operator := common.GetCurrentUser(ctx); operator != nil {
+		services.OperateLogService.AddOperateLog(operator.Id, constants.OpTypeUpdate, constants.EntityTopic, id, "取消话题推荐", ctx.Request)
 	}
 	ginx.WriteJSON(ctx, nil)
 
@@ -213,6 +219,9 @@ func TopicUndelete(ctx *gin.Context) {
 	if err != nil {
 		ginx.WriteJSON(ctx, err)
 		return
+	}
+	if operator := common.GetCurrentUser(ctx); operator != nil {
+		services.OperateLogService.AddOperateLog(operator.Id, constants.OpTypeUpdate, constants.EntityTopic, id, "恢复话题", ctx.Request)
 	}
 	ginx.WriteJSON(ctx, nil)
 
@@ -286,6 +295,9 @@ func TopicMarkSolved(ctx *gin.Context) {
 		ginx.WriteJSON(ctx, err)
 		return
 	}
+	if operator := common.GetCurrentUser(ctx); operator != nil {
+		services.OperateLogService.AddOperateLog(operator.Id, constants.OpTypeUpdate, constants.EntityTopic, id, "标记话题已解决", ctx.Request)
+	}
 	ginx.WriteJSON(ctx, nil)
 
 }
@@ -303,6 +315,9 @@ func TopicMarkUnsolved(ctx *gin.Context) {
 	if err := services.TopicService.ForceSetQaStatus(id, constants.QaStatusUnsolved); err != nil {
 		ginx.WriteJSON(ctx, err)
 		return
+	}
+	if operator := common.GetCurrentUser(ctx); operator != nil {
+		services.OperateLogService.AddOperateLog(operator.Id, constants.OpTypeUpdate, constants.EntityTopic, id, "取消话题已解决状态", ctx.Request)
 	}
 	ginx.WriteJSON(ctx, nil)
 

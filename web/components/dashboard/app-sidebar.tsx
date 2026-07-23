@@ -79,6 +79,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             permission: PERMISSIONS.DASHBOARD_TAG_VIEW,
           },
           {
+            title: t("dashboard.nav.attachments"),
+            url: "/dashboard/attachments",
+            permission: PERMISSIONS.DASHBOARD_ATTACHMENT_VIEW,
+          },
+          {
             title: t("dashboard.nav.votes"),
             url: "/dashboard/votes",
             permission: PERMISSIONS.DASHBOARD_VOTE_VIEW,
@@ -117,6 +122,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             title: t("dashboard.nav.favorites"),
             url: "/dashboard/favorites",
             permission: PERMISSIONS.DASHBOARD_FAVORITE_VIEW,
+          },
+          {
+            title: t("dashboard.nav.messages"),
+            url: "/dashboard/messages",
+            permission: PERMISSIONS.DASHBOARD_MESSAGE_VIEW,
           },
         ],
       },
@@ -162,6 +172,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             title: t("dashboard.nav.voteRecords"),
             url: "/dashboard/vote-records",
             permission: PERMISSIONS.DASHBOARD_VOTE_RECORD_VIEW,
+          },
+          {
+            title: t("dashboard.nav.health"),
+            url: "/dashboard/health",
+            permission: PERMISSIONS.DASHBOARD_HEALTH_VIEW,
           },
         ],
       },

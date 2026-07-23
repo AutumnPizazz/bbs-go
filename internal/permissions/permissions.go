@@ -116,6 +116,17 @@ var (
 	PermissionDictUpdate     = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.dict.update", GroupName: GroupSystem, SortNo: 1410, NameEn: "Update Dictionary Items", NameZh: "编辑字典项"}
 	PermissionDictDelete     = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.dict.delete", GroupName: GroupSystem, SortNo: 1420, NameEn: "Delete Dictionary Items", NameZh: "删除字典项"}
 	PermissionDictSort       = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.dict.sort", GroupName: GroupSystem, SortNo: 1430, NameEn: "Sort Dictionary Items", NameZh: "排序字典项"}
+
+	PermissionAttachmentView    = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.attachment.view", GroupName: GroupContent, SortNo: 1000, NameEn: "View Attachments", NameZh: "查看附件"}
+	PermissionAttachmentDelete  = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.attachment.delete", GroupName: GroupContent, SortNo: 1010, NameEn: "Delete Attachments", NameZh: "删除附件"}
+	PermissionAttachmentCleanup = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.attachment.cleanup", GroupName: GroupSystem, SortNo: 1440, NameEn: "Clean Up Orphan Attachments", NameZh: "清理孤儿附件"}
+
+	PermissionMessageView   = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.message.view", GroupName: GroupCommunity, SortNo: 820, NameEn: "View Messages", NameZh: "查看站内消息"}
+	PermissionMessageSend   = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.message.send", GroupName: GroupCommunity, SortNo: 830, NameEn: "Send Messages", NameZh: "发送站内消息"}
+	PermissionMessageDelete = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.message.delete", GroupName: GroupCommunity, SortNo: 840, NameEn: "Delete Messages", NameZh: "删除站内消息"}
+
+	PermissionHealthView = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.health.view", GroupName: GroupSystem, SortNo: 1450, NameEn: "View System Health", NameZh: "查看系统健康状态"}
+	PermissionTaskView   = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.task.view", GroupName: GroupSystem, SortNo: 1460, NameEn: "View Background Tasks", NameZh: "查看后台任务"}
 )
 
 var Permissions = []PermissionDefinition{
@@ -184,6 +195,14 @@ var Permissions = []PermissionDefinition{
 	PermissionDictUpdate,
 	PermissionDictDelete,
 	PermissionDictSort,
+	PermissionAttachmentView,
+	PermissionAttachmentDelete,
+	PermissionAttachmentCleanup,
+	PermissionMessageView,
+	PermissionMessageSend,
+	PermissionMessageDelete,
+	PermissionHealthView,
+	PermissionTaskView,
 }
 
 func FindByCode(code string) (PermissionDefinition, bool) {

@@ -235,6 +235,12 @@ func registerAdminRoutes(group *gin.RouterGroup) {
 	commonGroup := group.Group("/common")
 	commonGroup.GET("/overview", adminHandlers.CommonOverview)
 
+	healthGroup := group.Group("/health")
+	healthGroup.GET("", adminHandlers.Health)
+
+	taskGroup := group.Group("/tasks")
+	taskGroup.GET("/status", adminHandlers.TaskStatus)
+
 	commentGroup := group.Group("/comment")
 	commentGroup.POST("/list", adminHandlers.CommentList)
 	commentGroup.POST("/delete", adminHandlers.CommentRemove)
@@ -258,6 +264,19 @@ func registerAdminRoutes(group *gin.RouterGroup) {
 	tagGroup.GET("/autocomplete", adminHandlers.TagAutocomplete)
 	tagGroup.GET("/tags", adminHandlers.TagTags)
 	tagGroup.GET("/:id", adminHandlers.TagDetail)
+
+	attachmentGroup := group.Group("/attachment")
+	attachmentGroup.POST("/list", adminHandlers.AttachmentList)
+	attachmentGroup.POST("/delete", adminHandlers.AttachmentRemove)
+	attachmentGroup.POST("/cleanup-orphans", adminHandlers.AttachmentCleanupOrphans)
+	attachmentGroup.GET("/:id", adminHandlers.AttachmentDetail)
+
+	messageGroup := group.Group("/message")
+	messageGroup.POST("/list", adminHandlers.MessageList)
+	messageGroup.POST("/create", adminHandlers.MessageCreate)
+	messageGroup.POST("/update", adminHandlers.MessageUpdate)
+	messageGroup.POST("/delete", adminHandlers.MessageRemove)
+	messageGroup.GET("/:id", adminHandlers.MessageDetail)
 
 	favoriteGroup := group.Group("/favorite")
 	favoriteGroup.POST("/list", adminHandlers.FavoriteList)

@@ -15,6 +15,7 @@ import (
 	"bbs-go/internal/models/constants"
 	"bbs-go/internal/models/dto"
 	"bbs-go/internal/pkg/locales"
+	"bbs-go/internal/pkg/params"
 	"bbs-go/internal/pkg/uploader"
 	"bbs-go/internal/repositories"
 )
@@ -99,6 +100,34 @@ func (s *attachmentService) Get(id string) *models.Attachment {
 		return nil
 	}
 	return att
+}
+
+// GetAny is used by the management console so deleted records remain traceable.
+func (s *attachmentService) GetAny(id string) *models.Attachment {
+	return repositories.AttachmentRepository.Get(sqls.DB(), id)
+}
+
+func (s *attachmentService) FindPageByParams(queryParams *params.QueryParams) (list []models.Attachment, paging *sqls.Paging) {
+	return repositories.AttachmentRepository.FindPageByParams(sqls.DB(), queryParams)
+}
+
+// SoftDelete marks an attachment as deleted. The object is retained until a
+// storage-specific cleanup process can safely remove it.
+func (s *attachmentService) SoftDelete(id string) error {
+	return repositories.AttachmentRepository.Updates(sqls.DB(), id, map[string]interface{}{
+		"status":      constants.StatusDeleted,
+		"update_time": dates.NowTimestamp(),
+	})
+}
+
+// CleanupOrphans soft-deletes unbound uploads older than before. It deliberately
+// does not remove an object from storage because the uploader interface has no
+// portable delete operation yet.
+func (s *attachmentService) CleanupOrphans(before int64) (int64, error) {
+	result := sqls.DB().Model(&models.Attachment{}).
+		Where("topic_id = ? AND status = ? AND create_time < ?", 0, constants.StatusOk, before).
+		Updates(map[string]interface{}{"status": constants.StatusDeleted, "update_time": dates.NowTimestamp()})
+	return result.RowsAffected, result.Error
 }
 
 // ListByTopicId 按帖子查询正常状态的附件

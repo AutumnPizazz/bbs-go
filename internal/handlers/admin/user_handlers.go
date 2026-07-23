@@ -52,6 +52,7 @@ func userBuildUserItem(user *models.User, buildRoleIds bool) map[string]interfac
 }
 
 func UserSynccount(ctx *gin.Context) {
+	operator := common.GetCurrentUser(ctx)
 
 	go func() {
 		services.UserService.Scan(func(users []models.User) {
@@ -64,6 +65,9 @@ func UserSynccount(ctx *gin.Context) {
 			}
 		})
 	}()
+	if operator != nil {
+		services.OperateLogService.AddOperateLog(operator.Id, constants.OpTypeUpdate, constants.EntityUser, 0, "启动用户内容计数同步", ctx.Request)
+	}
 	ginx.WriteJSON(ctx, nil)
 
 }

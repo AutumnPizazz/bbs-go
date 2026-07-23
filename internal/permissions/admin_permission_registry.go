@@ -67,6 +67,11 @@ var (
 		{Method: "POST", Pattern: "/api/admin/dict/update_sort", Permissions: []PermissionDefinition{PermissionDictSort}},
 		{Method: "GET", Pattern: "/api/admin/dict/dicts", Permissions: []PermissionDefinition{PermissionDictView}},
 
+		{Method: "GET", Pattern: "/api/admin/attachment/*", Permissions: []PermissionDefinition{PermissionAttachmentView}},
+		{Method: "POST", Pattern: "/api/admin/attachment/list", Permissions: []PermissionDefinition{PermissionAttachmentView}},
+		{Method: "POST", Pattern: "/api/admin/attachment/delete", Permissions: []PermissionDefinition{PermissionAttachmentDelete}},
+		{Method: "POST", Pattern: "/api/admin/attachment/cleanup-orphans", Permissions: []PermissionDefinition{PermissionAttachmentCleanup}},
+
 		{Method: "GET", Pattern: "/api/admin/user/*", Permissions: []PermissionDefinition{PermissionUserView}},
 		{Method: "GET", Pattern: "/api/admin/user/synccount", Permissions: []PermissionDefinition{PermissionUserUpdate}},
 		{Method: "POST", Pattern: "/api/admin/user/list", Permissions: []PermissionDefinition{PermissionUserView}},
@@ -102,6 +107,13 @@ var (
 		{Method: "POST", Pattern: "/api/admin/user-report/action", Permissions: []PermissionDefinition{PermissionUserReportProcess}},
 		{Method: "GET", Pattern: "/api/admin/operate-log/*", Permissions: []PermissionDefinition{PermissionOperateLogView}},
 		{Method: "POST", Pattern: "/api/admin/operate-log/list", Permissions: []PermissionDefinition{PermissionOperateLogView}},
+		{Method: "GET", Pattern: "/api/admin/message/*", Permissions: []PermissionDefinition{PermissionMessageView}},
+		{Method: "POST", Pattern: "/api/admin/message/list", Permissions: []PermissionDefinition{PermissionMessageView}},
+		{Method: "POST", Pattern: "/api/admin/message/create", Permissions: []PermissionDefinition{PermissionMessageSend}},
+		{Method: "POST", Pattern: "/api/admin/message/update", Permissions: []PermissionDefinition{PermissionMessageSend}},
+		{Method: "POST", Pattern: "/api/admin/message/delete", Permissions: []PermissionDefinition{PermissionMessageDelete}},
+		{Method: "GET", Pattern: "/api/admin/health", Permissions: []PermissionDefinition{PermissionHealthView}},
+		{Method: "GET", Pattern: "/api/admin/tasks/**", Permissions: []PermissionDefinition{PermissionHealthView, PermissionTaskView}},
 
 		{Method: "GET", Pattern: "/api/admin/favorite/*", Permissions: []PermissionDefinition{PermissionFavoriteView}},
 		{Method: "POST", Pattern: "/api/admin/favorite/list", Permissions: []PermissionDefinition{PermissionFavoriteView}},

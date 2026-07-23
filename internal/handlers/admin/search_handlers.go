@@ -1,6 +1,8 @@
 package admin
 
 import (
+	"bbs-go/internal/models/constants"
+	"bbs-go/internal/pkg/common"
 	"bbs-go/internal/pkg/ginx"
 	"bbs-go/internal/services"
 
@@ -8,7 +10,12 @@ import (
 )
 
 func SearchReindex(ctx *gin.Context) {
-	status, _ := services.SearchReindexService.Start()
+	status, started := services.SearchReindexService.Start()
+	if started {
+		if operator := common.GetCurrentUser(ctx); operator != nil {
+			services.OperateLogService.AddOperateLog(operator.Id, constants.OpTypeUpdate, "searchReindex", 0, "启动搜索索引重建", ctx.Request)
+		}
+	}
 	ginx.WriteJSON(ctx, status)
 }
 

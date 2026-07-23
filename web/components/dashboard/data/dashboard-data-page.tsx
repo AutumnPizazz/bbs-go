@@ -79,9 +79,11 @@ export function DashboardDataPage({
         searchLabel={t("dashboard.actions.search")}
         refreshLabel={t("dashboard.actions.refresh")}
         createLabel={t("dashboard.actions.create")}
+        saveLabel={t("dashboard.actions.saveView")}
         onFilterChange={state.updateFilter}
         onRefresh={() => void state.load()}
         onCreate={state.openCreate}
+        onSaveFilters={state.saveFilters}
       />
 
       <DashboardDataTable

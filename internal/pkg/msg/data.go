@@ -4,19 +4,21 @@ package msg
 const (
 	StatusUnread   = 0 // 消息未读
 	StatusHaveRead = 1 // 消息已读
+	StatusDeleted  = 2 // 消息已删除
 )
 
 type Type int
 
 // 消息类型
 const (
-	TypeTopicComment     Type = 0 // 收到话题评论
-	TypeCommentReply     Type = 1 // 收到他人回复
-	TypeTopicLike        Type = 2 // 收到点赞
-	TypeTopicFavorite    Type = 3 // 话题被收藏
-	TypeTopicRecommend   Type = 4 // 话题被设为推荐
-	TypeTopicDelete      Type = 5 // 话题被删除
-	TypeQaAnswerAccepted Type = 9 // 回答被采纳为最佳答案
+	TypeTopicComment      Type = 0   // 收到话题评论
+	TypeCommentReply      Type = 1   // 收到他人回复
+	TypeTopicLike         Type = 2   // 收到点赞
+	TypeTopicFavorite     Type = 3   // 话题被收藏
+	TypeTopicRecommend    Type = 4   // 话题被设为推荐
+	TypeTopicDelete       Type = 5   // 话题被删除
+	TypeQaAnswerAccepted  Type = 9   // 回答被采纳为最佳答案
+	TypeAdminAnnouncement Type = 100 // 后台发送的站内公告
 )
 
 type TopicLikeExtraData struct {

@@ -33,6 +33,34 @@ import {
   toDashboardDataPrimitive,
 } from "./dashboard-data-utils"
 
+const DASHBOARD_FILTERS_STORAGE_PREFIX = "bbsgo-dashboard-filters:"
+
+function initialDashboardFilters(
+  defaultFilters: Record<string, AdminFormValue> | undefined,
+  limit: number
+) {
+  return createAdminInitialFilters(defaultFilters, limit)
+}
+
+function readDashboardFilters(
+  endpoint: string,
+  defaultFilters: Record<string, AdminFormValue> | undefined,
+  limit: number
+) {
+  const initial = initialDashboardFilters(defaultFilters, limit)
+  if (typeof window === "undefined") return initial
+  try {
+    const saved = window.localStorage.getItem(
+      `${DASHBOARD_FILTERS_STORAGE_PREFIX}${endpoint}`
+    )
+    if (!saved) return initial
+    const parsed = JSON.parse(saved) as Record<string, AdminFormValue>
+    return { ...initial, ...parsed, page: 1 }
+  } catch {
+    return initial
+  }
+}
+
 export function useDashboardDataPage({
   config,
   messages,
@@ -58,8 +86,9 @@ export function useDashboardDataPage({
 }) {
   const initialLimit = config.pageSize ?? 20
   const [filters, setFilters] = React.useState<Record<string, AdminFormValue>>(
-    () => createAdminInitialFilters(config.defaultFilters, initialLimit)
+    () => initialDashboardFilters(config.defaultFilters, initialLimit)
   )
+  const [filtersHydrated, setFiltersHydrated] = React.useState(false)
   const [records, setRecords] = React.useState<AdminRecord[]>([])
   const [total, setTotal] = React.useState(0)
   const [loading, setLoading] = React.useState(false)
@@ -84,6 +113,13 @@ export function useDashboardDataPage({
   )
   const treeCollapseModeRef = React.useRef<string | null>(null)
   const knownTreeKeysRef = React.useRef<Set<string>>(new Set())
+
+  React.useEffect(() => {
+    setFilters(
+      readDashboardFilters(config.listEndpoint, config.defaultFilters, initialLimit)
+    )
+    setFiltersHydrated(true)
+  }, [config.listEndpoint])
 
   const page = Number(filters.page || 1)
   const limit = Number(filters.limit || initialLimit)
@@ -189,8 +225,9 @@ export function useDashboardDataPage({
   ])
 
   React.useEffect(() => {
+    if (!filtersHydrated) return
     void load()
-  }, [load])
+  }, [filtersHydrated, load])
 
   React.useEffect(() => {
     const sources = [...(config.filters || []), ...(config.formFields || [])]
@@ -252,6 +289,14 @@ export function useDashboardDataPage({
       [name]: value,
       page: name === "page" ? value : name === "limit" ? current.page : 1,
     }))
+  }
+
+  function saveFilters() {
+    if (typeof window === "undefined") return
+    window.localStorage.setItem(
+      `${DASHBOARD_FILTERS_STORAGE_PREFIX}${config.listEndpoint}`,
+      JSON.stringify(filters)
+    )
   }
 
   async function openEdit(record: AdminRecord) {
@@ -631,6 +676,7 @@ export function useDashboardDataPage({
     visibleFormFields,
     load,
     updateFilter,
+    saveFilters,
     setFilters,
     setEditing,
     setViewing,

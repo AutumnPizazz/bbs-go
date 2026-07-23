@@ -1,6 +1,6 @@
 "use client"
 
-import { PlusIcon, RefreshCwIcon, SearchIcon } from "lucide-react"
+import { BookmarkIcon, PlusIcon, RefreshCwIcon, SearchIcon } from "lucide-react"
 
 import type { AdminFormValue } from "@/lib/api/admin"
 import { Button } from "@/components/ui/button"
@@ -21,9 +21,11 @@ export function DashboardDataToolbar({
   searchLabel,
   refreshLabel,
   createLabel,
+  saveLabel,
   onFilterChange,
   onRefresh,
   onCreate,
+  onSaveFilters,
 }: {
   filters?: DashboardDataFilter[]
   values: Record<string, AdminFormValue>
@@ -34,9 +36,11 @@ export function DashboardDataToolbar({
   searchLabel: string
   refreshLabel: string
   createLabel: string
+  saveLabel: string
   onFilterChange: (name: string, value: AdminFormValue) => void
   onRefresh: () => void
   onCreate: () => void
+  onSaveFilters: () => void
 }) {
   return (
     <div className="rounded-lg border bg-[var(--dashboard-panel)] p-3 text-card-foreground shadow-xs">
@@ -60,6 +64,10 @@ export function DashboardDataToolbar({
         <Button variant="outline" size="icon" onClick={onRefresh} disabled={loading}>
           <RefreshCwIcon />
           <span className="sr-only">{refreshLabel}</span>
+        </Button>
+        <Button variant="outline" onClick={onSaveFilters} disabled={loading}>
+          <BookmarkIcon />
+          {saveLabel}
         </Button>
         {canCreate ? (
           <Button className="ml-auto" onClick={onCreate}>
