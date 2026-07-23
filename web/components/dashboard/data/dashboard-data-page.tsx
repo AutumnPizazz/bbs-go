@@ -2,7 +2,7 @@
 
 import * as React from "react"
 
-import type { AdminFormValue } from "@/lib/api/admin"
+import type { AdminFormValue, AdminRecord } from "@/lib/api/admin"
 import { adminPostForm } from "@/lib/api/admin"
 import type { PermissionCode } from "@/lib/auth/permissions.generated"
 import { useCurrentUser } from "@/components/app/app-provider"
@@ -21,6 +21,7 @@ import { DashboardDataToolbar } from "./dashboard-data-toolbar"
 import type {
   DashboardDataBulkAction,
   DashboardDataBulkPreview,
+  DashboardDataBulkResult,
   DashboardDataPageConfig,
 } from "./dashboard-data-types"
 import { useDashboardDataPage } from "./use-dashboard-data-page"
@@ -77,29 +78,37 @@ export function DashboardDataPage({
     ids: Array<string | number>
     selectedCount: number
     preview: DashboardDataBulkPreview | null
+    result: DashboardDataBulkResult | null
     confirmText: string
     submitting: boolean
     error: string | null
   } | null>(null)
+  const [recordCache, setRecordCache] = React.useState(
+    () => new Map<string, AdminRecord>()
+  )
   const selectableRecords = state.displayRecords.filter(
     (record) => record.id !== undefined && record.id !== null
   )
-  const selectedRecords = selectableRecords.filter((record) =>
-    selectedIds.has(String(record.id))
+  const selectedRecords = Array.from(selectedIds).map(
+    (id) => recordCache.get(id) || ({ id } satisfies AdminRecord)
   )
   const allSelected =
     selectableRecords.length > 0 &&
     selectableRecords.every((record) => selectedIds.has(String(record.id)))
 
   React.useEffect(() => {
-    const availableIds = new Set(
-      selectableRecords.map((record) => String(record.id))
-    )
-    setSelectedIds((current) => {
-      const next = new Set(
-        Array.from(current).filter((id) => availableIds.has(id))
-      )
-      return next.size === current.size ? current : next
+    if (!selectableRecords.length) return
+    setRecordCache((current) => {
+      const next = new Map(current)
+      let changed = false
+      selectableRecords.forEach((record) => {
+        const id = String(record.id)
+        if (next.get(id) !== record) {
+          next.set(id, record)
+          changed = true
+        }
+      })
+      return changed ? next : current
     })
   }, [state.displayRecords])
 
@@ -134,26 +143,37 @@ export function DashboardDataPage({
       )
   }
 
-  async function openBulkAction(action: DashboardDataBulkAction) {
-    if (!selectedRecords.length) return
-    const ids = bulkIds(selectedRecords)
+  function recordsForIds(ids: Array<string | number>) {
+    return ids.map(
+      (id) => recordCache.get(String(id)) || ({ id } satisfies AdminRecord)
+    )
+  }
+
+  async function openBulkAction(
+    action: DashboardDataBulkAction,
+    retryIds?: Array<string | number>
+  ) {
+    const ids = retryIds || bulkIds(selectedRecords)
     if (!ids.length) return
     setBulkState({
       action,
       ids,
       selectedCount: ids.length,
       preview: null,
+      result: null,
       confirmText: "",
-      submitting: false,
+      submitting: true,
       error: null,
     })
     try {
       const data = await adminPostForm<DashboardDataBulkPreview>(
         action.previewEndpoint,
-        { ...(action.payload?.(selectedRecords) ?? {}), ids }
+        { ...(action.payload?.(recordsForIds(ids)) ?? {}), ids }
       )
       setBulkState((current) =>
-        current ? { ...current, preview: data, error: null } : current
+        current
+          ? { ...current, preview: data, submitting: false, error: null }
+          : current
       )
     } catch (err) {
       setBulkState((current) =>
@@ -164,6 +184,7 @@ export function DashboardDataPage({
                 err instanceof Error
                   ? err.message
                   : t("dashboard.errors.actionFailed"),
+              submitting: false,
             }
           : current
       )
@@ -175,19 +196,34 @@ export function DashboardDataPage({
     const current = bulkState
     setBulkState({ ...current, submitting: true, error: null })
     try {
-      await adminPostForm(current.action.endpoint, {
-        ...(current.action.payload?.(
-          selectedRecords.filter((record) =>
-            current.ids.includes(record.id as string | number)
-          )
-        ) ?? {}),
-        ids: current.ids,
-        confirmText: current.confirmText,
-      })
-      msgSuccess(current.action.successMessage || t("dashboard.messages.actionDone"))
+      const result = await adminPostForm<DashboardDataBulkResult>(
+        current.action.endpoint,
+        {
+          ...(current.action.payload?.(recordsForIds(current.ids)) ?? {}),
+          ids: current.ids,
+          confirmText: current.confirmText,
+        }
+      )
+      const failures = result.failures || []
+      await state.load()
+      if (failures.length) {
+        setSelectedIds(new Set(failures.map((failure) => String(failure.id))))
+        setBulkState({
+          ...current,
+          preview: null,
+          result,
+          confirmText: "",
+          submitting: false,
+          error: null,
+        })
+        return
+      }
+      msgSuccess(
+        current.action.successMessage || t("dashboard.messages.actionDone")
+      )
       setBulkState(null)
       setSelectedIds(new Set())
-      await state.load()
+      setRecordCache(new Map())
     } catch (err) {
       setBulkState({
         ...current,
@@ -198,6 +234,14 @@ export function DashboardDataPage({
             : t("dashboard.errors.actionFailed"),
       })
     }
+  }
+
+  function retryBulkFailures() {
+    if (!bulkState?.result?.failures?.length) return
+    void openBulkAction(
+      bulkState.action,
+      bulkState.result.failures.map((failure) => failure.id)
+    )
   }
 
   if (!canView) {
@@ -225,6 +269,11 @@ export function DashboardDataPage({
         onRefresh={() => void state.load()}
         onCreate={state.openCreate}
         onSaveFilters={state.saveFilters}
+        clearSelectionLabel={t("dashboard.bulk.clearSelection")}
+        onClearSelection={() => {
+          setSelectedIds(new Set())
+          setRecordCache(new Map())
+        }}
         bulkActions={visibleConfig.bulkActions?.map((action) => ({
           label: action.label,
           onClick: () => void openBulkAction(action),
@@ -340,6 +389,7 @@ export function DashboardDataPage({
         action={bulkState?.action || null}
         selectedCount={bulkState?.selectedCount || 0}
         preview={bulkState?.preview || null}
+        result={bulkState?.result || null}
         confirmText={bulkState?.confirmText || ""}
         submitting={Boolean(bulkState?.submitting)}
         error={bulkState?.error || null}
@@ -350,6 +400,7 @@ export function DashboardDataPage({
         }
         onClose={() => setBulkState(null)}
         onConfirm={() => void performBulkAction()}
+        onRetry={retryBulkFailures}
       />
     </div>
   )

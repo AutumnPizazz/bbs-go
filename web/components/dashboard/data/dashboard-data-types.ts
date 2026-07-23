@@ -76,6 +76,21 @@ export type DashboardDataBulkPreview = {
   confirmText?: string
 }
 
+export type DashboardDataBulkFailure = {
+  id: string | number
+  message: string
+}
+
+export type DashboardDataBulkResult = {
+  action?: string
+  requestedCount?: number
+  eligibleCount?: number
+  processedCount?: number
+  skippedCount?: number
+  failedCount?: number
+  failures?: DashboardDataBulkFailure[]
+}
+
 export type DashboardDataBulkAction = {
   label: string
   endpoint: string

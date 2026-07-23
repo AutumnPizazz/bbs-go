@@ -16,6 +16,7 @@ import {
   StarOffIcon,
   Trash2Icon,
   Undo2Icon,
+  XIcon,
 } from "lucide-react"
 
 import { DashboardSelect } from "@/components/dashboard/dashboard-select"
@@ -48,6 +49,7 @@ import {
 import type {
   DashboardDataBulkAction,
   DashboardDataBulkPreview,
+  DashboardDataBulkResult,
 } from "@/components/dashboard/data"
 import { formatDateTime } from "@/lib/format"
 import { userHasPermission } from "@/lib/auth/roles"
@@ -185,6 +187,7 @@ export default function DashboardTopicsRoute() {
     action: DashboardDataBulkAction
     ids: number[]
     preview: DashboardDataBulkPreview | null
+    result: DashboardDataBulkResult | null
     confirmText: string
     submitting: boolean
     error: string | null
@@ -248,26 +251,14 @@ export default function DashboardTopicsRoute() {
       : []),
   ]
 
-  const selectedRecords = records.filter(
-    (topic) => topic.id !== undefined && selectedIds.has(topic.id)
+  const selectedRecords = Array.from(selectedIds).map(
+    (id) => records.find((topic) => topic.id === id) || ({ id } as TopicRecord)
   )
   const allSelected =
     records.length > 0 &&
-    records.every((topic) => topic.id !== undefined && selectedIds.has(topic.id))
-
-  React.useEffect(() => {
-    const availableIds = new Set(
-      records
-        .map((topic) => topic.id)
-        .filter((id): id is number => typeof id === "number")
+    records.every(
+      (topic) => topic.id !== undefined && selectedIds.has(topic.id)
     )
-    setSelectedIds((current) => {
-      const next = new Set(
-        Array.from(current).filter((id) => availableIds.has(id))
-      )
-      return next.size === current.size ? current : next
-    })
-  }, [records])
 
   const load = React.useCallback(async () => {
     setLoading(true)
@@ -306,29 +297,40 @@ export default function DashboardTopicsRoute() {
   }
 
   function toggleAllSelectedTopics() {
-    setSelectedIds(
-      allSelected
-        ? new Set()
-        : new Set(
-            records
-              .map((topic) => topic.id)
-              .filter((id): id is number => typeof id === "number")
-          )
-    )
-  }
-
-  async function openBulkAction(action: DashboardDataBulkAction) {
-    if (!selectedRecords.length) return
-    const ids = selectedRecords
+    const currentPageIds = records
       .map((topic) => topic.id)
       .filter((id): id is number => typeof id === "number")
+    setSelectedIds((current) => {
+      const next = new Set(current)
+      currentPageIds.forEach((id) => {
+        if (allSelected) {
+          next.delete(id)
+        } else {
+          next.add(id)
+        }
+      })
+      return next
+    })
+  }
+
+  async function openBulkAction(
+    action: DashboardDataBulkAction,
+    retryIds?: number[]
+  ) {
+    if (!selectedRecords.length) return
+    const ids =
+      retryIds ||
+      selectedRecords
+        .map((topic) => topic.id)
+        .filter((id): id is number => typeof id === "number")
     if (!ids.length) return
     setBulkState({
       action,
       ids,
       preview: null,
+      result: null,
       confirmText: "",
-      submitting: false,
+      submitting: true,
       error: null,
     })
     try {
@@ -337,7 +339,9 @@ export default function DashboardTopicsRoute() {
         { ...(action.payload?.(selectedRecords) ?? {}), ids }
       )
       setBulkState((current) =>
-        current ? { ...current, preview, error: null } : current
+        current
+          ? { ...current, preview, submitting: false, error: null }
+          : current
       )
     } catch (err) {
       setBulkState((current) =>
@@ -348,6 +352,7 @@ export default function DashboardTopicsRoute() {
                 err instanceof Error
                   ? err.message
                   : t("dashboard.errors.actionFailed"),
+              submitting: false,
             }
           : current
       )
@@ -359,15 +364,33 @@ export default function DashboardTopicsRoute() {
     const current = bulkState
     setBulkState({ ...current, submitting: true, error: null })
     try {
-      await adminPostForm(current.action.endpoint, {
-        ...(current.action.payload?.(selectedRecords) ?? {}),
-        ids: current.ids,
-        confirmText: current.confirmText,
-      })
-      msgSuccess(current.action.successMessage || t("dashboard.messages.actionDone"))
+      const result = await adminPostForm<DashboardDataBulkResult>(
+        current.action.endpoint,
+        {
+          ...(current.action.payload?.(selectedRecords) ?? {}),
+          ids: current.ids,
+          confirmText: current.confirmText,
+        }
+      )
+      const failures = result.failures || []
+      await load()
+      if (failures.length) {
+        setSelectedIds(new Set(failures.map((failure) => Number(failure.id))))
+        setBulkState({
+          ...current,
+          preview: null,
+          result,
+          confirmText: "",
+          submitting: false,
+          error: null,
+        })
+        return
+      }
+      msgSuccess(
+        current.action.successMessage || t("dashboard.messages.actionDone")
+      )
       setBulkState(null)
       setSelectedIds(new Set())
-      await load()
     } catch (err) {
       setBulkState({
         ...current,
@@ -378,6 +401,16 @@ export default function DashboardTopicsRoute() {
             : t("dashboard.errors.actionFailed"),
       })
     }
+  }
+
+  function retryBulkFailures() {
+    if (!bulkState?.result?.failures?.length) return
+    void openBulkAction(
+      bulkState.action,
+      bulkState.result.failures
+        .map((failure) => Number(failure.id))
+        .filter((id) => Number.isFinite(id) && id > 0)
+    )
   }
 
   async function openAnswers(topic: TopicRecord) {
@@ -585,6 +618,14 @@ export default function DashboardTopicsRoute() {
             <span className="mr-1 text-sm font-medium">
               {t("dashboard.bulk.selected", { count: selectedRecords.length })}
             </span>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setSelectedIds(new Set())}
+            >
+              <XIcon />
+              {t("dashboard.bulk.clearSelection")}
+            </Button>
             {bulkActions.map((action) => (
               <Button
                 key={action.label}
@@ -666,6 +707,7 @@ export default function DashboardTopicsRoute() {
         action={bulkState?.action || null}
         selectedCount={bulkState?.ids.length || 0}
         preview={bulkState?.preview || null}
+        result={bulkState?.result || null}
         confirmText={bulkState?.confirmText || ""}
         submitting={Boolean(bulkState?.submitting)}
         error={bulkState?.error || null}
@@ -676,6 +718,7 @@ export default function DashboardTopicsRoute() {
         }
         onClose={() => setBulkState(null)}
         onConfirm={() => void performBulkAction()}
+        onRetry={retryBulkFailures}
       />
       <AnswerDialog
         topic={answerTopic}

@@ -2,7 +2,9 @@ export { DashboardDataPage } from "./dashboard-data-page"
 export { DashboardDataBulkDialog } from "./dashboard-data-bulk-dialog"
 export type {
   DashboardDataBulkAction,
+  DashboardDataBulkFailure,
   DashboardDataBulkPreview,
+  DashboardDataBulkResult,
   DashboardDataColumn,
   DashboardDataDetailField,
   DashboardDataFilter,

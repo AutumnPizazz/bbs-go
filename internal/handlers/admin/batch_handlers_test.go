@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"errors"
 	"testing"
 
 	"bbs-go/internal/models"
@@ -63,5 +64,17 @@ func TestBatchActionsValidateSupportedValues(t *testing.T) {
 	}
 	if status, err := reportBatchStatus("ignore"); err != nil || status != 2 {
 		t.Fatalf("expected ignore to map to status 2, got %d, %v", status, err)
+	}
+}
+
+func TestAdminBatchResultKeepsRetryableFailures(t *testing.T) {
+	result := newAdminBatchResult("delete", []int64{11, 12}, 2)
+	appendAdminBatchFailure(&result, 12, errors.New("topic is locked"))
+
+	if result.ProcessedCount != 0 || result.FailedCount != 1 {
+		t.Fatalf("unexpected batch counters: %#v", result)
+	}
+	if len(result.Failures) != 1 || result.Failures[0].Id != 12 || result.Failures[0].Message != "topic is locked" {
+		t.Fatalf("expected failed id and message to remain retryable: %#v", result.Failures)
 	}
 }
