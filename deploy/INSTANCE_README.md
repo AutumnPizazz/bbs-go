@@ -4,7 +4,7 @@
 
 ## Windows
 
-启动 Docker Desktop，双击 `deploy.cmd`。脚本发现同名容器或 `bbs-go-instance_mysql-data` 数据卷已存在时会拒绝部署，不会覆盖现有实例。
+启动 Docker Desktop，解压 ZIP 并进入最外层目录，双击 `deploy.cmd`。也可以运行 `powershell -ExecutionPolicy Bypass -File deploy.ps1`。脚本发现同名容器或 `bbs-go-instance_mysql-data` 数据卷已存在时会拒绝部署，不会覆盖现有实例。
 
 ## Linux
 
@@ -13,7 +13,7 @@ chmod +x deploy.sh
 ./deploy.sh
 ```
 
-数据库导入完成且容器健康后访问 `http://127.0.0.1:3000`。查看状态和日志：
+数据库导入完成且容器健康后访问 `http://127.0.0.1:3000`。容器内部 API 的 `8082` 不需要从宿主机访问。查看状态和日志：
 
 ```shell
 docker compose ps

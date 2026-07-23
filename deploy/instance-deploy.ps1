@@ -27,4 +27,5 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host "BBS-GO restore started. MySQL will become healthy after the database import."
-Write-Host "Open http://127.0.0.1:3000 after 'docker compose ps' reports healthy."
+$port = ((Get-Content .env | Where-Object { $_ -match '^BBSGO_HTTP_PORT=' }) -split '=', 2)[1]
+Write-Host "Open http://127.0.0.1:$port after 'docker compose ps' reports healthy."

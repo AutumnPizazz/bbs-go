@@ -18,4 +18,5 @@ mkdir -p runtime/logs
 docker compose --env-file .env up -d
 
 echo "BBS-GO restore started. MySQL will become healthy after the database import."
-echo "Open http://127.0.0.1:3000 after 'docker compose ps' reports healthy."
+port=$(sed -n 's/^BBSGO_HTTP_PORT=//p' .env)
+echo "Open http://127.0.0.1:${port:-3000} after 'docker compose ps' reports healthy."
