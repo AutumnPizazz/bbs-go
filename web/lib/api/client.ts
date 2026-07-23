@@ -138,6 +138,9 @@ export async function apiFetch<T>(
   const token = fetchOptions.token
   if (token) {
     headers.set("X-User-Token", token)
+  } else if (!isServer()) {
+    const browserToken = browserCookie("bbsgo_token")
+    if (browserToken) headers.set("X-User-Token", decodeURIComponent(browserToken))
   }
 
   let body = fetchOptions.body

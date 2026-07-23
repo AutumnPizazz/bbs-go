@@ -3,7 +3,6 @@
 import { useRouter, useSearchParams } from "@/lib/router/navigation"
 import { Lock } from "lucide-react"
 import {
-  useActionState,
   useEffect,
   useId,
   useMemo,
@@ -12,10 +11,7 @@ import {
   Suspense,
 } from "react"
 
-import {
-  signinAction,
-  type AuthActionState,
-} from "@/lib/actions/auth"
+import type { AuthActionState } from "@/lib/actions/auth"
 import {
   CaptchaChallenge,
   type CaptchaChallengeHandle,
@@ -23,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import type { SiteConfig } from "@/lib/api/types"
+import type { LoginResult } from "@/lib/api/types"
 import { apiFetch } from "@/lib/api/client"
 import { useI18n } from "@/lib/i18n/provider"
 import { safeRedirect } from "@/lib/site"
@@ -118,7 +115,8 @@ function SigninFormContent({
 function PasswordLoginForm({ redirect }: { redirect?: string }) {
   const { t } = useI18n()
   const { msgError } = useToastActions()
-  const [state, action, pending] = useActionState(signinAction, initialState)
+  const [state, setState] = useState<AuthActionState>(initialState)
+  const [pending, setPending] = useState(false)
   const captchaRef = useRef<CaptchaChallengeHandle>(null)
   const formRef = useRef<HTMLFormElement>(null)
   const [username, setUsername] = useState("")
@@ -139,22 +137,34 @@ function PasswordLoginForm({ redirect }: { redirect?: string }) {
     <div className="password-login mx-auto max-w-[400px]">
       <form
         ref={formRef}
-        action={action}
         className="space-y-6"
-        onSubmit={(event) => {
+        onSubmit={async (event) => {
+          event.preventDefault()
           if (!username) {
-            event.preventDefault()
             msgError(t("user.signin.password.usernameRequired"))
             return
           }
           if (!password) {
-            event.preventDefault()
             msgError(t("user.signin.password.passwordRequired"))
             return
           }
           if (!captchaRef.current?.hasCaptcha()) {
-            event.preventDefault()
             void captchaRef.current?.open()
+            return
+          }
+
+          setPending(true)
+          try {
+            const result = await apiFetch<LoginResult>("/api/login/signin", {
+              method: "POST",
+              body: new FormData(formRef.current!),
+            })
+            document.cookie = `bbsgo_token=${encodeURIComponent(result.token)}; Path=/; Max-Age=31536000; SameSite=Lax`
+            setState({ ok: true, redirect: safeRedirect(result.redirect, `/user/${result.user.id}`) })
+          } catch (error) {
+            setState({ ok: false, message: error instanceof Error ? error.message : "Sign in failed" })
+          } finally {
+            setPending(false)
           }
         }}
       >
