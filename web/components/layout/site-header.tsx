@@ -131,7 +131,35 @@ function signinHref(fullPath: string) {
   return `/user/signin?redirect=${encodeURIComponent(redirect)}`
 }
 
-function moduleItems(config: SiteConfig | null, t: TFunction) {
+function positiveCategoryId(value: string | null) {
+  const categoryId = Number(value)
+  return Number.isInteger(categoryId) && categoryId > 0 ? categoryId : 0
+}
+
+export function selectedCategoryIdFromLocation(
+  pathname: string,
+  searchParams: URLSearchParams
+) {
+  const queryCategoryId = positiveCategoryId(searchParams.get("categoryId"))
+  if (queryCategoryId > 0) return queryCategoryId
+
+  const match = pathname.match(/^\/topics\/category\/(\d+)(?:\/|$)/)
+  return positiveCategoryId(match?.[1] || null)
+}
+
+function topicCreateHref(type: 0 | 2, categoryId: number) {
+  const params = new URLSearchParams()
+  if (type === 2) params.set("type", "2")
+  if (categoryId > 0) params.set("categoryId", String(categoryId))
+  const query = params.toString()
+  return `/topic/create${query ? `?${query}` : ""}`
+}
+
+function moduleItems(
+  config: SiteConfig | null,
+  t: TFunction,
+  categoryId: number
+) {
   const enabledModules = config?.modules
   const items: Array<{
     command: string
@@ -144,7 +172,7 @@ function moduleItems(config: SiteConfig | null, t: TFunction) {
     items.push({
       command: "topic",
       name: t("common.createBtn.topic"),
-      href: "/topic/create",
+      href: topicCreateHref(0, categoryId),
       icon: MessageSquare,
     })
   }
@@ -152,7 +180,7 @@ function moduleItems(config: SiteConfig | null, t: TFunction) {
     items.push({
       command: "qa",
       name: t("common.createBtn.qa"),
-      href: "/topic/create?type=2",
+      href: topicCreateHref(2, categoryId),
       icon: CircleHelp,
     })
   }
@@ -169,7 +197,10 @@ function CreateActions({
   t: TFunction
   className?: string
 }) {
-  const items = moduleItems(config, t)
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const categoryId = selectedCategoryIdFromLocation(pathname, searchParams)
+  const items = moduleItems(config, t, categoryId)
   if (!items.length) return null
 
   return (
