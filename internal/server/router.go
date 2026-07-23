@@ -217,6 +217,7 @@ func registerAdminRoutes(group *gin.RouterGroup) {
 
 	dictTypeGroup := group.Group("/dict-type")
 	dictTypeGroup.GET("/list", adminHandlers.DictTypeList)
+	dictTypeGroup.POST("/list", adminHandlers.DictTypeList)
 	dictTypeGroup.POST("/create", adminHandlers.DictTypeCreate)
 	dictTypeGroup.POST("/update", adminHandlers.DictTypeUpdate)
 	dictTypeGroup.POST("/delete", adminHandlers.DictTypeRemove)

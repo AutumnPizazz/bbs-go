@@ -4,9 +4,11 @@ import (
 	"crypto/subtle"
 	"net/http"
 	"strings"
+	"time"
 
 	"bbs-go/internal/models/constants"
 	"bbs-go/internal/pkg/ginx"
+	"github.com/mlogclub/simple/common/strs"
 
 	"github.com/gin-gonic/gin"
 )
@@ -31,6 +33,24 @@ func CSRFMiddleware(ctx *gin.Context) {
 		return
 	}
 	ctx.Next()
+}
+
+// ensureCSRFCookie upgrades existing cookie sessions created before CSRF was
+// enabled. Header-token clients do not need a browser CSRF cookie.
+func ensureCSRFCookie(ctx *gin.Context) {
+	if ginx.GetCookie(ctx, constants.CookieTokenKey) == "" ||
+		ctx.GetHeader("Authorization") != "" ||
+		ctx.GetHeader("X-User-Token") != "" ||
+		ginx.GetCookie(ctx, constants.CookieCSRFTokenKey) != "" {
+		return
+	}
+
+	ginx.SetCookieKV(
+		ctx,
+		constants.CookieCSRFTokenKey,
+		strs.UUID(),
+		ginx.CookieExpires(365*time.Hour*24),
+	)
 }
 
 func isSafeMethod(method string) bool {

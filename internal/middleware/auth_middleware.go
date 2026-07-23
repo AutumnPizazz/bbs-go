@@ -12,6 +12,7 @@ func AuthMiddleware(ctx *gin.Context) {
 	if config.Instance.Installed {
 		if user := services.UserTokenService.GetCurrent(ctx); user != nil {
 			common.SetCurrentUser(ctx, user)
+			ensureCSRFCookie(ctx)
 		}
 	}
 	ctx.Next()
