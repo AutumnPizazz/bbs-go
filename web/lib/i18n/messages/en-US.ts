@@ -615,6 +615,7 @@ const enUS = {
       homePage: "Homepage",
       description: "Description",
       status: "Status",
+      processStatus: "Process Status",
       createTime: "Created",
       updateTime: "Updated",
       title: "Title",
