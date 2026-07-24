@@ -55,3 +55,4 @@ deploy/.env
 # Local release output
 dist/
 /docker-data
+/secret
