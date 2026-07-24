@@ -130,6 +130,12 @@ var (
 		{Method: "POST", Pattern: "/api/admin/announcement/publish", Permissions: []PermissionDefinition{PermissionAnnouncementPublish}},
 		{Method: "GET", Pattern: "/api/admin/health", Permissions: []PermissionDefinition{PermissionHealthView}},
 		{Method: "GET", Pattern: "/api/admin/tasks/**", Permissions: []PermissionDefinition{PermissionHealthView, PermissionTaskView}},
+		{Method: "GET", Pattern: "/api/admin/backup/config", Permissions: []PermissionDefinition{PermissionBackupView}},
+		{Method: "GET", Pattern: "/api/admin/backup/list", Permissions: []PermissionDefinition{PermissionBackupView}},
+		{Method: "GET", Pattern: "/api/admin/backup/download/*", Permissions: []PermissionDefinition{PermissionBackupDownload}},
+		{Method: "POST", Pattern: "/api/admin/backup/create", Permissions: []PermissionDefinition{PermissionBackupCreate}},
+		{Method: "POST", Pattern: "/api/admin/backup/config", Permissions: []PermissionDefinition{PermissionBackupConfig}},
+		{Method: "POST", Pattern: "/api/admin/backup/delete", Permissions: []PermissionDefinition{PermissionBackupDelete}},
 
 		{Method: "GET", Pattern: "/api/admin/favorite/*", Permissions: []PermissionDefinition{PermissionFavoriteView}},
 		{Method: "POST", Pattern: "/api/admin/favorite/list", Permissions: []PermissionDefinition{PermissionFavoriteView}},

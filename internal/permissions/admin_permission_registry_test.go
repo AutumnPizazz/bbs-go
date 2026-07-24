@@ -134,6 +134,8 @@ func TestAdminPermissionRegistryCoversEveryRegisteredAdminRoute(t *testing.T) {
 		{"GET", "/api/admin/message/1"}, {"POST", "/api/admin/message/list"}, {"POST", "/api/admin/message/create"}, {"POST", "/api/admin/message/update"}, {"POST", "/api/admin/message/delete"},
 		{"GET", "/api/admin/announcement/history"}, {"POST", "/api/admin/announcement/preview"}, {"POST", "/api/admin/announcement/publish"},
 		{"GET", "/api/admin/health"}, {"GET", "/api/admin/tasks/status"},
+		{"GET", "/api/admin/backup/config"}, {"POST", "/api/admin/backup/config"}, {"GET", "/api/admin/backup/list"},
+		{"POST", "/api/admin/backup/create"}, {"POST", "/api/admin/backup/delete"}, {"GET", "/api/admin/backup/download/1"},
 		{"GET", "/api/admin/user-report/1"}, {"POST", "/api/admin/user-report/list"}, {"POST", "/api/admin/user-report/create"}, {"POST", "/api/admin/user-report/update"}, {"POST", "/api/admin/user-report/process"}, {"POST", "/api/admin/user-report/action"}, {"POST", "/api/admin/user-report/batch/preview"}, {"POST", "/api/admin/user-report/batch"},
 		{"GET", "/api/admin/vote/1"}, {"POST", "/api/admin/vote/list"}, {"POST", "/api/admin/vote/create"}, {"POST", "/api/admin/vote/update"}, {"POST", "/api/admin/vote/delete"},
 		{"GET", "/api/admin/vote-option/1"}, {"POST", "/api/admin/vote-option/list"}, {"POST", "/api/admin/vote-option/create"}, {"POST", "/api/admin/vote-option/update"}, {"POST", "/api/admin/vote-option/delete"},

@@ -17,6 +17,7 @@ var Models = []interface{}{
 	&Attachment{},
 	&MessageSendTask{}, &MessageDelivery{},
 	&AnnouncementPublishRecord{}, &DashboardViewPreference{},
+	&DatabaseBackup{},
 }
 
 type Model struct {

@@ -321,6 +321,7 @@ func InitMigrations() error {
 		slog.Error("sync permissions failed", slog.Any("error", err))
 		return err
 	}
+	services.DatabaseBackupService.RecoverStale()
 	return nil
 }
 

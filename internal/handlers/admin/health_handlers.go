@@ -72,16 +72,18 @@ func TaskStatus(ctx *gin.Context) {
 	search := services.SearchReindexService.Status()
 	sitemap := services.SeoSitemapService.Status()
 	attachmentCleanup := services.AttachmentCleanupTaskService.Status()
+	databaseBackup := services.DatabaseBackupService.Status()
 	ginx.WriteJSON(ctx, map[string]interface{}{
 		"tasks": map[string]interface{}{
 			"searchReindex":     search,
 			"sitemap":           sitemap,
 			"attachmentCleanup": attachmentCleanup,
+			"databaseBackup":    databaseBackup,
 		},
-		"failed":       search.Error != "" || sitemap.Error != "" || attachmentCleanup.Error != "",
-		"active":       search.Running || sitemap.Running || attachmentCleanup.Running,
+		"failed":       search.Error != "" || sitemap.Error != "" || attachmentCleanup.Error != "" || databaseBackup.LastError != "",
+		"active":       search.Running || sitemap.Running || attachmentCleanup.Running || databaseBackup.Running,
 		"checkedAt":    dates.NowTimestamp(),
-		"retrySupport": map[string]bool{"searchReindex": true, "sitemap": true, "attachmentCleanup": false},
+		"retrySupport": map[string]bool{"searchReindex": true, "sitemap": true, "attachmentCleanup": false, "databaseBackup": true},
 	})
 }
 

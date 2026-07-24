@@ -1,0 +1,554 @@
+package services
+
+import (
+	"bytes"
+	"context"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
+	"errors"
+	"fmt"
+	"io"
+	"log/slog"
+	"net"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/glebarez/sqlite"
+	"github.com/go-sql-driver/mysql"
+	"github.com/jackc/pgx/v5"
+	"github.com/mlogclub/simple/common/dates"
+	"github.com/mlogclub/simple/sqls"
+	"github.com/robfig/cron/v3"
+	"gorm.io/gorm"
+
+	"bbs-go/internal/models"
+	"bbs-go/internal/pkg/config"
+)
+
+const (
+	BackupTriggerManual       = "manual"
+	BackupTriggerScheduled    = "scheduled"
+	BackupConfirmText         = "CREATE_BACKUP"
+	BackupDeleteConfirmText   = "DELETE_BACKUP"
+	BackupDownloadConfirmText = "DOWNLOAD_BACKUP"
+	maxBackupErrorLength      = 1024
+)
+
+type DatabaseBackupStatus struct {
+	Running       bool   `json:"running"`
+	LastSuccessAt int64  `json:"lastSuccessAt"`
+	LastFailureAt int64  `json:"lastFailureAt"`
+	LastError     string `json:"lastError,omitempty"`
+	Retention     int    `json:"retention"`
+	Directory     string `json:"directory"`
+}
+
+type DatabaseBackupConfig struct {
+	Enabled   bool   `json:"enabled"`
+	Schedule  string `json:"schedule"`
+	Retention int    `json:"retention"`
+	Directory string `json:"directory"`
+}
+
+type databaseBackupService struct {
+	mu sync.Mutex
+}
+
+var DatabaseBackupService = &databaseBackupService{}
+
+func (s *databaseBackupService) Config() DatabaseBackupConfig {
+	if config.Instance == nil {
+		return DatabaseBackupConfig{Schedule: config.DefaultBackupSchedule, Retention: config.DefaultBackupRetention, Directory: config.DefaultBackupDirectory}
+	}
+	cfg := config.Instance.Backup
+	config.SetBackupDefaults(&cfg)
+	return DatabaseBackupConfig{Enabled: cfg.Enabled, Schedule: cfg.Schedule, Retention: cfg.Retention, Directory: cfg.Directory}
+}
+
+func (s *databaseBackupService) Status() DatabaseBackupStatus {
+	status := DatabaseBackupStatus{}
+	if db := sqls.DB(); db != nil {
+		var running models.DatabaseBackup
+		status.Running = db.Where("status = ?", models.DatabaseBackupRunning).Order("id desc").First(&running).Error == nil
+		var successful models.DatabaseBackup
+		if db.Where("status = ?", models.DatabaseBackupSuccess).Order("finished_at desc").First(&successful).Error == nil {
+			status.LastSuccessAt = successful.FinishedAt
+		}
+		var failed models.DatabaseBackup
+		if db.Where("status = ?", models.DatabaseBackupFailed).Order("finished_at desc").First(&failed).Error == nil {
+			status.LastFailureAt = failed.FinishedAt
+			status.LastError = failed.Error
+		}
+	}
+	cfg := s.Config()
+	status.Retention = cfg.Retention
+	status.Directory = cfg.Directory
+	return status
+}
+
+func (s *databaseBackupService) ValidateConfig(next config.BackupConfig) error {
+	config.SetBackupDefaults(&next)
+	if next.Retention < 1 || next.Retention > 100 {
+		return errors.New("backup retention must be between 1 and 100")
+	}
+	if _, err := cron.ParseStandard(next.Schedule); err != nil {
+		return fmt.Errorf("invalid backup schedule: %w", err)
+	}
+	if _, err := s.directory(next.Directory); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *databaseBackupService) SaveConfig(next config.BackupConfig) error {
+	if err := s.ValidateConfig(next); err != nil {
+		return err
+	}
+	return config.SaveBackupConfig(next)
+}
+
+func (s *databaseBackupService) StartManual(requestedBy int64) (*models.DatabaseBackup, error) {
+	return s.start(BackupTriggerManual, requestedBy)
+}
+
+func (s *databaseBackupService) StartScheduled() (*models.DatabaseBackup, error) {
+	if !s.Config().Enabled {
+		return nil, errors.New("scheduled database backups are disabled")
+	}
+	return s.start(BackupTriggerScheduled, 0)
+}
+
+// RecoverStale marks interrupted backups as failed so a restart cannot leave
+// the persistent queue blocked forever.
+func (s *databaseBackupService) RecoverStale() {
+	db := sqls.DB()
+	if db == nil {
+		return
+	}
+	var backups []models.DatabaseBackup
+	if err := db.Where("status = ?", models.DatabaseBackupRunning).Find(&backups).Error; err != nil {
+		slog.Warn("failed to load interrupted database backups", slog.Any("error", err))
+		return
+	}
+	for _, backup := range backups {
+		if path, err := s.pathForBackup(&backup); err == nil {
+			_ = os.Remove(path)
+		}
+		if err := db.Model(&models.DatabaseBackup{}).Where("id = ? AND status = ?", backup.Id, models.DatabaseBackupRunning).Updates(map[string]interface{}{
+			"status": models.DatabaseBackupFailed, "error": "backup interrupted by process restart", "finished_at": dates.NowTimestamp(), "update_time": dates.NowTimestamp(),
+		}).Error; err != nil {
+			slog.Warn("failed to mark interrupted database backup", slog.Int64("id", backup.Id), slog.Any("error", err))
+		}
+	}
+}
+
+func (s *databaseBackupService) start(trigger string, requestedBy int64) (*models.DatabaseBackup, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	db := sqls.DB()
+	if db == nil {
+		return nil, errors.New("database is not initialized")
+	}
+	var running int64
+	if err := db.Model(&models.DatabaseBackup{}).Where("status = ?", models.DatabaseBackupRunning).Count(&running).Error; err != nil {
+		return nil, err
+	}
+	if running > 0 {
+		return nil, errors.New("another database backup is already running")
+	}
+	now := dates.NowTimestamp()
+	databaseType := config.DbTypeMySQL
+	if config.Instance != nil {
+		databaseType = strings.ToLower(config.Instance.DB.Type)
+	}
+	backup := &models.DatabaseBackup{
+		TriggerType: trigger, DatabaseType: databaseType,
+		FileName: s.newFileName(trigger), Directory: s.Config().Directory,
+		Status:      models.DatabaseBackupRunning,
+		RequestedBy: requestedBy, StartedAt: now, CreateTime: now, UpdateTime: now,
+	}
+	if err := db.Create(backup).Error; err != nil {
+		return nil, err
+	}
+	go s.run(backup.Id)
+	return backup, nil
+}
+
+func (s *databaseBackupService) run(id int64) {
+	backup := s.get(id)
+	if backup == nil {
+		return
+	}
+	path, size, checksum, err := s.createFile(backup.FileName, backup.Directory)
+	now := dates.NowTimestamp()
+	updates := map[string]interface{}{"finished_at": now, "update_time": now}
+	if err != nil {
+		updates["status"] = models.DatabaseBackupFailed
+		updates["error"] = truncateBackupError(err.Error())
+		_ = sqls.DB().Model(&models.DatabaseBackup{}).Where("id = ?", id).Updates(updates).Error
+		return
+	}
+	if err := s.verifyFile(path, backup.DatabaseType, checksum); err != nil {
+		_ = os.Remove(path)
+		updates["status"] = models.DatabaseBackupFailed
+		updates["error"] = truncateBackupError(err.Error())
+		_ = sqls.DB().Model(&models.DatabaseBackup{}).Where("id = ?", id).Updates(updates).Error
+		return
+	}
+	updates["status"] = models.DatabaseBackupSuccess
+	updates["error"] = ""
+	updates["size"] = size
+	updates["checksum"] = checksum
+	if err := sqls.DB().Model(&models.DatabaseBackup{}).Where("id = ?", id).Updates(updates).Error; err != nil {
+		return
+	}
+	s.prune()
+}
+
+func (s *databaseBackupService) List(limit int) []models.DatabaseBackup {
+	if limit < 1 || limit > 100 {
+		limit = 50
+	}
+	var backups []models.DatabaseBackup
+	if db := sqls.DB(); db != nil {
+		db.Order("id desc").Limit(limit).Find(&backups)
+	}
+	return backups
+}
+
+func (s *databaseBackupService) Delete(id int64) error {
+	backup := s.get(id)
+	if backup == nil {
+		return errors.New("backup not found")
+	}
+	if backup.Status == models.DatabaseBackupRunning {
+		return errors.New("running backups cannot be deleted")
+	}
+	path, err := s.pathForBackup(backup)
+	if err != nil {
+		return err
+	}
+	if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+	return sqls.DB().Delete(&models.DatabaseBackup{}, id).Error
+}
+
+func (s *databaseBackupService) Get(id int64) *models.DatabaseBackup { return s.get(id) }
+
+func (s *databaseBackupService) FilePath(backup *models.DatabaseBackup) (string, error) {
+	if backup == nil {
+		return "", errors.New("backup not found")
+	}
+	return s.pathForBackup(backup)
+}
+
+func (s *databaseBackupService) StartScheduler(c *cron.Cron) {
+	if config.Instance == nil {
+		return
+	}
+	cfg := config.Instance.Backup
+	config.SetBackupDefaults(&cfg)
+	if !cfg.Enabled {
+		return
+	}
+	if _, err := cron.ParseStandard(cfg.Schedule); err != nil {
+		return
+	}
+	_, _ = c.AddFunc(cfg.Schedule, func() {
+		_, _ = s.StartScheduled()
+	})
+}
+
+func (s *databaseBackupService) createFile(fileName, directory string) (string, int64, string, error) {
+	path, err := s.pathForFileNameInDirectory(fileName, directory)
+	if err != nil {
+		return "", 0, "", err
+	}
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return "", 0, "", err
+	}
+	tmp, err := os.CreateTemp(dir, ".bbs-go-backup-*.tmp")
+	if err != nil {
+		return "", 0, "", err
+	}
+	tmpPath := tmp.Name()
+	if err := tmp.Close(); err != nil {
+		_ = os.Remove(tmpPath)
+		return "", 0, "", err
+	}
+	_ = os.Chmod(tmpPath, 0o600)
+	defer func() { _ = os.Remove(tmpPath) }()
+
+	if err := s.dump(tmpPath); err != nil {
+		return "", 0, "", err
+	}
+	if err := os.Rename(tmpPath, path); err != nil {
+		return "", 0, "", err
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		return "", 0, "", err
+	}
+	checksum, err := fileChecksum(path)
+	if err != nil {
+		return "", 0, "", err
+	}
+	return path, info.Size(), checksum, nil
+}
+
+func (s *databaseBackupService) dump(path string) error {
+	dbType := strings.ToLower(config.Instance.DB.Type)
+	switch dbType {
+	case config.DbTypeSQLite:
+		return s.dumpSQLite(path)
+	case config.DbTypeMySQL:
+		return s.dumpCommand(path, "mysqldump")
+	case config.DbTypePostgreSQL:
+		return s.dumpCommand(path, "pg_dump")
+	default:
+		return fmt.Errorf("unsupported database type: %s", dbType)
+	}
+}
+
+func (s *databaseBackupService) dumpSQLite(path string) error {
+	db := sqls.DB()
+	if db == nil {
+		return errors.New("database is not initialized")
+	}
+	sqlDB, err := db.DB()
+	if err != nil {
+		return err
+	}
+	quoted := strings.ReplaceAll(path, "'", "''")
+	if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+	_, err = sqlDB.Exec("VACUUM INTO '" + quoted + "'")
+	return err
+}
+
+func (s *databaseBackupService) dumpCommand(path, commandName string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
+	defer cancel()
+	args, env, err := s.dumpCommandArgs(commandName, path)
+	if err != nil {
+		return err
+	}
+	cmd := exec.CommandContext(ctx, commandName, args...)
+	cmd.Env = append(os.Environ(), env...)
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		message := strings.TrimSpace(stderr.String())
+		if message == "" {
+			message = err.Error()
+		}
+		return errors.New(message)
+	}
+	return nil
+}
+
+func (s *databaseBackupService) dumpCommandArgs(commandName, path string) ([]string, []string, error) {
+	dbType := strings.ToLower(config.Instance.DB.Type)
+	if dbType == config.DbTypeMySQL && commandName == "mysqldump" {
+		cfg, err := mysql.ParseDSN(config.Instance.DB.Url)
+		if err != nil {
+			return nil, nil, fmt.Errorf("invalid MySQL connection string: %w", err)
+		}
+		args := []string{"--single-transaction", "--routines", "--events", "--triggers", "--hex-blob", "--result-file=" + path, "--user=" + cfg.User, cfg.DBName}
+		if cfg.Net == "unix" {
+			args = append(args, "--socket="+cfg.Addr)
+		} else {
+			host, port := splitMySQLAddress(cfg.Addr)
+			args = append(args, "--host="+host)
+			if port != "" {
+				args = append(args, "--port="+port)
+			}
+		}
+		return args, []string{"MYSQL_PWD=" + cfg.Passwd}, nil
+	}
+	if dbType == config.DbTypePostgreSQL && commandName == "pg_dump" {
+		cfg, err := pgx.ParseConfig(config.Instance.DB.Url)
+		if err != nil {
+			return nil, nil, fmt.Errorf("invalid PostgreSQL connection string: %w", err)
+		}
+		args := []string{"--format=plain", "--no-owner", "--file=" + path, "--host=" + cfg.Host, "--port=" + fmt.Sprint(cfg.Port), "--username=" + cfg.User, "--dbname=" + cfg.Database}
+		if sslMode := cfg.RuntimeParams["sslmode"]; sslMode != "" {
+			args = append(args, "--sslmode="+sslMode)
+		}
+		return args, []string{"PGPASSWORD=" + cfg.Password}, nil
+	}
+	return nil, nil, errors.New("database dump command does not match configured database")
+}
+
+func splitMySQLAddress(address string) (string, string) {
+	if strings.HasPrefix(address, "/") {
+		return address, ""
+	}
+	if host, port, err := net.SplitHostPort(address); err == nil {
+		return host, port
+	}
+	host, port, ok := strings.Cut(address, ":")
+	if ok && host != "" && port != "" {
+		return host, port
+	}
+	return address, ""
+}
+
+func (s *databaseBackupService) verifyFile(path, dbType, checksum string) error {
+	actual, err := fileChecksum(path)
+	if err != nil {
+		return err
+	}
+	if actual != checksum {
+		return errors.New("backup checksum verification failed")
+	}
+	info, err := os.Stat(path)
+	if err != nil || !info.Mode().IsRegular() || info.Size() == 0 {
+		return errors.New("backup file is empty or invalid")
+	}
+	if dbType == config.DbTypeSQLite {
+		return verifySQLite(path)
+	}
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	var header [256]byte
+	count, err := file.Read(header[:])
+	if err != nil && !errors.Is(err, io.EOF) {
+		return err
+	}
+	if count == 0 {
+		return errors.New("backup file is empty")
+	}
+	return nil
+}
+
+func verifySQLite(path string) error {
+	db, err := gorm.Open(sqlite.Open("file:"+path+"?mode=ro"), &gorm.Config{})
+	if err != nil {
+		return err
+	}
+	var result string
+	if err := db.Raw("PRAGMA integrity_check").Scan(&result).Error; err != nil {
+		return err
+	}
+	if strings.ToLower(strings.TrimSpace(result)) != "ok" {
+		return fmt.Errorf("sqlite integrity check failed: %s", result)
+	}
+	sqlDB, err := db.DB()
+	if err == nil {
+		_ = sqlDB.Close()
+	}
+	return nil
+}
+
+func (s *databaseBackupService) prune() {
+	retention := s.Config().Retention
+	list := s.List(100)
+	successful := make([]models.DatabaseBackup, 0)
+	for _, backup := range list {
+		if backup.Status == models.DatabaseBackupSuccess {
+			successful = append(successful, backup)
+		}
+	}
+	if len(successful) <= retention {
+		return
+	}
+	for _, backup := range successful[retention:] {
+		_ = s.Delete(backup.Id)
+	}
+}
+
+func (s *databaseBackupService) directory(value string) (string, error) {
+	value = strings.TrimSpace(value)
+	if value == "" || filepath.IsAbs(value) {
+		return "", errors.New("backup directory must be a relative path")
+	}
+	clean := filepath.Clean(value)
+	if clean == "." || clean == ".." || strings.HasPrefix(clean, ".."+string(filepath.Separator)) {
+		return "", errors.New("backup directory must stay inside the application directory")
+	}
+	root, err := filepath.Abs(config.GetConfigDir())
+	if err != nil {
+		return "", err
+	}
+	dir, err := filepath.Abs(filepath.Join(root, clean))
+	if err != nil {
+		return "", err
+	}
+	return dir, nil
+}
+
+func (s *databaseBackupService) pathForFileName(fileName string) (string, error) {
+	return s.pathForFileNameInDirectory(fileName, s.Config().Directory)
+}
+
+func (s *databaseBackupService) pathForBackup(backup *models.DatabaseBackup) (string, error) {
+	directory := backup.Directory
+	if directory == "" {
+		directory = s.Config().Directory
+	}
+	return s.pathForFileNameInDirectory(backup.FileName, directory)
+}
+
+func (s *databaseBackupService) pathForFileNameInDirectory(fileName, directory string) (string, error) {
+	if fileName == "" || filepath.Base(fileName) != fileName {
+		return "", errors.New("invalid backup file name")
+	}
+	dir, err := s.directory(directory)
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(dir, fileName), nil
+}
+
+func (s *databaseBackupService) get(id int64) *models.DatabaseBackup {
+	if db := sqls.DB(); db != nil {
+		var backup models.DatabaseBackup
+		if db.First(&backup, id).Error == nil {
+			return &backup
+		}
+	}
+	return nil
+}
+
+func (s *databaseBackupService) newFileName(trigger string) string {
+	var suffix [4]byte
+	_, _ = rand.Read(suffix[:])
+	extension := ".sql"
+	if config.Instance != nil && strings.EqualFold(config.Instance.DB.Type, config.DbTypeSQLite) {
+		extension = ".sqlite3"
+	}
+	return fmt.Sprintf("bbs-go-%s-%s-%s%s", time.Now().UTC().Format("20060102-150405"), trigger, hex.EncodeToString(suffix[:]), extension)
+}
+
+func fileChecksum(path string) (string, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+	hash := sha256.New()
+	if _, err := io.Copy(hash, file); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(hash.Sum(nil)), nil
+}
+
+func truncateBackupError(message string) string {
+	message = strings.TrimSpace(message)
+	if len(message) > maxBackupErrorLength {
+		return message[:maxBackupErrorLength]
+	}
+	return message
+}

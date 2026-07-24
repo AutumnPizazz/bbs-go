@@ -243,6 +243,14 @@ func registerAdminRoutes(group *gin.RouterGroup) {
 	taskGroup := group.Group("/tasks")
 	taskGroup.GET("/status", adminHandlers.TaskStatus)
 
+	backupGroup := group.Group("/backup")
+	backupGroup.GET("/config", adminHandlers.DatabaseBackupConfig)
+	backupGroup.POST("/config", adminHandlers.DatabaseBackupSaveConfig)
+	backupGroup.GET("/list", adminHandlers.DatabaseBackupList)
+	backupGroup.POST("/create", adminHandlers.DatabaseBackupCreate)
+	backupGroup.POST("/delete", adminHandlers.DatabaseBackupRemove)
+	backupGroup.GET("/download/:id", adminHandlers.DatabaseBackupDownload)
+
 	commentGroup := group.Group("/comment")
 	commentGroup.POST("/list", adminHandlers.CommentList)
 	commentGroup.POST("/delete", adminHandlers.CommentRemove)

@@ -74,6 +74,7 @@ type Config struct {
 	Logger         LoggerConfig   `yaml:"logger"`         // 日志配置
 	DB             DBConfig       `yaml:"db"`             // 数据库配置
 	Search         SearchConfig   `yaml:"search"`         // 搜索配置
+	Backup         BackupConfig   `yaml:"backup"`         // 数据库备份配置
 	Security       SecurityConfig `yaml:"security"`       // 安全配置
 }
 
@@ -105,6 +106,13 @@ type DBConfig struct {
 
 type SearchConfig struct {
 	IndexPath string `yaml:"indexPath"`
+}
+
+type BackupConfig struct {
+	Enabled   bool   `yaml:"enabled"`
+	Schedule  string `yaml:"schedule"`
+	Retention int    `yaml:"retention"`
+	Directory string `yaml:"directory"`
 }
 
 type SecurityConfig struct {
@@ -143,6 +151,7 @@ func ReadConfig() (cfg *Config, exists bool, err error) {
 			DB: defaultDbConfig(),
 		}
 	}
+	SetBackupDefaults(&cfg.Backup)
 
 	return cfg, exists, nil
 }
@@ -252,4 +261,31 @@ func defaultDbConfig() DBConfig {
 		ConnMaxLifetimeSeconds: 3600,
 		LogLevel:               DefaultDBLogLevel,
 	}
+}
+
+const (
+	DefaultBackupSchedule  = "0 3 * * *"
+	DefaultBackupRetention = 7
+	DefaultBackupDirectory = "backups"
+)
+
+func SetBackupDefaults(c *BackupConfig) {
+	if strs.IsBlank(c.Schedule) {
+		c.Schedule = DefaultBackupSchedule
+	}
+	if c.Retention == 0 {
+		c.Retention = DefaultBackupRetention
+	}
+	if strs.IsBlank(c.Directory) {
+		c.Directory = DefaultBackupDirectory
+	}
+}
+
+func SaveBackupConfig(backup BackupConfig) error {
+	SetBackupDefaults(&backup)
+	if Instance == nil {
+		return errors.New("config is not initialized")
+	}
+	Instance.Backup = backup
+	return WriteConfig(Instance)
 }

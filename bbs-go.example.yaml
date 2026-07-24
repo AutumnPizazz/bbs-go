@@ -30,3 +30,10 @@ DB:
 # search
 Search:
   IndexPath: # 索引路径
+
+# 数据库备份（默认关闭；备份目录必须是应用目录下的相对路径）
+Backup:
+  Enabled: false
+  Schedule: "0 3 * * *"
+  Retention: 7
+  Directory: backups

@@ -16,6 +16,7 @@ func Start() {
 			slog.Error("generate sitemap error", slog.Any("err", err))
 		}
 	})
+	services.DatabaseBackupService.StartScheduler(c)
 
 	c.Start()
 }
