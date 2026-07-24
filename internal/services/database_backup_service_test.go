@@ -1,6 +1,7 @@
 package services
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -66,6 +67,18 @@ func TestDatabaseBackupDumpArgsDoNotExposePasswords(t *testing.T) {
 	}
 	if len(env) != 1 || env[0] != "MYSQL_PWD=secret-password" {
 		t.Fatalf("expected password to be passed through MYSQL_PWD, got %#v", env)
+	}
+	for _, expected := range []string{"--ignore-table=bbsgo.database_backups", "--ignore-table=bbsgo.database_restores"} {
+		found := false
+		for _, arg := range args {
+			if arg == expected {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Fatalf("expected dump args to exclude metadata table %q, got %#v", expected, args)
+		}
 	}
 	host, port := splitMySQLAddress("db.example:3307")
 	if host != "db.example" || port != "3307" {
@@ -211,5 +224,75 @@ func TestDatabaseBackupSQLiteCreatesAndVerifiesSnapshot(t *testing.T) {
 	}
 	if recoveredRestore.Status != models.DatabaseRestoreFailed || recoveredRestore.Error == "" {
 		t.Fatalf("expected stale restore to be marked failed, got %#v", recoveredRestore)
+	}
+}
+
+func TestDatabaseBackupFinalizesRestoreMetadataAfterLegacyDump(t *testing.T) {
+	previousDB := sqls.DB()
+	t.Cleanup(func() { sqls.SetDB(previousDB) })
+
+	db, err := gorm.Open(sqlite.Open(filepath.Join(t.TempDir(), "metadata.db")), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("open metadata database: %v", err)
+	}
+	sqlDB, err := db.DB()
+	if err != nil {
+		t.Fatalf("get metadata database connection: %v", err)
+	}
+	t.Cleanup(func() { _ = sqlDB.Close() })
+	sqls.SetDB(db)
+	if err := db.AutoMigrate(&models.DatabaseBackup{}, &models.DatabaseRestore{}); err != nil {
+		t.Fatalf("migrate metadata tables: %v", err)
+	}
+
+	selected := &models.DatabaseBackup{
+		TriggerType: BackupTriggerManual, DatabaseType: config.DbTypeMySQL,
+		FileName: "selected.sql", Directory: "backups", Status: models.DatabaseBackupSuccess,
+		Progress: 100, Phase: backupPhaseCompleted, CreateTime: 1, UpdateTime: 1,
+	}
+	safety := &models.DatabaseBackup{
+		TriggerType: BackupTriggerRestoreSafety, DatabaseType: config.DbTypeMySQL,
+		FileName: "safety.sql", Directory: "backups", Status: models.DatabaseBackupSuccess,
+		Progress: 100, Phase: backupPhaseCompleted, CreateTime: 2, UpdateTime: 2,
+	}
+	if err := db.Create(selected).Error; err != nil {
+		t.Fatalf("create selected backup: %v", err)
+	}
+	if err := db.Create(safety).Error; err != nil {
+		t.Fatalf("create safety backup: %v", err)
+	}
+	task := &models.DatabaseRestore{
+		BackupId: selected.Id, DatabaseType: config.DbTypeMySQL, Status: models.DatabaseRestoreRunning,
+		RequestedBy: 7, SafetyBackupId: safety.Id, Progress: 55, Phase: restorePhaseRestoring,
+		StartedAt: 3, CreateTime: 3, UpdateTime: 3,
+	}
+	if err := db.Create(task).Error; err != nil {
+		t.Fatalf("create restore task: %v", err)
+	}
+
+	if err := db.Exec("DELETE FROM database_restores").Error; err != nil {
+		t.Fatalf("simulate legacy restore metadata replacement: %v", err)
+	}
+	if err := db.Exec("DELETE FROM database_backups").Error; err != nil {
+		t.Fatalf("simulate legacy backup metadata replacement: %v", err)
+	}
+
+	service := &databaseBackupService{}
+	if err := service.finalizeRestoreMetadata(task, selected, safety); err != nil {
+		t.Fatalf("finalize restore metadata: %v", err)
+	}
+	if result := db.Where("status = ?", models.DatabaseRestoreRunning).First(&models.DatabaseRestore{}); !errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		t.Fatalf("expected no running restore records, got %v", result.Error)
+	}
+	var restored models.DatabaseRestore
+	if err := db.Where("status = ?", models.DatabaseRestoreSuccess).First(&restored).Error; err != nil {
+		t.Fatalf("load finalized restore: %v", err)
+	}
+	if restored.Progress != 100 || restored.Phase != restorePhaseCompleted || restored.SafetyBackupId == 0 {
+		t.Fatalf("unexpected finalized restore: %#v", restored)
+	}
+	var restoredBackup models.DatabaseBackup
+	if err := db.Where("file_name = ?", safety.FileName).First(&restoredBackup).Error; err != nil {
+		t.Fatalf("load restored safety metadata: %v", err)
 	}
 }

@@ -50,6 +50,8 @@ const (
 	restorePhaseRestoring    = "restoring"
 	restorePhaseFailed       = "failed"
 	restorePhaseCompleted    = "completed"
+	backupMetadataTable      = "database_backups"
+	restoreMetadataTable     = "database_restores"
 )
 
 type DatabaseBackupStatus struct {
@@ -363,9 +365,10 @@ func (s *databaseBackupService) runRestore(id int64) {
 		s.markRestoreFailed(id, err)
 		return
 	}
-	_ = sqls.DB().Model(&models.DatabaseRestore{}).Where("id = ?", id).Updates(map[string]interface{}{
-		"status": models.DatabaseRestoreSuccess, "phase": restorePhaseCompleted, "progress": 100, "error": "", "finished_at": dates.NowTimestamp(), "update_time": dates.NowTimestamp(),
-	}).Error
+	if err := s.finalizeRestoreMetadata(task, backup, safetyBackup); err != nil {
+		s.markRestoreFailed(id, fmt.Errorf("database restore completed but status finalization failed: %w", err))
+		return
+	}
 	restoreSucceeded = true
 }
 
@@ -377,7 +380,11 @@ func (s *databaseBackupService) createSafetyBackup(requestedBy int64) (*models.D
 	if err := s.executeBackup(backup); err != nil {
 		return backup, err
 	}
-	return backup, nil
+	completed := s.get(backup.Id)
+	if completed == nil {
+		return nil, errors.New("safety backup record was not found after completion")
+	}
+	return completed, nil
 }
 
 func (s *databaseBackupService) restoreMySQL(path string) error {
@@ -434,6 +441,89 @@ func (s *databaseBackupService) markRestoreFailed(id int64, cause error) {
 		"status": models.DatabaseRestoreFailed, "phase": restorePhaseFailed, "error": truncateBackupError(cause.Error()),
 		"finished_at": dates.NowTimestamp(), "update_time": dates.NowTimestamp(),
 	}).Error
+}
+
+// finalizeRestoreMetadata repairs the task tables when an older dump included
+// them and replaced the records created for the current restore.
+func (s *databaseBackupService) finalizeRestoreMetadata(task *models.DatabaseRestore, backup, safetyBackup *models.DatabaseBackup) error {
+	db := sqls.DB()
+	if db == nil {
+		return errors.New("database is not initialized")
+	}
+	if err := db.AutoMigrate(&models.DatabaseBackup{}, &models.DatabaseRestore{}); err != nil {
+		return err
+	}
+
+	restoredBackup, err := s.ensureBackupRecord(db, backup)
+	if err != nil {
+		return fmt.Errorf("restore selected backup metadata: %w", err)
+	}
+	restoredSafetyBackup, err := s.ensureBackupRecord(db, safetyBackup)
+	if err != nil {
+		return fmt.Errorf("restore safety backup metadata: %w", err)
+	}
+
+	now := dates.NowTimestamp()
+	if result := db.Model(&models.DatabaseRestore{}).Where("status = ? AND id <> ?", models.DatabaseRestoreRunning, task.Id).Updates(map[string]interface{}{
+		"status": models.DatabaseRestoreFailed, "phase": restorePhaseFailed,
+		"error": "restore metadata was replaced during a database restore", "finished_at": now, "update_time": now,
+	}); result.Error != nil {
+		return result.Error
+	}
+
+	updates := map[string]interface{}{
+		"backup_id": restoredBackup.Id, "database_type": task.DatabaseType, "status": models.DatabaseRestoreSuccess,
+		"requested_by": task.RequestedBy, "safety_backup_id": restoredSafetyBackup.Id,
+		"progress": 100, "phase": restorePhaseCompleted, "error": "", "started_at": task.StartedAt,
+		"finished_at": now, "update_time": now,
+	}
+	result := db.Model(&models.DatabaseRestore{}).Where("id = ?", task.Id).Updates(updates)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected > 0 {
+		return nil
+	}
+
+	restoredTask := *task
+	restoredTask.Id = 0
+	restoredTask.BackupId = restoredBackup.Id
+	restoredTask.Status = models.DatabaseRestoreSuccess
+	restoredTask.SafetyBackupId = restoredSafetyBackup.Id
+	restoredTask.Progress = 100
+	restoredTask.Phase = restorePhaseCompleted
+	restoredTask.Error = ""
+	restoredTask.FinishedAt = now
+	restoredTask.UpdateTime = now
+	if err := db.Create(&restoredTask).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *databaseBackupService) ensureBackupRecord(db *gorm.DB, source *models.DatabaseBackup) (*models.DatabaseBackup, error) {
+	if source == nil {
+		return nil, errors.New("backup metadata is missing")
+	}
+	var existing models.DatabaseBackup
+	err := db.Where("file_name = ?", source.FileName).First(&existing).Error
+	if err == nil {
+		restored := *source
+		restored.Id = existing.Id
+		if err := db.Save(&restored).Error; err != nil {
+			return nil, err
+		}
+		return &restored, nil
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+	restored := *source
+	restored.Id = 0
+	if err := db.Create(&restored).Error; err != nil {
+		return nil, err
+	}
+	return &restored, nil
 }
 
 func (s *databaseBackupService) updateBackupProgress(id int64, progress int, phase string) {
@@ -668,7 +758,11 @@ func (s *databaseBackupService) dumpCommandArgs(commandName, path string) ([]str
 		if err != nil {
 			return nil, nil, fmt.Errorf("invalid MySQL connection string: %w", err)
 		}
-		args := []string{"--single-transaction", "--routines", "--events", "--triggers", "--hex-blob", "--no-tablespaces", "--result-file=" + path, "--user=" + cfg.User, cfg.DBName}
+		if cfg.DBName == "" {
+			return nil, nil, errors.New("MySQL database name is required")
+		}
+		args := []string{"--single-transaction", "--routines", "--events", "--triggers", "--hex-blob", "--no-tablespaces", "--result-file=" + path, "--user=" + cfg.User}
+		args = append(args, "--ignore-table="+cfg.DBName+"."+backupMetadataTable, "--ignore-table="+cfg.DBName+"."+restoreMetadataTable, cfg.DBName)
 		if cfg.Net == "unix" {
 			args = append(args, "--socket="+cfg.Addr)
 		} else {
