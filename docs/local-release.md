@@ -104,3 +104,5 @@ dist/bbs-go-instance-v1.0.1-linux-amd64.zip
 部署脚本会加载包内镜像、导入 `mysql-init/001-bbsgo.sql.gz`，等待数据库恢复完成后启动 BBS-GO。发现同名容器或数据卷时会拒绝覆盖。恢复完成后访问 `http://127.0.0.1:3000`，而不是容器内部的 `8082`。
 
 实例包同样遵守输出文件不覆盖规则。例如已经生成 `v1.0.1` 后再次执行同一命令会得到 `output already exists`，应改用 `v1.0.2` 或新的 `-output` 路径。
+
+需要在已有 Ubuntu 云服务器上先备份旧应用、清理旧 Docker 资源再替换部署时，参见[远程 Ubuntu 替换部署](remote-deployment-ubuntu.md)。
