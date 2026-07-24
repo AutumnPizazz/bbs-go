@@ -151,16 +151,26 @@ export default function DashboardHealthRoute() {
   }, [load])
 
   React.useEffect(() => {
-    if (!backup?.status?.restore?.running) {
-      return
+    let disposed = false
+    let timer: number | undefined
+
+    const refresh = () => {
+      if (disposed) return
+      void load().finally(() => {
+        if (!disposed) {
+          timer = window.setTimeout(refresh, 2000)
+        }
+      })
     }
 
-    const timer = window.setInterval(() => {
-      void load()
-    }, 2000)
-
-    return () => window.clearInterval(timer)
-  }, [backup?.status?.restore?.running, load])
+    timer = window.setTimeout(refresh, 2000)
+    return () => {
+      disposed = true
+      if (timer !== undefined) {
+        window.clearTimeout(timer)
+      }
+    }
+  }, [load])
 
   async function startTask(endpoint: string) {
     try {
