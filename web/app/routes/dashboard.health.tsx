@@ -84,6 +84,8 @@ type BackupState = {
   results?: BackupRecord[]
 }
 
+const byteCountFormatter = new Intl.NumberFormat("en-US")
+
 function StatusIcon({ status }: { status?: string }) {
   return status === "ok" ? (
     <CheckCircle2Icon className="size-4 text-emerald-600" />
@@ -407,7 +409,7 @@ export default function DashboardHealthRoute() {
                           : t("dashboard.pages.health.backup.failed")}
                       {record.error ? <p className="mt-1 max-w-[260px] text-xs text-destructive">{record.error}</p> : null}
                     </td>
-                    <td className="px-3 py-2">{record.size || 0}</td>
+                    <td className="px-3 py-2">{byteCountFormatter.format(record.size || 0)}</td>
                     <td className="px-3 py-2 text-xs text-muted-foreground">{record.finishedAt || "-"}</td>
                     <td className="px-3 py-2 text-right">
                       <div className="flex justify-end gap-2">
