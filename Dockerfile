@@ -33,7 +33,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 	CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
 	go build -v -trimpath -ldflags="-s -w" -o /out/bbs-go ./main.go
 
-FROM node:24-alpine AS app
+FROM node:24-bookworm-slim AS app
 WORKDIR /app
 
 ENV NODE_ENV=production \
@@ -42,7 +42,9 @@ ENV NODE_ENV=production \
 	BBSGO_SERVER_URL=http://127.0.0.1:8082 \
 	TZ=Asia/Shanghai
 
-RUN apk add --no-cache ca-certificates tzdata wget mariadb-client \
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends ca-certificates tzdata wget default-mysql-client \
+	&& rm -rf /var/lib/apt/lists/* \
 	&& mkdir -p /app/data /app/logs /app/backups /app/res/uploads /app/defaults
 
 COPY --from=server-builder /out/bbs-go /app/bbs-go

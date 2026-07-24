@@ -614,7 +614,7 @@ func (s *databaseBackupService) dumpCommandArgs(commandName, path string) ([]str
 		if err != nil {
 			return nil, nil, fmt.Errorf("invalid MySQL connection string: %w", err)
 		}
-		args := []string{"--single-transaction", "--routines", "--events", "--triggers", "--hex-blob", "--result-file=" + path, "--user=" + cfg.User, cfg.DBName}
+		args := []string{"--single-transaction", "--routines", "--events", "--triggers", "--hex-blob", "--no-tablespaces", "--result-file=" + path, "--user=" + cfg.User, cfg.DBName}
 		if cfg.Net == "unix" {
 			args = append(args, "--socket="+cfg.Addr)
 		} else {
