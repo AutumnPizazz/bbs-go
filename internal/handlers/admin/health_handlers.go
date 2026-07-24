@@ -44,7 +44,14 @@ func Health(ctx *gin.Context) {
 	if storage.Message == "" {
 		storage.Message = "local"
 	}
+	if err := services.UploadService.CheckConnectivity(); err != nil {
+		storage.Status = "error"
+		storage.Message = err.Error()
+	}
 	components["storage"] = storage
+	if storage.Status != "ok" {
+		status = "degraded"
+	}
 
 	searchStatus := services.SearchReindexService.Status()
 	sitemapStatus := services.SeoSitemapService.Status()
@@ -64,15 +71,17 @@ func Health(ctx *gin.Context) {
 func TaskStatus(ctx *gin.Context) {
 	search := services.SearchReindexService.Status()
 	sitemap := services.SeoSitemapService.Status()
+	attachmentCleanup := services.AttachmentCleanupTaskService.Status()
 	ginx.WriteJSON(ctx, map[string]interface{}{
 		"tasks": map[string]interface{}{
-			"searchReindex": search,
-			"sitemap":       sitemap,
+			"searchReindex":     search,
+			"sitemap":           sitemap,
+			"attachmentCleanup": attachmentCleanup,
 		},
-		"failed":       search.Error != "" || sitemap.Error != "",
-		"active":       search.Running || sitemap.Running,
+		"failed":       search.Error != "" || sitemap.Error != "" || attachmentCleanup.Error != "",
+		"active":       search.Running || sitemap.Running || attachmentCleanup.Running,
 		"checkedAt":    dates.NowTimestamp(),
-		"retrySupport": map[string]bool{"searchReindex": true, "sitemap": true},
+		"retrySupport": map[string]bool{"searchReindex": true, "sitemap": true, "attachmentCleanup": false},
 	})
 }
 

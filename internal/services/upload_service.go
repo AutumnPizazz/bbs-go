@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"net/url"
+	"strings"
 	"sync"
 
 	"github.com/mlogclub/simple/common/strs"
@@ -40,6 +42,78 @@ func (s *uploadService) putObject(key string, body io.Reader, opts *uploader.Put
 // PutObject 按 key 流式上传；opts 可设置 ContentType、ContentDisposition、ContentLength。
 func (s *uploadService) PutObject(key string, body io.Reader, opts *uploader.PutOptions) (string, error) {
 	return s.putObject(key, body, opts)
+}
+
+func (s *uploadService) DeleteObject(key string) error {
+	u, err := s.getUploader()
+	if err != nil {
+		return err
+	}
+	return u.DeleteObject(SysConfigService.GetUploadConfig(), key)
+}
+
+// StorageKeyFromURL derives a legacy storage key only when the URL belongs to
+// the currently configured provider. This prevents an arbitrary URL from
+// being interpreted as a deletable object key.
+func (s *uploadService) StorageKeyFromURL(raw string) (string, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return "", nil
+	}
+	parsed, err := url.Parse(raw)
+	if err != nil {
+		return "", err
+	}
+	cfg := SysConfigService.GetUploadConfig()
+	if strs.IsBlank(string(cfg.EnableUploadMethod)) {
+		cfg.EnableUploadMethod = dto.Local
+	}
+	basePath := ""
+	switch cfg.EnableUploadMethod {
+	case dto.Local:
+		basePath = strings.Trim(respath.UploadsURLPrefix, "/")
+		if parsed.Host != "" {
+			base, parseErr := url.Parse(SysConfigService.GetBaseURL())
+			if parseErr != nil || base.Host == "" || !strings.EqualFold(base.Host, parsed.Host) {
+				return "", fmt.Errorf("attachment URL does not belong to local storage")
+			}
+		}
+		if !strings.HasPrefix(strings.TrimLeft(parsed.Path, "/"), basePath+"/") {
+			return "", fmt.Errorf("attachment URL does not belong to local storage")
+		}
+	case dto.AliyunOss:
+		basePath, err = requireStorageHost(parsed, cfg.AliyunOss.Host)
+	case dto.TencentCos:
+		expected := fmt.Sprintf("https://%s.cos.%s.myqcloud.com", cfg.TencentCos.Bucket, cfg.TencentCos.Region)
+		basePath, err = requireStorageHost(parsed, expected)
+	case dto.AwsS3:
+		expected := fmt.Sprintf("https://%s.s3.%s.amazonaws.com", cfg.AwsS3.Bucket, cfg.AwsS3.Region)
+		basePath, err = requireStorageHost(parsed, expected)
+	default:
+		return "", fmt.Errorf("unsupported upload method: %s", cfg.EnableUploadMethod)
+	}
+	if err != nil {
+		return "", err
+	}
+	key := strings.TrimPrefix(strings.TrimLeft(parsed.Path, "/"), strings.Trim(basePath, "/"))
+	key = strings.TrimLeft(key, "/")
+	return uploader.NormalizeStorageKey(key)
+}
+
+func requireStorageHost(parsed *url.URL, expectedRaw string) (string, error) {
+	expected, err := url.Parse(strings.TrimSpace(expectedRaw))
+	if err != nil || expected.Host == "" || parsed.Host == "" || !strings.EqualFold(expected.Host, parsed.Host) {
+		return "", fmt.Errorf("attachment URL does not belong to configured storage")
+	}
+	return strings.Trim(expected.Path, "/"), nil
+}
+
+func (s *uploadService) CheckConnectivity() error {
+	u, err := s.getUploader()
+	if err != nil {
+		return err
+	}
+	return u.CheckConnectivity(SysConfigService.GetUploadConfig())
 }
 
 func (s *uploadService) ObjectURL(key string) string {

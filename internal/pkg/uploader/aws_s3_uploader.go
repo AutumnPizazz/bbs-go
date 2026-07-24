@@ -61,6 +61,22 @@ func (u *AwsS3Uploader) CopyImage(cfg dto.UploadConfig, originUrl string) (strin
 	return u.PutObject(cfg, key, bytes.NewReader(data), opts)
 }
 
+func (u *AwsS3Uploader) DeleteObject(cfg dto.UploadConfig, key string) error {
+	if err := u.initClient(cfg); err != nil {
+		return err
+	}
+	_, err := u.client.DeleteObject(context.Background(), &s3.DeleteObjectInput{Bucket: aws.String(cfg.AwsS3.Bucket), Key: aws.String(key)})
+	return err
+}
+
+func (u *AwsS3Uploader) CheckConnectivity(cfg dto.UploadConfig) error {
+	if err := u.initClient(cfg); err != nil {
+		return err
+	}
+	_, err := u.client.HeadBucket(context.Background(), &s3.HeadBucketInput{Bucket: aws.String(cfg.AwsS3.Bucket)})
+	return err
+}
+
 func (u *AwsS3Uploader) initClient(cfg dto.UploadConfig) error {
 	if !u.isCfgChange(cfg) {
 		return nil

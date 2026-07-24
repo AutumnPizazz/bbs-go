@@ -98,20 +98,24 @@ func UserReportProcess(ctx *gin.Context) {
 	}
 
 	t := services.UserReportService.Get(id)
-	if t == nil {
+	if t == nil || !userReportTargetAccessible(user, t) {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage("entity not found"))
 		return
 	}
+	scope, scopeErr := userReportProcessScope(ctx)
+	if scopeErr != nil {
+		ginx.WriteJSON(ctx, scopeErr)
+		return
+	}
 
-	t.ProcessStatus = processStatus
-	t.ProcessTime = dates.NowTimestamp()
-	t.ProcessUserId = user.Id
-	if err := services.UserReportService.Update(t); err != nil {
+	processed, err := processRelatedUserReports(t, processStatus, scope, user.Id)
+	if err != nil {
+		services.OperateLogService.AddOperateLogFailure(user.Id, constants.OpTypeUpdate, "userReport", t.Id, "更新举报处理状态", err, ctx.Request)
 		ginx.WriteJSON(ctx, ginx.ErrorMessage(err.Error()))
 		return
 	}
 	services.OperateLogService.AddOperateLog(user.Id, constants.OpTypeUpdate, "userReport", t.Id,
-		fmt.Sprintf("更新举报处理状态：%d", processStatus), ctx.Request)
+		fmt.Sprintf("更新举报处理状态：%d，范围：%s，影响%d条", processStatus, scope, processed), ctx.Request)
 	ginx.WriteJSON(ctx, t)
 
 }
@@ -137,8 +141,13 @@ func UserReportAction(ctx *gin.Context) {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage("action is required"))
 		return
 	}
+	scope, err := userReportProcessScope(ctx)
+	if err != nil {
+		services.OperateLogService.AddOperateLogFailure(user.Id, constants.OpTypeUpdate, "userReport", report.Id, "举报处置动作："+action, err, ctx.Request)
+		ginx.WriteJSON(ctx, err)
+		return
+	}
 
-	var err error
 	switch action {
 	case "delete":
 		switch report.DataType {
@@ -185,15 +194,49 @@ func UserReportAction(ctx *gin.Context) {
 		ginx.WriteJSON(ctx, err)
 		return
 	}
-	if err := services.UserReportService.Updates(report.Id, map[string]interface{}{
-		"process_status": 1, "process_time": dates.NowTimestamp(), "process_user_id": user.Id,
-	}); err != nil {
+	processed, err := processRelatedUserReports(report, 1, scope, user.Id)
+	if err != nil {
+		services.OperateLogService.AddOperateLogFailure(user.Id, constants.OpTypeUpdate, "userReport", report.Id, "举报处置动作："+action, err, ctx.Request)
 		ginx.WriteJSON(ctx, err)
 		return
 	}
 	services.OperateLogService.AddOperateLog(user.Id, constants.OpTypeUpdate, "userReport", report.Id,
-		"举报处置动作："+action, ctx.Request)
+		fmt.Sprintf("举报处置动作：%s，范围：%s，影响%d条", action, scope, processed), ctx.Request)
 	ginx.WriteJSON(ctx, services.UserReportService.Get(report.Id))
+}
+
+func userReportProcessScope(ctx *gin.Context) (string, error) {
+	scope, _ := params.Get(ctx, "scope")
+	if scope == "" {
+		return "current", nil
+	}
+	if scope != "current" && scope != "object" {
+		return "", ginx.ErrorMessage("scope must be current or object")
+	}
+	return scope, nil
+}
+
+func processRelatedUserReports(report *models.UserReport, processStatus int64, scope string, userId int64) (int, error) {
+	reports := []*models.UserReport{report}
+	if scope == "object" {
+		relatedReports := services.UserReportService.FindByObject(report.DataType, report.DataId)
+		for i := range relatedReports {
+			related := &relatedReports[i]
+			if related.Id != report.Id && related.ProcessStatus == 0 {
+				reports = append(reports, related)
+			}
+		}
+	}
+	processed := 0
+	for _, item := range reports {
+		if err := services.UserReportService.Updates(item.Id, map[string]interface{}{
+			"process_status": processStatus, "process_time": dates.NowTimestamp(), "process_user_id": userId,
+		}); err != nil {
+			return processed, err
+		}
+		processed++
+	}
+	return processed, nil
 }
 
 func userReportTargetAccessible(user *models.User, report *models.UserReport) bool {
@@ -215,6 +258,21 @@ func userReportTargetAccessible(user *models.User, report *models.UserReport) bo
 func buildUserReportDetail(report *models.UserReport) map[string]interface{} {
 	detail := web.NewRspBuilder(report).Build()
 	detail["target"] = buildUserReportTarget(report)
+	related := services.UserReportService.FindByObject(report.DataType, report.DataId)
+	relatedReports := make([]map[string]interface{}, 0, len(related))
+	pendingCount := 0
+	for _, item := range related {
+		if item.Id == report.Id {
+			continue
+		}
+		if item.ProcessStatus == 0 {
+			pendingCount++
+		}
+		relatedReports = append(relatedReports, web.NewRspBuilder(&item).Build())
+	}
+	detail["relatedReports"] = relatedReports
+	detail["relatedReportCount"] = len(relatedReports)
+	detail["pendingRelatedReportCount"] = pendingCount
 	return detail
 }
 

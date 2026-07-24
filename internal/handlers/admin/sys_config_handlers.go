@@ -15,6 +15,7 @@ import (
 	"github.com/mlogclub/simple/web"
 
 	"bbs-go/internal/cache"
+	"bbs-go/internal/models"
 	"bbs-go/internal/models/constants"
 	"bbs-go/internal/models/dto"
 	"bbs-go/internal/pkg/common"
@@ -33,12 +34,15 @@ func SysConfigDetail(ctx *gin.Context) {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage("Not found, id="+strconv.FormatInt(id, 10)))
 		return
 	}
-	ginx.WriteJSON(ctx, t)
+	ginx.WriteJSON(ctx, redactSysConfig(t))
 
 }
 
 func SysConfigList(ctx *gin.Context) {
 	list, paging := services.SysConfigService.FindPageByParams(params.NewQueryParams(ctx).PageByReq().Desc("id"))
+	for i := range list {
+		list[i] = *redactSysConfig(&list[i])
+	}
 	ginx.WriteJSON(ctx, &web.PageResult{Results: list, Page: paging})
 
 }
@@ -110,6 +114,21 @@ func SysConfigSaveSensitive(ctx *gin.Context) {
 			"更新敏感系统设置（不记录配置值）：keys="+strings.Join(configKeys(body), ","), ctx.Request)
 	}
 	ginx.WriteJSON(ctx, nil)
+}
+
+func redactSysConfig(value *models.SysConfig) *models.SysConfig {
+	if value == nil {
+		return nil
+	}
+	copy := *value
+	if services.SysConfigService.IsSensitiveKey(copy.Key) {
+		if strings.TrimSpace(copy.Value) == "" {
+			copy.Value = ""
+		} else {
+			copy.Value = "[configured]"
+		}
+	}
+	return &copy
 }
 
 func configKeys(body []byte) []string {

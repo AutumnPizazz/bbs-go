@@ -49,6 +49,22 @@ func (u *TencentCosUploader) CopyImage(cfg dto.UploadConfig, originUrl string) (
 	return u.PutObject(cfg, key, bytes.NewReader(data), opts)
 }
 
+func (u *TencentCosUploader) DeleteObject(cfg dto.UploadConfig, key string) error {
+	if err := u.initClient(cfg); err != nil {
+		return err
+	}
+	_, err := u.client.Object.Delete(context.Background(), key)
+	return err
+}
+
+func (u *TencentCosUploader) CheckConnectivity(cfg dto.UploadConfig) error {
+	if err := u.initClient(cfg); err != nil {
+		return err
+	}
+	_, err := u.client.Bucket.Head(context.Background())
+	return err
+}
+
 func (u *TencentCosUploader) initClient(cfg dto.UploadConfig) error {
 	if !u.isCfgChange(cfg) {
 		return nil

@@ -15,6 +15,8 @@ var Models = []interface{}{
 	&Vote{}, &VoteOption{}, &VoteRecord{},
 	&OperateLog{}, &UserFollow{}, &UserFeed{}, &UserReport{},
 	&Attachment{},
+	&MessageSendTask{}, &MessageDelivery{},
+	&AnnouncementPublishRecord{}, &DashboardViewPreference{},
 }
 
 type Model struct {
@@ -157,6 +159,7 @@ type Tag struct {
 	Status      int    `gorm:"type:int;index:idx_tag_status;not null" json:"status" form:"status"`
 	CreateTime  int64  `json:"createTime" form:"createTime"`
 	UpdateTime  int64  `json:"updateTime" form:"updateTime"`
+	UsageCount  int64  `gorm:"-" json:"usageCount"`
 }
 
 // 评论
@@ -333,6 +336,7 @@ type OperateLog struct {
 	DataType    string `gorm:"not null;index:idx_operate_log_data;size:32" json:"dataType" form:"dataType"` // 数据类型
 	DataId      int64  `gorm:"not null;index:idx_operate_log_data" json:"dataId" form:"dataId" `            // 数据编号
 	Description string `gorm:"not null;size:1024" json:"description" form:"description"`                    // 描述
+	Result      string `gorm:"size:32;not null;default:success" json:"result" form:"result"`                // success / failure
 	Ip          string `gorm:"size:128" json:"ip" form:"ip"`                                                // ip地址
 	UserAgent   string `gorm:"type:text" json:"userAgent" form:"userAgent"`                                 // UserAgent
 	Referer     string `gorm:"type:text" json:"referer" form:"referer"`                                     // Referer
@@ -361,14 +365,14 @@ type UserFeed struct {
 // UserReport 用户举报
 type UserReport struct {
 	Model
-	DataId      int64  `json:"dataId" form:"dataId"`           // 举报数据ID
-	DataType    string `json:"dataType" form:"dataType"`       // 举报数据类型
-	UserId      int64  `json:"userId" form:"userId"`           // 举报人ID
-	Reason      string `json:"reason" form:"reason"`           // 举报原因
+	DataId        int64  `json:"dataId" form:"dataId"`               // 举报数据ID
+	DataType      string `json:"dataType" form:"dataType"`           // 举报数据类型
+	UserId        int64  `json:"userId" form:"userId"`               // 举报人ID
+	Reason        string `json:"reason" form:"reason"`               // 举报原因
 	ProcessStatus int64  `json:"processStatus" form:"processStatus"` // 处理状态
 	ProcessTime   int64  `json:"processTime" form:"processTime"`     // 处理时间
 	ProcessUserId int64  `json:"processUserId" form:"processUserId"` // 处理人ID
-	CreateTime  int64  `json:"createTime" form:"createTime"`   // 举报时间
+	CreateTime    int64  `json:"createTime" form:"createTime"`       // 举报时间
 }
 
 // Attachment 帖子附件
@@ -378,6 +382,7 @@ type Attachment struct {
 	UserId        int64  `gorm:"not null;index:idx_attachment_user_id" json:"userId" form:"userId"`                       // 上传者（发帖人）ID
 	FileName      string `gorm:"size:256" json:"fileName" form:"fileName"`                                                // 原始文件名
 	FileUrl       string `gorm:"size:1024" json:"fileUrl" form:"fileUrl"`                                                 // 访问地址（相对路径或完整 URL，上传返回）
+	StorageKey    string `gorm:"size:1024;index:idx_attachment_storage_key,length:512" json:"storageKey" form:"storageKey"` // 对象存储 key；前缀索引避免 utf8mb4 超过 MySQL 索引长度限制
 	FileSize      int64  `gorm:"not null;default:0" json:"fileSize" form:"fileSize"`                                      // 文件大小（字节）
 	FileType      string `gorm:"size:64" json:"fileType" form:"fileType"`                                                 // MIME 或扩展名
 	DownloadCount int    `gorm:"type:int;not null;default:0" json:"downloadCount" form:"downloadCount"`                   // 下载次数

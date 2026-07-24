@@ -67,6 +67,7 @@ export function DashboardDataPage({
       actionDone: t("dashboard.messages.actionDone"),
       confirmDelete: t("dashboard.confirmDelete"),
       deleteAction: t("dashboard.actions.delete"),
+      saveViewPrompt: t("dashboard.actions.saveViewPrompt"),
     },
   })
 
@@ -269,6 +270,9 @@ export function DashboardDataPage({
         onRefresh={() => void state.load()}
         onCreate={state.openCreate}
         onSaveFilters={state.saveFilters}
+        savedViews={state.savedViews}
+        onLoadView={state.loadSavedView}
+        loadViewLabel={t("dashboard.actions.loadView")}
         clearSelectionLabel={t("dashboard.bulk.clearSelection")}
         onClearSelection={() => {
           setSelectedIds(new Set())

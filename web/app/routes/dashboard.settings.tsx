@@ -4,7 +4,9 @@ import * as React from "react"
 import {
   CheckIcon,
   ChevronDownIcon,
+  EyeIcon,
   GripVerticalIcon,
+  HistoryIcon,
   PlusIcon,
   RefreshCwIcon,
   SaveIcon,
@@ -119,6 +121,15 @@ type SitemapGenerateStatus = {
   finishedAt: number
   error: string
   sitemapURL: string
+}
+
+type AnnouncementRecord = {
+  id?: number
+  content?: string
+  previousContent?: string
+  status?: string
+  publishTime?: number
+  operatorId?: number
 }
 
 const SETTINGS_ENDPOINT = "/api/admin/sys-config/configs"
@@ -342,6 +353,10 @@ export default function DashboardSettingsRoute() {
   const [confirmState, setConfirmState] =
     React.useState<ConfirmDialogState>(null)
   const [error, setError] = React.useState<string | null>(null)
+  const [announcementHistory, setAnnouncementHistory] = React.useState<AnnouncementRecord[]>([])
+  const [announcementPreview, setAnnouncementPreview] = React.useState<string | null>(null)
+  const [previewingAnnouncement, setPreviewingAnnouncement] = React.useState(false)
+  const [publishingAnnouncement, setPublishingAnnouncement] = React.useState(false)
   const canView = userHasPermission(
     currentUser,
     PERMISSIONS.DASHBOARD_SETTING_VIEW
@@ -357,6 +372,14 @@ export default function DashboardSettingsRoute() {
   const canGenerateSitemap = userHasPermission(
     currentUser,
     PERMISSIONS.DASHBOARD_SITEMAP_GENERATE
+  )
+  const canPublishAnnouncement = userHasPermission(
+    currentUser,
+    PERMISSIONS.DASHBOARD_ANNOUNCEMENT_PUBLISH
+  )
+  const canViewAnnouncement = userHasPermission(
+    currentUser,
+    PERMISSIONS.DASHBOARD_ANNOUNCEMENT_VIEW
   )
   const tabKeys = React.useMemo(
     () => [
@@ -393,6 +416,7 @@ export default function DashboardSettingsRoute() {
           ),
         ])
         setSettings(config as SettingsState)
+        setAnnouncementPreview(null)
         setNodes(Array.isArray(nodeList) ? nodeList : [])
       } catch (err) {
         setError(
@@ -408,6 +432,21 @@ export default function DashboardSettingsRoute() {
   React.useEffect(() => {
     void loadConfig()
   }, [loadConfig])
+
+  const loadAnnouncementHistory = React.useCallback(async () => {
+    try {
+      const response = await adminGet<{ results?: AnnouncementRecord[] }>(
+        "/api/admin/announcement/history?page=1&pageSize=10"
+      )
+      setAnnouncementHistory(Array.isArray(response?.results) ? response.results : [])
+    } catch {
+      setAnnouncementHistory([])
+    }
+  }, [])
+
+  React.useEffect(() => {
+    if (canView && canViewAnnouncement) void loadAnnouncementHistory()
+  }, [canView, canViewAnnouncement, loadAnnouncementHistory])
 
   const loadSearchStatus = React.useCallback(async () => {
     if (!canReindex) return
@@ -485,6 +524,45 @@ export default function DashboardSettingsRoute() {
       )
     } finally {
       setSavingSection(null)
+    }
+  }
+
+  async function previewAnnouncement() {
+    setPreviewingAnnouncement(true)
+    try {
+      const response = await adminPostJson<{ content?: string }>(
+        "/api/admin/announcement/preview",
+        { content: getString(settings.siteNotification) }
+      )
+      setAnnouncementPreview(String(response?.content || ""))
+    } catch (err) {
+      msgError(err instanceof Error ? err.message : t("dashboard.errors.actionFailed"))
+    } finally {
+      setPreviewingAnnouncement(false)
+    }
+  }
+
+  function requestAnnouncementPublish() {
+    if (!canPublishAnnouncement) return
+    setConfirmState({
+      title: s("announcement.confirmTitle"),
+      description: s("announcement.confirmDescription"),
+      confirmText: s("announcement.publish"),
+      onConfirm: () => void publishAnnouncement(getString(settings.siteNotification)),
+    })
+  }
+
+  async function publishAnnouncement(content: string) {
+    setPublishingAnnouncement(true)
+    try {
+      await adminPostJson("/api/admin/announcement/publish", { content })
+      await Promise.all([loadConfig({ silent: true }), loadAnnouncementHistory()])
+      setAnnouncementPreview(null)
+      msgSuccess(s("announcement.published"))
+    } catch (err) {
+      msgError(err instanceof Error ? err.message : t("dashboard.errors.saveFailed"))
+    } finally {
+      setPublishingAnnouncement(false)
     }
   }
 
@@ -573,9 +651,16 @@ export default function DashboardSettingsRoute() {
                   siteDescription: settings.siteDescription,
                   baseURL: settings.baseURL,
                   siteKeywords: settings.siteKeywords,
-                  siteNotification: settings.siteNotification,
                 })
               }
+              canPublishAnnouncement={canPublishAnnouncement}
+              canViewAnnouncement={canViewAnnouncement}
+              announcementHistory={announcementHistory}
+              announcementPreview={announcementPreview}
+              previewingAnnouncement={previewingAnnouncement}
+              publishingAnnouncement={publishingAnnouncement}
+              onPreviewAnnouncement={() => void previewAnnouncement()}
+              onPublishAnnouncement={requestAnnouncementPublish}
             />
           </TabsContent>
 
@@ -742,55 +827,121 @@ function CommonSettings({
   s,
   update,
   onSave,
-}: SettingsProps) {
+  canPublishAnnouncement,
+  canViewAnnouncement,
+  announcementHistory,
+  announcementPreview,
+  previewingAnnouncement,
+  publishingAnnouncement,
+  onPreviewAnnouncement,
+  onPublishAnnouncement,
+}: SettingsProps & {
+  canPublishAnnouncement: boolean
+  canViewAnnouncement: boolean
+  announcementHistory: AnnouncementRecord[]
+  announcementPreview: string | null
+  previewingAnnouncement: boolean
+  publishingAnnouncement: boolean
+  onPreviewAnnouncement: () => void
+  onPublishAnnouncement: () => void
+}) {
   return (
-    <SettingsForm
-      onSave={onSave}
-      saving={saving}
-      submitLabel={s("common.submit")}
-    >
-      <Field label={s("common.siteTitle")}>
-        <Input
-          value={getString(settings.siteTitle)}
-          placeholder={s("common.placeholder.siteTitle")}
-          onChange={(event) => update("siteTitle", event.target.value)}
-        />
-      </Field>
-      <Field label={s("common.siteLogo")}>
-        <DashboardImageUpload
-          value={getString(settings.siteLogo)}
-          onChange={(value) => update("siteLogo", value)}
-        />
-      </Field>
-      <Field label={s("common.siteDescription")}>
-        <Textarea
-          value={getString(settings.siteDescription)}
-          placeholder={s("common.placeholder.siteDescription")}
-          onChange={(event) => update("siteDescription", event.target.value)}
-        />
-      </Field>
-      <Field label={s("common.baseURL")}>
-        <Input
-          value={getString(settings.baseURL)}
-          placeholder={s("common.placeholder.baseURL")}
-          onChange={(event) => update("baseURL", event.target.value)}
-        />
-      </Field>
-      <Field label={s("common.siteKeywords")}>
-        <TagsInput
-          value={getStringArray(settings.siteKeywords)}
-          placeholder={s("common.placeholder.siteKeywords")}
-          onChange={(value) => update("siteKeywords", value)}
-        />
-      </Field>
-      <Field label={s("common.siteNotification")}>
-        <Textarea
-          value={getString(settings.siteNotification)}
-          placeholder={s("common.placeholder.siteNotification")}
-          onChange={(event) => update("siteNotification", event.target.value)}
-        />
-      </Field>
-    </SettingsForm>
+    <div className="grid gap-4">
+      <SettingsForm
+        onSave={onSave}
+        saving={saving}
+        submitLabel={s("common.submit")}
+      >
+        <Field label={s("common.siteTitle")}>
+          <Input
+            value={getString(settings.siteTitle)}
+            placeholder={s("common.placeholder.siteTitle")}
+            onChange={(event) => update("siteTitle", event.target.value)}
+          />
+        </Field>
+        <Field label={s("common.siteLogo")}>
+          <DashboardImageUpload
+            value={getString(settings.siteLogo)}
+            onChange={(value) => update("siteLogo", value)}
+          />
+        </Field>
+        <Field label={s("common.siteDescription")}>
+          <Textarea
+            value={getString(settings.siteDescription)}
+            placeholder={s("common.placeholder.siteDescription")}
+            onChange={(event) => update("siteDescription", event.target.value)}
+          />
+        </Field>
+        <Field label={s("common.baseURL")}>
+          <Input
+            value={getString(settings.baseURL)}
+            placeholder={s("common.placeholder.baseURL")}
+            onChange={(event) => update("baseURL", event.target.value)}
+          />
+        </Field>
+        <Field label={s("common.siteKeywords")}>
+          <TagsInput
+            value={getStringArray(settings.siteKeywords)}
+            placeholder={s("common.placeholder.siteKeywords")}
+            onChange={(value) => update("siteKeywords", value)}
+          />
+        </Field>
+      </SettingsForm>
+
+      <Card size="sm" className="gap-4 bg-[var(--dashboard-panel)] shadow-xs">
+        <CardHeader className="border-b pb-4">
+          <CardTitle>{s("announcement.title")}</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <Textarea
+            value={getString(settings.siteNotification)}
+            placeholder={s("common.placeholder.siteNotification")}
+            onChange={(event) => update("siteNotification", event.target.value)}
+          />
+          <div className="flex flex-wrap gap-2">
+            {canViewAnnouncement ? (
+              <Button type="button" variant="outline" onClick={onPreviewAnnouncement} disabled={previewingAnnouncement}>
+                <EyeIcon />
+                {s("announcement.preview")}
+              </Button>
+            ) : null}
+            {canPublishAnnouncement ? (
+              <Button type="button" onClick={onPublishAnnouncement} disabled={publishingAnnouncement}>
+                <SaveIcon />
+                {s("announcement.publish")}
+              </Button>
+            ) : null}
+          </div>
+          {announcementPreview !== null ? (
+            <div className="rounded-md border bg-background p-4">
+              <div className="mb-2 flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <EyeIcon className="size-4" />
+                {s("announcement.previewResult")}
+              </div>
+              <div dangerouslySetInnerHTML={{ __html: announcementPreview }} />
+            </div>
+          ) : null}
+          {canViewAnnouncement ? (
+            <div className="grid gap-2 border-t pt-4">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <HistoryIcon className="size-4 text-muted-foreground" />
+                {s("announcement.history")}
+              </div>
+              {announcementHistory.length ? announcementHistory.map((record) => (
+                <div key={String(record.id)} className="grid gap-1 rounded-md border p-3 text-sm">
+                  <div className="flex flex-wrap items-center gap-2 text-muted-foreground">
+                    <Badge variant="outline">{record.status || "-"}</Badge>
+                    <span>{record.operatorId || "-"}</span>
+                    <span>{record.publishTime ? new Date(record.publishTime).toLocaleString() : "-"}</span>
+                  </div>
+                  <div className="line-clamp-2 whitespace-pre-wrap">{record.content || ""}</div>
+                </div>
+              )) : <p className="text-sm text-muted-foreground">{s("announcement.empty")}</p>}
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
+    </div>
   )
 }
 

@@ -2,6 +2,8 @@ package uploader
 
 import (
 	"io"
+	"os"
+	"path"
 
 	"bbs-go/internal/models/dto"
 	"bbs-go/internal/pkg/config"
@@ -33,6 +35,23 @@ type Uploader interface {
 	PutObject(cfg dto.UploadConfig, key string, body io.Reader, opts *PutOptions) (string, error)
 	// CopyImage 从 originUrl 拉取图片并上传（内部使用 GenerateImageKey 生成 key）。
 	CopyImage(cfg dto.UploadConfig, originUrl string) (string, error)
+	// DeleteObject permanently removes an object by storage key.
+	DeleteObject(cfg dto.UploadConfig, key string) error
+	// CheckConnectivity verifies that the configured storage can be reached.
+	CheckConnectivity(cfg dto.UploadConfig) error
+}
+
+// NormalizeStorageKey accepts only relative, POSIX-style object keys.
+func NormalizeStorageKey(key string) (string, error) {
+	key = strings.TrimSpace(key)
+	if key == "" || strings.ContainsAny(key, "\\\x00") || strings.HasPrefix(key, "/") {
+		return "", os.ErrInvalid
+	}
+	clean := path.Clean(key)
+	if clean == "." || clean == ".." || strings.HasPrefix(clean, "../") || clean != key {
+		return "", os.ErrInvalid
+	}
+	return clean, nil
 }
 
 // ---- Key 生成（与存储实现解耦，由调用方或 CopyImage 组合使用） ----

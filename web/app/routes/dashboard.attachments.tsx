@@ -1,5 +1,8 @@
 "use client"
 
+import * as React from "react"
+import { PlayIcon } from "lucide-react"
+
 import {
   DashboardDataPage,
   type DashboardDataPageConfig,
@@ -7,6 +10,11 @@ import {
 import * as dashboardData from "@/components/dashboard/data/dashboard-data-route-utils"
 import { useI18n } from "@/lib/i18n/provider"
 import { PERMISSIONS } from "@/lib/auth/permissions.generated"
+import { useCurrentUser } from "@/components/app/app-provider"
+import { userHasPermission } from "@/lib/auth/roles"
+import { adminPostForm } from "@/lib/api/admin"
+import { msgError, msgSuccess } from "@/lib/toast"
+import { Button } from "@/components/ui/button"
 
 export default function DashboardAttachmentsRoute() {
   const { t } = useI18n()
@@ -68,5 +76,56 @@ export default function DashboardAttachmentsRoute() {
     canDelete: (record) => record.status !== 1,
   }
 
-  return <DashboardDataPage config={config} />
+  return (
+    <>
+      <DashboardDataPage config={config} />
+      <AttachmentCleanupPanel />
+    </>
+  )
+}
+
+function AttachmentCleanupPanel() {
+  const { t } = useI18n()
+  const currentUser = useCurrentUser()
+  const canCleanup = userHasPermission(
+    currentUser,
+    PERMISSIONS.DASHBOARD_ATTACHMENT_CLEANUP
+  )
+  const [running, setRunning] = React.useState(false)
+
+  if (!canCleanup) return null
+
+  async function startCleanup() {
+    setRunning(true)
+    try {
+      const before = Date.now() - 7 * 24 * 60 * 60 * 1000
+      await adminPostForm("/api/admin/attachment/cleanup-orphans", { before })
+      msgSuccess(t("dashboard.messages.attachmentCleanupStarted"))
+    } catch (err) {
+      msgError(
+        err instanceof Error ? err.message : t("dashboard.errors.actionFailed")
+      )
+    } finally {
+      setRunning(false)
+    }
+  }
+
+  return (
+    <section className="border-t p-4 md:p-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-[var(--dashboard-panel)] p-4 shadow-xs">
+        <div>
+          <h2 className="font-medium">
+            {t("dashboard.pages.attachments.cleanupTitle")}
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {t("dashboard.pages.attachments.cleanupDescription")}
+          </p>
+        </div>
+        <Button type="button" onClick={() => void startCleanup()} disabled={running}>
+          <PlayIcon className="size-4" />
+          {t("dashboard.pages.health.start")}
+        </Button>
+      </div>
+    </section>
+  )
 }

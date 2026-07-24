@@ -3,6 +3,7 @@ package admin
 import (
 	"bbs-go/internal/models"
 	"bbs-go/internal/models/constants"
+	"bbs-go/internal/pkg/common"
 	"bbs-go/internal/repositories"
 	"bbs-go/internal/services"
 	"fmt"
@@ -66,11 +67,21 @@ func CommonOverview(ctx *gin.Context) {
 	metrics["activeUsers"] = countActiveUsers(db, todayStart)
 	searchStatus := services.SearchReindexService.Status()
 	sitemapStatus := services.SeoSitemapService.Status()
-	if searchStatus.Error != "" || sitemapStatus.Error != "" {
-		metrics["failedTasks"] = 1
-	} else {
-		metrics["failedTasks"] = 0
+	failedTasks := int64(0)
+	if searchStatus.Error != "" {
+		failedTasks++
 	}
+	if sitemapStatus.Error != "" {
+		failedTasks++
+	}
+	var failedMessageTasks int64
+	db.Model(&models.MessageSendTask{}).Where("status = ?", models.MessageTaskFailed).Count(&failedMessageTasks)
+	metrics["failedMessageTasks"] = failedMessageTasks
+	failedTasks += failedMessageTasks
+	if services.AttachmentCleanupTaskService.Status().Error != "" {
+		failedTasks++
+	}
+	metrics["failedTasks"] = failedTasks
 
 	pending := map[string]int64{
 		"pendingReports": repositories.UserReportRepository.Count(db, sqls.NewCnd().Eq("process_status", 0)),
@@ -79,17 +90,44 @@ func CommonOverview(ctx *gin.Context) {
 	recentTopics := repositories.TopicRepository.Find(db, sqls.NewCnd().Eq("status", constants.StatusOk).Desc("id").Limit(5))
 	recentUsers := repositories.UserRepository.Find(db, sqls.NewCnd().Eq("status", constants.StatusOk).Desc("id").Limit(5))
 	trend := buildDashboardTrend(db, now)
+	breakdown := buildDashboardBreakdown(db, common.GetCurrentUser(ctx))
 
 	ginx.WriteJSON(ctx, web.NewEmptyRspBuilder().
 		Put("metrics", metrics).
 		Put("pending", pending).
 		Put("trend", trend).
+		Put("breakdown", breakdown).
 		Put("recent", map[string]interface{}{
 			"topics": buildRecentTopicItems(recentTopics),
 			"users":  buildRecentUserItems(recentUsers),
 		}).
 		JsonResult())
 
+}
+
+func buildDashboardBreakdown(db *gorm.DB, operator *models.User) map[string]interface{} {
+	allowed := services.ContentAccessService.GetAllowedCategoryIds(operator)
+	allowedSet := make(map[int64]struct{}, len(allowed))
+	for _, id := range allowed {
+		allowedSet[id] = struct{}{}
+	}
+	categories := make([]map[string]interface{}, 0)
+	for _, category := range services.CategoryService.GetCategories() {
+		if _, ok := allowedSet[category.Id]; !ok {
+			continue
+		}
+		var topics, comments int64
+		db.Model(&models.Topic{}).Where("category_id = ? AND status = ?", category.Id, constants.StatusOk).Count(&topics)
+		db.Model(&models.Comment{}).Where("status = ? AND entity_type = ? AND entity_id IN (SELECT id FROM t_topic WHERE category_id = ?)", constants.StatusOk, constants.EntityTopic, category.Id).Count(&comments)
+		categories = append(categories, map[string]interface{}{"id": category.Id, "name": category.Name, "topics": topics, "comments": comments})
+	}
+	roles := make([]map[string]interface{}, 0)
+	for _, role := range services.RoleService.Find(sqls.NewCnd().Eq("status", constants.StatusOk).Asc("sort_no")) {
+		var users int64
+		db.Model(&models.UserRole{}).Where("role_id = ? AND user_id IN (SELECT id FROM t_user WHERE status = ?)", role.Id, constants.StatusOk).Count(&users)
+		roles = append(roles, map[string]interface{}{"id": role.Id, "name": role.Name, "users": users})
+	}
+	return map[string]interface{}{"categories": categories, "roles": roles}
 }
 
 func countActiveUsers(db *gorm.DB, start int64) int64 {
@@ -116,6 +154,7 @@ func buildDashboardTrend(db *gorm.DB, now time.Time) []map[string]interface{} {
 			"users":    repositories.UserRepository.Count(db, sqls.NewCnd().Eq("status", constants.StatusOk).Gte("create_time", startMs).Lt("create_time", endMs)),
 			"topics":   repositories.TopicRepository.Count(db, sqls.NewCnd().Eq("status", constants.StatusOk).Gte("create_time", startMs).Lt("create_time", endMs)),
 			"comments": repositories.CommentRepository.Count(db, sqls.NewCnd().Eq("status", constants.StatusOk).Gte("create_time", startMs).Lt("create_time", endMs)),
+			"reports":  repositories.UserReportRepository.Count(db, sqls.NewCnd().Gte("create_time", startMs).Lt("create_time", endMs)),
 		})
 	}
 	return trend

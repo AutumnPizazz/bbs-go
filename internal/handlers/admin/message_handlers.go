@@ -25,6 +25,13 @@ type adminMessageForm struct {
 	Content string `form:"content" json:"content"`
 }
 
+type adminMessageTaskForm struct {
+	Title      string `form:"title" json:"title"`
+	Content    string `form:"content" json:"content"`
+	TargetType string `form:"targetType" json:"targetType"`
+	TargetId   int64  `form:"targetId" json:"targetId"`
+}
+
 func MessageDetail(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
@@ -168,4 +175,105 @@ func validateAdminMessage(form *adminMessageForm) error {
 		return ginx.ErrorMessage("title is too long")
 	}
 	return nil
+}
+
+func MessageTaskPreview(ctx *gin.Context) {
+	form := &adminMessageTaskForm{}
+	if err := ginx.Bind(ctx, form); err != nil {
+		ginx.WriteJSON(ctx, err)
+		return
+	}
+	ids, err := services.MessageSendTaskService.RecipientIds(form.TargetType, form.TargetId)
+	if err != nil {
+		ginx.WriteJSON(ctx, err)
+		return
+	}
+	ginx.WriteJSON(ctx, map[string]interface{}{
+		"targetType": form.TargetType,
+		"targetId":   form.TargetId,
+		"totalCount": len(ids),
+		"maxCount":   services.MaxMessageBroadcastRecipients,
+	})
+}
+
+func MessageTaskCreate(ctx *gin.Context) {
+	operator, err := common.CheckLogin(ctx)
+	if err != nil {
+		ginx.WriteJSON(ctx, err)
+		return
+	}
+	form := &adminMessageTaskForm{}
+	if err := ginx.Bind(ctx, form); err != nil {
+		ginx.WriteJSON(ctx, err)
+		return
+	}
+	task, err := services.MessageSendTaskService.CreateDraft(operator.Id, operator.Id, form.Title, form.Content, form.TargetType, form.TargetId)
+	if err != nil {
+		ginx.WriteJSON(ctx, err)
+		return
+	}
+	services.OperateLogService.AddOperateLog(operator.Id, constants.OpTypeCreate, "messageTask", task.Id, "创建群发消息草稿", ctx.Request)
+	ginx.WriteJSON(ctx, task)
+}
+
+func MessageTaskList(ctx *gin.Context) {
+	cnd := params.NewPagedSqlCnd(ctx,
+		params.QueryFilter{ParamName: "status", Op: params.Eq},
+		params.QueryFilter{ParamName: "targetType", Op: params.Eq},
+	).Desc("id")
+	list, paging := services.MessageSendTaskService.FindPage(cnd)
+	ginx.WriteJSON(ctx, &web.PageResult{Results: list, Page: paging})
+}
+
+func MessageTaskDetail(ctx *gin.Context) {
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		ginx.WriteJSON(ctx, err)
+		return
+	}
+	task := services.MessageSendTaskService.Get(id)
+	if task == nil {
+		ginx.WriteJSON(ctx, ginx.ErrorMessage("message task not found"))
+		return
+	}
+	failed := models.MessageDeliveryFailed
+	deliveries := services.MessageSendTaskService.Deliveries(task.Id, &failed)
+	if len(deliveries) > 200 {
+		deliveries = deliveries[:200]
+	}
+	ginx.WriteJSON(ctx, map[string]interface{}{"task": task, "failedDeliveries": deliveries})
+}
+
+func MessageTaskSend(ctx *gin.Context) {
+	operator, err := common.CheckLogin(ctx)
+	if err != nil {
+		ginx.WriteJSON(ctx, err)
+		return
+	}
+	id, _ := params.GetInt64(ctx, "id")
+	task, err := services.MessageSendTaskService.Start(id)
+	if err != nil {
+		services.OperateLogService.AddOperateLogFailure(operator.Id, constants.OpTypeUpdate, "messageTask", id, "启动群发消息任务", err, ctx.Request)
+		ginx.WriteJSON(ctx, err)
+		return
+	}
+	services.OperateLogService.AddOperateLog(operator.Id, constants.OpTypeUpdate, "messageTask", id, "启动群发消息任务", ctx.Request)
+	ginx.WriteJSON(ctx, task)
+}
+
+func MessageTaskRetry(ctx *gin.Context) {
+	operator, err := common.CheckLogin(ctx)
+	if err != nil {
+		ginx.WriteJSON(ctx, err)
+		return
+	}
+	id, _ := params.GetInt64(ctx, "id")
+	task, err := services.MessageSendTaskService.Retry(id)
+	if err != nil {
+		services.OperateLogService.AddOperateLogFailure(operator.Id, constants.OpTypeUpdate, "messageTask", id, "重试失败的群发消息投递", err, ctx.Request)
+		ginx.WriteJSON(ctx, err)
+		return
+	}
+	services.OperateLogService.AddOperateLog(operator.Id, constants.OpTypeUpdate, "messageTask", id, "重试失败的群发消息投递", ctx.Request)
+	ginx.WriteJSON(ctx, task)
 }

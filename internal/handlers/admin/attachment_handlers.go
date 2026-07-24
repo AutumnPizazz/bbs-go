@@ -68,13 +68,19 @@ func AttachmentRemove(ctx *gin.Context) {
 			return
 		}
 		if !canAccessAttachment(operator, attachment) {
+			if operator != nil {
+				services.OperateLogService.AddOperateLogFailure(operator.Id, constants.OpTypeDelete, constants.EntityAttachment, 0, "删除附件", errs.ContentAccessDenied(), ctx.Request)
+			}
 			ginx.WriteJSON(ctx, errs.ContentAccessDenied())
 			return
 		}
 		if attachment.Status == constants.StatusDeleted {
 			continue
 		}
-		if err := services.AttachmentService.SoftDelete(id); err != nil {
+		if err := services.AttachmentService.Delete(id); err != nil {
+			if operator != nil {
+				services.OperateLogService.AddOperateLogFailure(operator.Id, constants.OpTypeDelete, constants.EntityAttachment, 0, "删除附件", err, ctx.Request)
+			}
 			ginx.WriteJSON(ctx, err)
 			return
 		}
@@ -102,16 +108,16 @@ func AttachmentCleanupOrphans(ctx *gin.Context) {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage("before must be a past timestamp"))
 		return
 	}
-	count, err := services.AttachmentService.CleanupOrphans(before)
-	if err != nil {
-		ginx.WriteJSON(ctx, err)
+	status, started := services.AttachmentCleanupTaskService.Start(before)
+	if !started {
+		ginx.WriteJSON(ctx, status)
 		return
 	}
 	if operator := common.GetCurrentUser(ctx); operator != nil {
 		services.OperateLogService.AddOperateLog(operator.Id, constants.OpTypeDelete, constants.EntityAttachment, 0,
-			"清理孤儿附件，数量："+stringCount(int(count)), ctx.Request)
+			"启动孤儿附件清理任务", ctx.Request)
 	}
-	ginx.WriteJSON(ctx, map[string]interface{}{"count": count})
+	ginx.WriteJSON(ctx, status)
 }
 
 func splitAttachmentIDs(value string) []string {

@@ -49,6 +49,21 @@ func (u *AliyunOssUploader) CopyImage(cfg dto.UploadConfig, originUrl string) (s
 	return u.PutObject(cfg, key, bytes.NewReader(data), opts)
 }
 
+func (u *AliyunOssUploader) DeleteObject(cfg dto.UploadConfig, key string) error {
+	if err := u.initBucket(cfg); err != nil {
+		return err
+	}
+	return u.bucket.DeleteObject(key)
+}
+
+func (u *AliyunOssUploader) CheckConnectivity(cfg dto.UploadConfig) error {
+	if err := u.initBucket(cfg); err != nil {
+		return err
+	}
+	_, err := u.bucket.ListObjects(oss.MaxKeys(1))
+	return err
+}
+
 func (u *AliyunOssUploader) initBucket(cfg dto.UploadConfig) error {
 	if !u.isCfgChange(cfg) {
 		return nil

@@ -234,6 +234,8 @@ func registerAdminRoutes(group *gin.RouterGroup) {
 
 	commonGroup := group.Group("/common")
 	commonGroup.GET("/overview", adminHandlers.CommonOverview)
+	commonGroup.GET("/preferences/views", adminHandlers.DashboardViewPreferences)
+	commonGroup.POST("/preferences/views", adminHandlers.SaveDashboardViewPreferences)
 
 	healthGroup := group.Group("/health")
 	healthGroup.GET("", adminHandlers.Health)
@@ -278,7 +280,18 @@ func registerAdminRoutes(group *gin.RouterGroup) {
 	messageGroup.POST("/create", adminHandlers.MessageCreate)
 	messageGroup.POST("/update", adminHandlers.MessageUpdate)
 	messageGroup.POST("/delete", adminHandlers.MessageRemove)
+	messageGroup.POST("/task/preview", adminHandlers.MessageTaskPreview)
+	messageGroup.POST("/task/create", adminHandlers.MessageTaskCreate)
+	messageGroup.POST("/task/list", adminHandlers.MessageTaskList)
+	messageGroup.POST("/task/send", adminHandlers.MessageTaskSend)
+	messageGroup.POST("/task/retry", adminHandlers.MessageTaskRetry)
+	messageGroup.GET("/task/:id", adminHandlers.MessageTaskDetail)
 	messageGroup.GET("/:id", adminHandlers.MessageDetail)
+
+	announcementGroup := group.Group("/announcement")
+	announcementGroup.GET("/history", adminHandlers.AnnouncementHistory)
+	announcementGroup.POST("/preview", adminHandlers.AnnouncementPreview)
+	announcementGroup.POST("/publish", adminHandlers.AnnouncementPublish)
 
 	favoriteGroup := group.Group("/favorite")
 	favoriteGroup.POST("/list", adminHandlers.FavoriteList)

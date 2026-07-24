@@ -65,15 +65,16 @@ func init() {
 }
 
 type Config struct {
-	Language       Language      `yaml:"language"`       // 语言
-	Port           int           `yaml:"port"`           // 端口
-	IPLocator      IPLocator     `yaml:"ipLocator"`      // IP定位配置
-	AllowedOrigins []string      `yaml:"allowedOrigins"` // 跨域白名单
-	Installed      bool          `yaml:"installed"`      // 是否已安装
-	IDCodec        IDCodecConfig `yaml:"idCodec"`        // ID 编解码配置
-	Logger         LoggerConfig  `yaml:"logger"`         // 日志配置
-	DB             DBConfig      `yaml:"db"`             // 数据库配置
-	Search         SearchConfig  `yaml:"search"`         // 搜索配置
+	Language       Language       `yaml:"language"`       // 语言
+	Port           int            `yaml:"port"`           // 端口
+	IPLocator      IPLocator      `yaml:"ipLocator"`      // IP定位配置
+	AllowedOrigins []string       `yaml:"allowedOrigins"` // 跨域白名单
+	Installed      bool           `yaml:"installed"`      // 是否已安装
+	IDCodec        IDCodecConfig  `yaml:"idCodec"`        // ID 编解码配置
+	Logger         LoggerConfig   `yaml:"logger"`         // 日志配置
+	DB             DBConfig       `yaml:"db"`             // 数据库配置
+	Search         SearchConfig   `yaml:"search"`         // 搜索配置
+	Security       SecurityConfig `yaml:"security"`       // 安全配置
 }
 
 type IPLocator struct {
@@ -104,6 +105,10 @@ type DBConfig struct {
 
 type SearchConfig struct {
 	IndexPath string `yaml:"indexPath"`
+}
+
+type SecurityConfig struct {
+	EncryptionKey string `yaml:"encryptionKey"`
 }
 
 func ReadConfig() (cfg *Config, exists bool, err error) {

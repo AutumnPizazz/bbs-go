@@ -1,11 +1,15 @@
 package services
 
 import (
+	"strconv"
+	"strings"
+
 	"bbs-go/internal/models"
 	"bbs-go/internal/models/constants"
 	"bbs-go/internal/repositories"
 
 	"bbs-go/internal/pkg/params"
+	"bbs-go/internal/pkg/secureconfig"
 
 	"github.com/mlogclub/simple/sqls"
 	"gorm.io/gorm"
@@ -66,6 +70,21 @@ func (s *dictService) UpdateColumn(id int64, name string, value interface{}) err
 
 func (s *dictService) Delete(id int64) {
 	repositories.DictRepository.Delete(sqls.DB(), id)
+}
+
+func (s *dictService) ReferenceCount(id int64) int64 {
+	count := s.Count(sqls.NewCnd().Eq("parent_id", id))
+	needle := strconv.FormatInt(id, 10)
+	for _, config := range SysConfigService.GetAll() {
+		value, err := secureconfig.Decrypt(config.Value)
+		if err != nil {
+			value = config.Value
+		}
+		if strings.Contains(value, `"dictId":`+needle) || strings.Contains(value, `"dict_id":`+needle) {
+			count++
+		}
+	}
+	return count
 }
 
 func (s *dictService) GetNextSortNo() int {

@@ -16,6 +16,7 @@ var (
 
 	adminPermissionRules = []adminPermissionRule{
 		{Method: "GET", Pattern: "/api/admin/common/**", Permissions: []PermissionDefinition{PermissionDashboardView}},
+		{Method: "POST", Pattern: "/api/admin/common/preferences/views", Permissions: []PermissionDefinition{PermissionDashboardView}},
 
 		{Method: "GET", Pattern: "/api/admin/comment/*", Permissions: []PermissionDefinition{PermissionCommentView}},
 		{Method: "POST", Pattern: "/api/admin/comment/list", Permissions: []PermissionDefinition{PermissionCommentView}},
@@ -118,6 +119,15 @@ var (
 		{Method: "POST", Pattern: "/api/admin/message/create", Permissions: []PermissionDefinition{PermissionMessageSend}},
 		{Method: "POST", Pattern: "/api/admin/message/update", Permissions: []PermissionDefinition{PermissionMessageSend}},
 		{Method: "POST", Pattern: "/api/admin/message/delete", Permissions: []PermissionDefinition{PermissionMessageDelete}},
+		{Method: "POST", Pattern: "/api/admin/message/task/preview", Permissions: []PermissionDefinition{PermissionMessageBroadcast}},
+		{Method: "POST", Pattern: "/api/admin/message/task/create", Permissions: []PermissionDefinition{PermissionMessageBroadcast}},
+		{Method: "POST", Pattern: "/api/admin/message/task/list", Permissions: []PermissionDefinition{PermissionMessageTaskView}},
+		{Method: "POST", Pattern: "/api/admin/message/task/send", Permissions: []PermissionDefinition{PermissionMessageBroadcast}},
+		{Method: "POST", Pattern: "/api/admin/message/task/retry", Permissions: []PermissionDefinition{PermissionMessageBroadcast}},
+		{Method: "GET", Pattern: "/api/admin/message/task/*", Permissions: []PermissionDefinition{PermissionMessageTaskView}},
+		{Method: "GET", Pattern: "/api/admin/announcement/history", Permissions: []PermissionDefinition{PermissionAnnouncementView}},
+		{Method: "POST", Pattern: "/api/admin/announcement/preview", Permissions: []PermissionDefinition{PermissionAnnouncementView}},
+		{Method: "POST", Pattern: "/api/admin/announcement/publish", Permissions: []PermissionDefinition{PermissionAnnouncementPublish}},
 		{Method: "GET", Pattern: "/api/admin/health", Permissions: []PermissionDefinition{PermissionHealthView}},
 		{Method: "GET", Pattern: "/api/admin/tasks/**", Permissions: []PermissionDefinition{PermissionHealthView, PermissionTaskView}},
 

@@ -23,9 +23,16 @@ import { PERMISSIONS } from "@/lib/auth/permissions.generated"
 import { useCurrentUser } from "@/components/app/app-provider"
 import { userHasPermission } from "@/lib/auth/roles"
 import { msgError, msgSuccess } from "@/lib/toast"
+import {
+  NativeSelect,
+  NativeSelectOption,
+} from "@/components/ui/native-select"
 
 type ReportDetailRecord = AdminRecord & {
   target?: Record<string, unknown>
+  relatedReports?: AdminRecord[]
+  relatedReportCount?: number
+  pendingRelatedReportCount?: number
 }
 
 export default function DashboardUserReportsRoute() {
@@ -39,6 +46,9 @@ export default function DashboardUserReportsRoute() {
   )
   const [submittingAction, setSubmittingAction] = React.useState<string | null>(
     null
+  )
+  const [reportScope, setReportScope] = React.useState<"current" | "object">(
+    "current"
   )
   const [reloadKey, setReloadKey] = React.useState(0)
   const canProcess = userHasPermission(
@@ -56,6 +66,7 @@ export default function DashboardUserReportsRoute() {
       const detail = await adminGet<ReportDetailRecord>(
         `/api/admin/user-report/${String(record.id)}`
       )
+      setReportScope("current")
       setProcessingReport(detail)
     } catch (err) {
       msgError(
@@ -73,6 +84,7 @@ export default function DashboardUserReportsRoute() {
       await adminPostForm("/api/admin/user-report/process", {
         id: processingReport.id as number,
         processStatus,
+        scope: reportScope,
       })
       msgSuccess(
         processStatus === 1
@@ -97,6 +109,7 @@ export default function DashboardUserReportsRoute() {
       await adminPostForm("/api/admin/user-report/action", {
         id: processingReport.id as number,
         action,
+        scope: reportScope,
         ...(days ? { days } : {}),
       })
       msgSuccess(t("dashboard.messages.reportProcessed"))
@@ -205,8 +218,10 @@ export default function DashboardUserReportsRoute() {
         record={processingReport}
         submittingStatus={submittingStatus}
         submittingAction={submittingAction}
+        reportScope={reportScope}
         canProcess={canProcess}
         onClose={() => setProcessingReport(null)}
+        onScopeChange={setReportScope}
         onSubmitStatus={(status) => void submitReportStatus(status)}
         onSubmitAction={(action, days) => void submitReportAction(action, days)}
       />
@@ -218,16 +233,20 @@ function ReportProcessDialog({
   record,
   submittingStatus,
   submittingAction,
+  reportScope,
   canProcess,
   onClose,
+  onScopeChange,
   onSubmitStatus,
   onSubmitAction,
 }: {
   record: ReportDetailRecord | null
   submittingStatus: number | null
   submittingAction: string | null
+  reportScope: "current" | "object"
   canProcess: boolean
   onClose: () => void
+  onScopeChange: (scope: "current" | "object") => void
   onSubmitStatus: (status: 1 | 2) => void
   onSubmitAction: (action: string, days?: number) => void
 }) {
@@ -260,6 +279,31 @@ function ReportProcessDialog({
                 {String(record.reason || "-")}
               </div>
             </div>
+
+            {Number(record.relatedReportCount || 0) > 0 ? (
+              <div className="grid gap-1.5">
+                <div className="text-xs font-medium text-muted-foreground">
+                  {t("dashboard.reportProcess.scope")}
+                </div>
+                <NativeSelect
+                  value={reportScope}
+                  onChange={(event) =>
+                    onScopeChange(event.target.value as "current" | "object")
+                  }
+                  disabled={Boolean(submittingStatus || submittingAction)}
+                  className="w-full"
+                >
+                  <NativeSelectOption value="current">
+                    {t("dashboard.reportProcess.scopeCurrent")}
+                  </NativeSelectOption>
+                  <NativeSelectOption value="object">
+                    {t("dashboard.reportProcess.scopeObject", {
+                      count: Number(record.pendingRelatedReportCount || 0),
+                    })}
+                  </NativeSelectOption>
+                </NativeSelect>
+              </div>
+            ) : null}
 
             <div className="grid gap-1.5">
               <div className="text-xs font-medium text-muted-foreground">

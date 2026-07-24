@@ -46,6 +46,19 @@ func TagList(ctx *gin.Context) {
 		LikeByReq("name").
 		EqByReq("status").
 		PageByReq().Desc("id"))
+	type tagUsage struct {
+		TagId int64
+		Count int64
+	}
+	var usages []tagUsage
+	sqls.DB().Model(&models.TopicTag{}).Select("tag_id, count(*) as count").Where("status = ?", constants.StatusOk).Group("tag_id").Scan(&usages)
+	usageById := make(map[int64]int64, len(usages))
+	for _, usage := range usages {
+		usageById[usage.TagId] = usage.Count
+	}
+	for i := range list {
+		list[i].UsageCount = usageById[list[i].Id]
+	}
 	ginx.WriteJSON(ctx, &web.PageResult{Results: list, Page: paging})
 
 }

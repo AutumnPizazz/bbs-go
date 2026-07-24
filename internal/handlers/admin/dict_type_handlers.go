@@ -13,6 +13,7 @@ import (
 	"bbs-go/internal/pkg/params"
 
 	"github.com/mlogclub/simple/common/dates"
+	"github.com/mlogclub/simple/sqls"
 )
 
 func DictTypeDetail(ctx *gin.Context) {
@@ -101,6 +102,10 @@ func DictTypeRemove(ctx *gin.Context) {
 		return
 	}
 	for _, id := range ids {
+		if references := services.DictService.Count(sqls.NewCnd().Eq("type_id", id)); references > 0 {
+			ginx.WriteJSON(ctx, ginx.ErrorMessage("dictionary type still has items"))
+			return
+		}
 		services.DictTypeService.Delete(id)
 		if operator != nil {
 			services.OperateLogService.AddOperateLog(operator.Id, constants.OpTypeDelete, "dictType", id, "删除字典类型", ctx.Request)

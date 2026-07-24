@@ -101,6 +101,10 @@ func DictRemove(ctx *gin.Context) {
 		return
 	}
 	for _, id := range ids {
+		if references := services.DictService.ReferenceCount(id); references > 0 {
+			ginx.WriteJSON(ctx, ginx.ErrorMessage("dictionary item is still referenced"))
+			return
+		}
 		services.DictService.Delete(id)
 		if operator != nil {
 			services.OperateLogService.AddOperateLog(operator.Id, constants.OpTypeDelete, "dict", id, "删除字典项", ctx.Request)

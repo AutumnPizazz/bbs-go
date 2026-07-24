@@ -45,3 +45,23 @@ func (u *LocalUploader) CopyImage(cfg dto.UploadConfig, originUrl string) (strin
 	opts := &PutOptions{ContentType: ct, ContentLength: int64(len(data))}
 	return u.PutObject(cfg, key, bytes.NewReader(data), opts)
 }
+
+func (u *LocalUploader) DeleteObject(_ dto.UploadConfig, key string) error {
+	cleanKey := strings.TrimPrefix(filepath.ToSlash(filepath.Clean(key)), "/")
+	if cleanKey == "" || cleanKey == "." || cleanKey == ".." || strings.HasPrefix(cleanKey, "../") || strings.Contains(cleanKey, "/../") {
+		return os.ErrInvalid
+	}
+	err := os.Remove(respath.UploadsPath(filepath.FromSlash(cleanKey)))
+	if os.IsNotExist(err) {
+		return nil
+	}
+	return err
+}
+
+func (u *LocalUploader) CheckConnectivity(_ dto.UploadConfig) error {
+	if err := os.MkdirAll(respath.UploadsDir(), 0o755); err != nil {
+		return err
+	}
+	_, err := os.Stat(respath.UploadsDir())
+	return err
+}

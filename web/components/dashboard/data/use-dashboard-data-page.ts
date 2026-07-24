@@ -34,6 +34,7 @@ import {
 } from "./dashboard-data-utils"
 
 const DASHBOARD_FILTERS_STORAGE_PREFIX = "bbsgo-dashboard-filters:"
+const DASHBOARD_VIEWS_STORAGE_PREFIX = "bbsgo-dashboard-views:"
 
 function initialDashboardFilters(
   defaultFilters: Record<string, AdminFormValue> | undefined,
@@ -82,6 +83,7 @@ export function useDashboardDataPage({
     actionDone: string
     confirmDelete: string
     deleteAction: string
+    saveViewPrompt: string
   }
 }) {
   const initialLimit = config.pageSize ?? 20
@@ -89,6 +91,7 @@ export function useDashboardDataPage({
     () => initialDashboardFilters(config.defaultFilters, initialLimit)
   )
   const [filtersHydrated, setFiltersHydrated] = React.useState(false)
+  const [savedViews, setSavedViews] = React.useState<Record<string, Record<string, AdminFormValue>>>({})
   const [records, setRecords] = React.useState<AdminRecord[]>([])
   const [total, setTotal] = React.useState(0)
   const [loading, setLoading] = React.useState(false)
@@ -115,10 +118,42 @@ export function useDashboardDataPage({
   const knownTreeKeysRef = React.useRef<Set<string>>(new Set())
 
   React.useEffect(() => {
+    let cancelled = false
     setFilters(
       readDashboardFilters(config.listEndpoint, config.defaultFilters, initialLimit)
     )
+    if (typeof window !== "undefined") {
+      try {
+        const saved = window.localStorage.getItem(
+          `${DASHBOARD_VIEWS_STORAGE_PREFIX}${config.listEndpoint}`
+        )
+        setSavedViews(saved ? (JSON.parse(saved) as Record<string, Record<string, AdminFormValue>>) : {})
+      } catch {
+        setSavedViews({})
+      }
+    }
     setFiltersHydrated(true)
+
+    void adminGet<{ views?: Record<string, Record<string, AdminFormValue>> }>(
+      `/api/admin/common/preferences/views?key=${encodeURIComponent(config.listEndpoint)}`
+    )
+      .then((response) => {
+        if (cancelled || !response?.views) return
+        setSavedViews(response.views)
+        if (typeof window !== "undefined") {
+          window.localStorage.setItem(
+            `${DASHBOARD_VIEWS_STORAGE_PREFIX}${config.listEndpoint}`,
+            JSON.stringify(response.views)
+          )
+        }
+      })
+      .catch(() => {
+        // Local storage remains the offline fallback for view preferences.
+      })
+
+    return () => {
+      cancelled = true
+    }
   }, [config.listEndpoint])
 
   const page = Number(filters.page || 1)
@@ -297,6 +332,25 @@ export function useDashboardDataPage({
       `${DASHBOARD_FILTERS_STORAGE_PREFIX}${config.listEndpoint}`,
       JSON.stringify(filters)
     )
+    const name = window.prompt(messages.saveViewPrompt)
+    if (!name?.trim()) return
+    const next = { ...savedViews, [name.trim()]: { ...filters, page: 1 } }
+    setSavedViews(next)
+    window.localStorage.setItem(
+      `${DASHBOARD_VIEWS_STORAGE_PREFIX}${config.listEndpoint}`,
+      JSON.stringify(next)
+    )
+    void adminPostJson("/api/admin/common/preferences/views", {
+      key: config.listEndpoint,
+      views: next,
+    }).catch(() => {
+      // Keep the local copy even when the cross-device sync is unavailable.
+    })
+  }
+
+  function loadSavedView(name: string) {
+    if (!name || !savedViews[name]) return
+    setFilters({ ...savedViews[name], page: 1 })
   }
 
   async function openEdit(record: AdminRecord) {
@@ -677,6 +731,8 @@ export function useDashboardDataPage({
     load,
     updateFilter,
     saveFilters,
+    savedViews: Object.keys(savedViews),
+    loadSavedView,
     setFilters,
     setEditing,
     setViewing,

@@ -11,6 +11,7 @@ import {
 
 import type { AdminFormValue } from "@/lib/api/admin"
 import { Button } from "@/components/ui/button"
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 
 import { DashboardDataFilterControl } from "./dashboard-data-filter-control"
 import type {
@@ -33,6 +34,9 @@ export function DashboardDataToolbar({
   onRefresh,
   onCreate,
   onSaveFilters,
+  savedViews,
+  onLoadView,
+  loadViewLabel,
   bulkActions,
   selectedCount,
   selectedLabel,
@@ -53,6 +57,9 @@ export function DashboardDataToolbar({
   onRefresh: () => void
   onCreate: () => void
   onSaveFilters: () => void
+  savedViews: string[]
+  onLoadView: (name: string) => void
+  loadViewLabel: string
   bulkActions?: Array<{ label: string; onClick: () => void }>
   selectedCount: number
   selectedLabel: (count: number) => string
@@ -91,6 +98,20 @@ export function DashboardDataToolbar({
           <BookmarkIcon />
           {saveLabel}
         </Button>
+        {savedViews.length ? (
+          <NativeSelect
+            value=""
+            onChange={(event) => onLoadView(event.target.value)}
+            aria-label={loadViewLabel}
+          >
+            <NativeSelectOption value="">{loadViewLabel}</NativeSelectOption>
+            {savedViews.map((view) => (
+              <NativeSelectOption key={view} value={view}>
+                {view}
+              </NativeSelectOption>
+            ))}
+          </NativeSelect>
+        ) : null}
         {canCreate ? (
           <Button className="ml-auto" onClick={onCreate}>
             <PlusIcon />

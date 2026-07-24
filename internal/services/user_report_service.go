@@ -34,6 +34,13 @@ func (s *userReportService) FindOne(cnd *sqls.Cnd) *models.UserReport {
 	return repositories.UserReportRepository.FindOne(sqls.DB(), cnd)
 }
 
+func (s *userReportService) FindByObject(dataType string, dataId int64) []models.UserReport {
+	return repositories.UserReportRepository.Find(sqls.DB(), sqls.NewCnd().
+		Eq("data_type", dataType).
+		Eq("data_id", dataId).
+		Desc("id"))
+}
+
 func (s *userReportService) FindPageByParams(params *params.QueryParams) (list []models.UserReport, paging *sqls.Paging) {
 	return repositories.UserReportRepository.FindPageByParams(sqls.DB(), params)
 }

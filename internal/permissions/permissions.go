@@ -126,9 +126,14 @@ var (
 	PermissionAttachmentDelete  = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.attachment.delete", GroupName: GroupContent, SortNo: 1010, NameEn: "Delete Attachments", NameZh: "删除附件"}
 	PermissionAttachmentCleanup = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.attachment.cleanup", GroupName: GroupSystem, SortNo: 1440, NameEn: "Clean Up Orphan Attachments", NameZh: "清理孤儿附件"}
 
-	PermissionMessageView   = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.message.view", GroupName: GroupCommunity, SortNo: 820, NameEn: "View Messages", NameZh: "查看站内消息"}
-	PermissionMessageSend   = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.message.send", GroupName: GroupCommunity, SortNo: 830, NameEn: "Send Messages", NameZh: "发送站内消息"}
-	PermissionMessageDelete = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.message.delete", GroupName: GroupCommunity, SortNo: 840, NameEn: "Delete Messages", NameZh: "删除站内消息"}
+	PermissionMessageView      = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.message.view", GroupName: GroupCommunity, SortNo: 820, NameEn: "View Messages", NameZh: "查看站内消息"}
+	PermissionMessageSend      = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.message.send", GroupName: GroupCommunity, SortNo: 830, NameEn: "Send Messages", NameZh: "发送站内消息"}
+	PermissionMessageDelete    = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.message.delete", GroupName: GroupCommunity, SortNo: 840, NameEn: "Delete Messages", NameZh: "删除站内消息"}
+	PermissionMessageBroadcast = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.message.broadcast", GroupName: GroupCommunity, SortNo: 845, NameEn: "Broadcast Messages", NameZh: "群发站内消息"}
+	PermissionMessageTaskView  = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.message.task.view", GroupName: GroupCommunity, SortNo: 850, NameEn: "View Message Tasks", NameZh: "查看群发任务"}
+
+	PermissionAnnouncementView    = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.announcement.view", GroupName: GroupCommunity, SortNo: 855, NameEn: "View Announcement History", NameZh: "查看公告记录"}
+	PermissionAnnouncementPublish = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.announcement.publish", GroupName: GroupCommunity, SortNo: 856, NameEn: "Publish Announcements", NameZh: "发布站点公告"}
 
 	PermissionHealthView = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.health.view", GroupName: GroupSystem, SortNo: 1450, NameEn: "View System Health", NameZh: "查看系统健康状态"}
 	PermissionTaskView   = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.task.view", GroupName: GroupSystem, SortNo: 1460, NameEn: "View Background Tasks", NameZh: "查看后台任务"}
@@ -211,6 +216,10 @@ var Permissions = []PermissionDefinition{
 	PermissionMessageView,
 	PermissionMessageSend,
 	PermissionMessageDelete,
+	PermissionMessageBroadcast,
+	PermissionMessageTaskView,
+	PermissionAnnouncementView,
+	PermissionAnnouncementPublish,
 	PermissionHealthView,
 	PermissionTaskView,
 }

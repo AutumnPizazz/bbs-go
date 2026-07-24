@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"bbs-go/internal/pkg/params"
+	"bbs-go/internal/pkg/secureconfig"
 
 	"github.com/mlogclub/simple/common/dates"
 	"github.com/mlogclub/simple/common/jsons"
@@ -125,8 +126,14 @@ func (s *sysConfigService) SetSensitive(configStr string) error {
 		}
 		delete(input, "clearSensitive")
 	}
-	if len(input) == 0 {
+	if len(input) == 0 && len(clearPaths) == 0 {
 		return errors.New("sensitive configuration is required")
+	}
+	for _, path := range clearPaths {
+		root := strings.SplitN(path, ".", 2)[0]
+		if _, ok := input[root]; !ok {
+			input[root] = json.RawMessage(`{}`)
+		}
 	}
 	for key := range input {
 		if _, ok := sensitiveAdminConfigKeys[key]; !ok {
@@ -166,6 +173,11 @@ func (s *sysConfigService) SetSensitive(configStr string) error {
 		configs[key] = merged
 	}
 	return s.saveConfigValues(configs)
+}
+
+func (s *sysConfigService) IsSensitiveKey(key string) bool {
+	_, ok := sensitiveAdminConfigKeys[key]
+	return ok
 }
 
 func decodeAdminConfig(configStr string, allowSensitive bool) (map[string]string, error) {
@@ -354,6 +366,13 @@ func (s *sysConfigService) setSingle(db *gorm.DB, key, value, name, description 
 	}
 	if strs.IsNotBlank(description) {
 		sysConfig.Description = description
+	}
+	if _, sensitive := sensitiveAdminConfigKeys[key]; sensitive {
+		encoded, err := secureconfig.Encrypt(value)
+		if err != nil {
+			return err
+		}
+		sysConfig.Value = encoded
 	}
 
 	var err error
@@ -573,6 +592,10 @@ func (s *sysConfigService) GetUploadConfig() dto.UploadConfig {
 		slog.Warn("上传配置错误", slog.Any("err", err))
 	}
 	return uploadConfig
+}
+
+func (s *sysConfigService) GetSiteNotification() string {
+	return cache.SysConfigCache.GetStr(constants.SysConfigSiteNotification)
 }
 
 func (s *sysConfigService) GetUploadConfigAdmin() dto.UploadConfigAdmin {

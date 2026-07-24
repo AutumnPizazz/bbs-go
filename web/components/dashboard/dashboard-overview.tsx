@@ -31,6 +31,7 @@ type OverviewMetricKey =
   | "activeUsers"
   | "forbiddenUsers"
   | "failedTasks"
+  | "failedMessageTasks"
 
 type PendingKey =
   | "pendingReports"
@@ -49,6 +50,17 @@ type OverviewData = {
   recent?: {
     topics?: RecentItem[]
     users?: RecentItem[]
+  }
+  trend?: Array<{
+    date?: string
+    users?: number
+    topics?: number
+    comments?: number
+    reports?: number
+  }>
+  breakdown?: {
+    categories?: Array<{ id?: number; name?: string; topics?: number; comments?: number }>
+    roles?: Array<{ id?: number; name?: string; users?: number }>
   }
 }
 
@@ -94,11 +106,43 @@ function toRecentItems(value: unknown): RecentItem[] {
     }))
 }
 
+function toTrend(value: unknown) {
+  if (!Array.isArray(value)) return []
+  return value.filter((item): item is AdminRecord => !!item && typeof item === "object").map((item) => ({
+    date: typeof item.date === "string" ? item.date : undefined,
+    users: toNumber(item.users),
+    topics: toNumber(item.topics),
+    comments: toNumber(item.comments),
+    reports: toNumber(item.reports),
+  }))
+}
+
+function toBreakdown(value: unknown) {
+  const source = toRecord(value)
+  const categories = Array.isArray(source.categories)
+    ? source.categories.filter((item): item is AdminRecord => !!item && typeof item === "object").map((item) => ({
+        id: typeof item.id === "number" ? item.id : undefined,
+        name: typeof item.name === "string" ? item.name : undefined,
+        topics: toNumber(item.topics),
+        comments: toNumber(item.comments),
+      }))
+    : []
+  const roles = Array.isArray(source.roles)
+    ? source.roles.filter((item): item is AdminRecord => !!item && typeof item === "object").map((item) => ({
+        id: typeof item.id === "number" ? item.id : undefined,
+        name: typeof item.name === "string" ? item.name : undefined,
+        users: toNumber(item.users),
+      }))
+    : []
+  return { categories, roles }
+}
+
 function normalizeOverview(data: AdminRecord | null): OverviewData | null {
   if (!data) return null
   const metrics = toRecord(data.metrics)
   const pending = toRecord(data.pending)
   const recent = toRecord(data.recent)
+  const breakdown = toRecord(data.breakdown)
 
   return {
     metrics: {
@@ -110,6 +154,7 @@ function normalizeOverview(data: AdminRecord | null): OverviewData | null {
       activeUsers: toNumber(metrics.activeUsers),
       forbiddenUsers: toNumber(metrics.forbiddenUsers),
       failedTasks: toNumber(metrics.failedTasks),
+      failedMessageTasks: toNumber(metrics.failedMessageTasks),
     },
     pending: {
       pendingReports: toNumber(pending.pendingReports),
@@ -118,6 +163,8 @@ function normalizeOverview(data: AdminRecord | null): OverviewData | null {
       topics: toRecentItems(recent.topics),
       users: toRecentItems(recent.users),
     },
+    trend: toTrend(data.trend),
+    breakdown: toBreakdown(breakdown),
   }
 }
 
@@ -163,6 +210,7 @@ export function DashboardOverview() {
     { key: "activeUsers", icon: UsersIcon },
     { key: "forbiddenUsers", icon: AlertCircleIcon },
     { key: "failedTasks", icon: AlertCircleIcon },
+    { key: "failedMessageTasks", icon: AlertCircleIcon },
   ]
 
   const pendingItems: Array<{
@@ -424,6 +472,75 @@ export function DashboardOverview() {
           </div>
         </section>
       </div>
+
+      {overview?.trend?.length ? (
+        <section className="rounded-lg border bg-[var(--dashboard-panel)] p-4 text-card-foreground shadow-xs">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h2 className="text-base font-semibold">{t("dashboard.overview.trend.title")}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">{t("dashboard.overview.trend.description")}</p>
+            </div>
+            <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+              {(["users", "topics", "comments", "reports"] as const).map((key) => (
+                <span key={key} className="inline-flex items-center gap-1.5">
+                  <span className="size-2 rounded-full bg-primary" />
+                  {t(`dashboard.overview.trend.${key}`)}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div className="mt-5 overflow-x-auto">
+            <div className="grid min-w-[620px] grid-cols-7 gap-2">
+              {overview.trend.map((point) => {
+                const values = [point.users || 0, point.topics || 0, point.comments || 0, point.reports || 0]
+                const maximum = Math.max(1, ...values)
+                return (
+                  <div key={point.date} className="grid gap-2 text-center">
+                    <div className="flex h-32 items-end justify-center gap-1 rounded-md border bg-background/45 px-2 py-2">
+                      {values.map((value, index) => (
+                        <span
+                          key={index}
+                          className="w-3 rounded-t-sm bg-primary/70"
+                          style={{ height: `${Math.max(4, Math.round((value / maximum) * 100))}%` }}
+                          title={String(value)}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-xs text-muted-foreground">{point.date || "-"}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {overview?.breakdown ? (
+        <section className="grid gap-4 xl:grid-cols-2">
+          <div className="rounded-lg border bg-[var(--dashboard-panel)] p-4 text-card-foreground shadow-xs">
+            <h2 className="text-base font-semibold">{t("dashboard.overview.breakdown.categories")}</h2>
+            <div className="mt-4 grid gap-2">
+              {overview.breakdown.categories?.length ? overview.breakdown.categories.map((item) => (
+                <div key={String(item.id)} className="flex items-center justify-between gap-3 rounded-md border p-3 text-sm">
+                  <span className="min-w-0 truncate">{item.name || "-"}</span>
+                  <span className="shrink-0 text-muted-foreground">{item.topics || 0} / {item.comments || 0}</span>
+                </div>
+              )) : <p className="text-sm text-muted-foreground">{t("common.noData")}</p>}
+            </div>
+          </div>
+          <div className="rounded-lg border bg-[var(--dashboard-panel)] p-4 text-card-foreground shadow-xs">
+            <h2 className="text-base font-semibold">{t("dashboard.overview.breakdown.roles")}</h2>
+            <div className="mt-4 grid gap-2">
+              {overview.breakdown.roles?.length ? overview.breakdown.roles.map((item) => (
+                <div key={String(item.id)} className="flex items-center justify-between gap-3 rounded-md border p-3 text-sm">
+                  <span className="min-w-0 truncate">{item.name || "-"}</span>
+                  <span className="shrink-0 text-muted-foreground">{item.users || 0}</span>
+                </div>
+              )) : <p className="text-sm text-muted-foreground">{t("common.noData")}</p>}
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       <section className="rounded-lg border bg-[var(--dashboard-panel)] p-4 text-card-foreground shadow-xs">
         <div className="flex items-center gap-2">

@@ -2,6 +2,7 @@ package cache
 
 import (
 	"bbs-go/internal/pkg/locales"
+	"bbs-go/internal/pkg/secureconfig"
 	"errors"
 	"log/slog"
 	"time"
@@ -44,7 +45,16 @@ func (c *sysConfigCache) Get(key string) *models.SysConfig {
 		return nil
 	}
 	if val != nil {
-		return val.(*models.SysConfig)
+		config := *(val.(*models.SysConfig))
+		if secureconfig.IsEncrypted(config.Value) {
+			plain, err := secureconfig.Decrypt(config.Value)
+			if err != nil {
+				slog.Error("cannot decrypt system configuration", slog.String("key", config.Key), slog.Any("error", err))
+				return nil
+			}
+			config.Value = plain
+		}
+		return &config
 	}
 	return nil
 }

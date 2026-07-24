@@ -16,6 +16,7 @@ import (
 	"bbs-go/internal/models/dto"
 	"bbs-go/internal/pkg/locales"
 	"bbs-go/internal/pkg/params"
+	"bbs-go/internal/pkg/respath"
 	"bbs-go/internal/pkg/uploader"
 	"bbs-go/internal/repositories"
 )
@@ -68,6 +69,7 @@ func (s *attachmentService) Upload(userId, categoryId int64, filename string, co
 		UserId:     userId,
 		FileName:   filename,
 		FileUrl:    fileUrl,
+		StorageKey: key,
 		FileSize:   contentLength,
 		FileType:   contentType,
 		Status:     constants.StatusOk,
@@ -75,6 +77,7 @@ func (s *attachmentService) Upload(userId, categoryId int64, filename string, co
 		UpdateTime: dates.NowTimestamp(),
 	}
 	if err := repositories.AttachmentRepository.Create(sqls.DB(), att); err != nil {
+		_ = UploadService.DeleteObject(key)
 		return nil, err
 	}
 	return att, nil
@@ -111,8 +114,7 @@ func (s *attachmentService) FindPageByParams(queryParams *params.QueryParams) (l
 	return repositories.AttachmentRepository.FindPageByParams(sqls.DB(), queryParams)
 }
 
-// SoftDelete marks an attachment as deleted. The object is retained until a
-// storage-specific cleanup process can safely remove it.
+// SoftDelete marks an attachment as deleted without touching storage.
 func (s *attachmentService) SoftDelete(id string) error {
 	return repositories.AttachmentRepository.Updates(sqls.DB(), id, map[string]interface{}{
 		"status":      constants.StatusDeleted,
@@ -120,14 +122,62 @@ func (s *attachmentService) SoftDelete(id string) error {
 	})
 }
 
-// CleanupOrphans soft-deletes unbound uploads older than before. It deliberately
-// does not remove an object from storage because the uploader interface has no
-// portable delete operation yet.
+// Delete removes an unbound object from storage, then marks its record deleted.
+func (s *attachmentService) Delete(id string) error {
+	att := s.GetAny(id)
+	if att == nil {
+		return errors.New("attachment not found")
+	}
+	if att.TopicId > 0 {
+		return errors.New("referenced attachments cannot be physically deleted")
+	}
+	key, err := attachmentStorageKey(att)
+	if err != nil {
+		return err
+	}
+	if key != "" {
+		if err := UploadService.DeleteObject(key); err != nil {
+			return err
+		}
+	}
+	return s.SoftDelete(id)
+}
+
+// CleanupOrphans physically removes unbound uploads older than before.
 func (s *attachmentService) CleanupOrphans(before int64) (int64, error) {
-	result := sqls.DB().Model(&models.Attachment{}).
-		Where("topic_id = ? AND status = ? AND create_time < ?", 0, constants.StatusOk, before).
-		Updates(map[string]interface{}{"status": constants.StatusDeleted, "update_time": dates.NowTimestamp()})
-	return result.RowsAffected, result.Error
+	var attachments []models.Attachment
+	if err := sqls.DB().Where("topic_id = ? AND status = ? AND create_time < ?", 0, constants.StatusOk, before).Find(&attachments).Error; err != nil {
+		return 0, err
+	}
+	var cleaned int64
+	for i := range attachments {
+		if err := s.Delete(attachments[i].Id); err != nil {
+			return cleaned, err
+		}
+		cleaned++
+	}
+	return cleaned, nil
+}
+
+func attachmentStorageKey(att *models.Attachment) (string, error) {
+	if att == nil {
+		return "", nil
+	}
+	if strings.TrimSpace(att.StorageKey) != "" {
+		key, err := uploader.NormalizeStorageKey(att.StorageKey)
+		if err != nil {
+			return "", err
+		}
+		return key, nil
+	}
+	if strings.TrimSpace(att.FileUrl) == "" {
+		return "", nil
+	}
+	if strings.HasPrefix(strings.TrimSpace(att.FileUrl), respath.UploadsURLPrefix) {
+		path := strings.TrimPrefix(strings.TrimLeft(strings.TrimSpace(att.FileUrl), "/"), strings.Trim(respath.UploadsURLPrefix, "/")+"/")
+		return uploader.NormalizeStorageKey(path)
+	}
+	return UploadService.StorageKeyFromURL(att.FileUrl)
 }
 
 // ListByTopicId 按帖子查询正常状态的附件
