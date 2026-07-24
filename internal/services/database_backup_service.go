@@ -17,6 +17,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 
 	"github.com/glebarez/sqlite"
 	"github.com/go-sql-driver/mysql"
@@ -31,21 +32,32 @@ import (
 )
 
 const (
-	BackupTriggerManual       = "manual"
-	BackupTriggerScheduled    = "scheduled"
-	BackupConfirmText         = "CREATE_BACKUP"
-	BackupDeleteConfirmText   = "DELETE_BACKUP"
-	BackupDownloadConfirmText = "DOWNLOAD_BACKUP"
-	maxBackupErrorLength      = 1024
+	BackupTriggerManual        = "manual"
+	BackupTriggerScheduled     = "scheduled"
+	BackupTriggerRestoreSafety = "restore-safety"
+	BackupConfirmText          = "CREATE_BACKUP"
+	BackupDeleteConfirmText    = "DELETE_BACKUP"
+	BackupDownloadConfirmText  = "DOWNLOAD_BACKUP"
+	BackupRestoreConfirmText   = "RESTORE_BACKUP"
+	maxBackupErrorLength       = 1024
 )
 
 type DatabaseBackupStatus struct {
+	Running       bool                  `json:"running"`
+	LastSuccessAt int64                 `json:"lastSuccessAt"`
+	LastFailureAt int64                 `json:"lastFailureAt"`
+	LastError     string                `json:"lastError,omitempty"`
+	Retention     int                   `json:"retention"`
+	Directory     string                `json:"directory"`
+	Restore       DatabaseRestoreStatus `json:"restore"`
+}
+
+type DatabaseRestoreStatus struct {
 	Running       bool   `json:"running"`
 	LastSuccessAt int64  `json:"lastSuccessAt"`
 	LastFailureAt int64  `json:"lastFailureAt"`
 	LastError     string `json:"lastError,omitempty"`
-	Retention     int    `json:"retention"`
-	Directory     string `json:"directory"`
+	LastBackupId  int64  `json:"lastBackupId"`
 }
 
 type DatabaseBackupConfig struct {
@@ -84,6 +96,8 @@ func (s *databaseBackupService) Status() DatabaseBackupStatus {
 			status.LastFailureAt = failed.FinishedAt
 			status.LastError = failed.Error
 		}
+		status.Restore = s.restoreStatus(db)
+		status.Running = status.Running || status.Restore.Running
 	}
 	cfg := s.Config()
 	status.Retention = cfg.Retention
@@ -123,6 +137,53 @@ func (s *databaseBackupService) StartScheduled() (*models.DatabaseBackup, error)
 	return s.start(BackupTriggerScheduled, 0)
 }
 
+func (s *databaseBackupService) StartRestore(backupId, requestedBy int64) (*models.DatabaseRestore, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	db := sqls.DB()
+	if db == nil {
+		return nil, errors.New("database is not initialized")
+	}
+	if s.databaseType() != config.DbTypeMySQL {
+		return nil, errors.New("database restore is only supported for MySQL")
+	}
+	backup := s.get(backupId)
+	if backup == nil || backup.Status != models.DatabaseBackupSuccess {
+		return nil, errors.New("backup not found or is not successful")
+	}
+	if !strings.EqualFold(backup.DatabaseType, config.DbTypeMySQL) {
+		return nil, errors.New("backup database type is not compatible with MySQL")
+	}
+	if !strings.EqualFold(filepath.Ext(backup.FileName), ".sql") {
+		return nil, errors.New("MySQL restore requires a .sql backup file")
+	}
+	path, err := s.pathForBackup(backup)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.verifyFile(path, config.DbTypeMySQL, backup.Checksum); err != nil {
+		return nil, fmt.Errorf("backup validation failed: %w", err)
+	}
+	if s.backupRunning(db) {
+		return nil, errors.New("another database backup is already running")
+	}
+	if s.restoreRunning(db) {
+		return nil, errors.New("another database restore is already running")
+	}
+
+	now := dates.NowTimestamp()
+	task := &models.DatabaseRestore{
+		BackupId: backupId, DatabaseType: config.DbTypeMySQL, Status: models.DatabaseRestoreRunning,
+		RequestedBy: requestedBy, StartedAt: now, CreateTime: now, UpdateTime: now,
+	}
+	if err := db.Create(task).Error; err != nil {
+		return nil, err
+	}
+	go s.runRestore(task.Id)
+	return task, nil
+}
+
 // RecoverStale marks interrupted backups as failed so a restart cannot leave
 // the persistent queue blocked forever.
 func (s *databaseBackupService) RecoverStale() {
@@ -145,6 +206,18 @@ func (s *databaseBackupService) RecoverStale() {
 			slog.Warn("failed to mark interrupted database backup", slog.Int64("id", backup.Id), slog.Any("error", err))
 		}
 	}
+	var restores []models.DatabaseRestore
+	if err := db.Where("status = ?", models.DatabaseRestoreRunning).Find(&restores).Error; err != nil {
+		slog.Warn("failed to load interrupted database restores", slog.Any("error", err))
+		return
+	}
+	for _, restore := range restores {
+		if err := db.Model(&models.DatabaseRestore{}).Where("id = ? AND status = ?", restore.Id, models.DatabaseRestoreRunning).Updates(map[string]interface{}{
+			"status": models.DatabaseRestoreFailed, "error": "restore interrupted by process restart", "finished_at": dates.NowTimestamp(), "update_time": dates.NowTimestamp(),
+		}).Error; err != nil {
+			slog.Warn("failed to mark interrupted database restore", slog.Int64("id", restore.Id), slog.Any("error", err))
+		}
+	}
 }
 
 func (s *databaseBackupService) start(trigger string, requestedBy int64) (*models.DatabaseBackup, error) {
@@ -154,25 +227,14 @@ func (s *databaseBackupService) start(trigger string, requestedBy int64) (*model
 	if db == nil {
 		return nil, errors.New("database is not initialized")
 	}
-	var running int64
-	if err := db.Model(&models.DatabaseBackup{}).Where("status = ?", models.DatabaseBackupRunning).Count(&running).Error; err != nil {
-		return nil, err
-	}
-	if running > 0 {
+	if s.backupRunning(db) {
 		return nil, errors.New("another database backup is already running")
 	}
-	now := dates.NowTimestamp()
-	databaseType := config.DbTypeMySQL
-	if config.Instance != nil {
-		databaseType = strings.ToLower(config.Instance.DB.Type)
+	if s.restoreRunning(db) {
+		return nil, errors.New("another database restore is already running")
 	}
-	backup := &models.DatabaseBackup{
-		TriggerType: trigger, DatabaseType: databaseType,
-		FileName: s.newFileName(trigger), Directory: s.Config().Directory,
-		Status:      models.DatabaseBackupRunning,
-		RequestedBy: requestedBy, StartedAt: now, CreateTime: now, UpdateTime: now,
-	}
-	if err := db.Create(backup).Error; err != nil {
+	backup, err := s.createBackupRecord(trigger, requestedBy)
+	if err != nil {
 		return nil, err
 	}
 	go s.run(backup.Id)
@@ -184,30 +246,208 @@ func (s *databaseBackupService) run(id int64) {
 	if backup == nil {
 		return
 	}
-	path, size, checksum, err := s.createFile(backup.FileName, backup.Directory)
+	if err := s.executeBackup(backup); err == nil {
+		s.prune()
+	}
+}
+
+func (s *databaseBackupService) createBackupRecord(trigger string, requestedBy int64) (*models.DatabaseBackup, error) {
 	now := dates.NowTimestamp()
-	updates := map[string]interface{}{"finished_at": now, "update_time": now}
+	backup := &models.DatabaseBackup{
+		TriggerType: trigger, DatabaseType: s.databaseType(),
+		FileName: s.newFileName(trigger), Directory: s.Config().Directory,
+		Status:      models.DatabaseBackupRunning,
+		RequestedBy: requestedBy, StartedAt: now, CreateTime: now, UpdateTime: now,
+	}
+	if err := sqls.DB().Create(backup).Error; err != nil {
+		return nil, err
+	}
+	return backup, nil
+}
+
+func (s *databaseBackupService) executeBackup(backup *models.DatabaseBackup) error {
+	path, size, checksum, err := s.createFile(backup.FileName, backup.Directory)
 	if err != nil {
-		updates["status"] = models.DatabaseBackupFailed
-		updates["error"] = truncateBackupError(err.Error())
-		_ = sqls.DB().Model(&models.DatabaseBackup{}).Where("id = ?", id).Updates(updates).Error
-		return
+		s.markBackupFailed(backup.Id, err)
+		return err
 	}
 	if err := s.verifyFile(path, backup.DatabaseType, checksum); err != nil {
 		_ = os.Remove(path)
-		updates["status"] = models.DatabaseBackupFailed
-		updates["error"] = truncateBackupError(err.Error())
-		_ = sqls.DB().Model(&models.DatabaseBackup{}).Where("id = ?", id).Updates(updates).Error
+		s.markBackupFailed(backup.Id, err)
+		return err
+	}
+	updates := map[string]interface{}{
+		"status": models.DatabaseBackupSuccess, "error": "", "size": size,
+		"checksum": checksum, "finished_at": dates.NowTimestamp(), "update_time": dates.NowTimestamp(),
+	}
+	if err := sqls.DB().Model(&models.DatabaseBackup{}).Where("id = ?", backup.Id).Updates(updates).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *databaseBackupService) markBackupFailed(id int64, cause error) {
+	_ = sqls.DB().Model(&models.DatabaseBackup{}).Where("id = ?", id).Updates(map[string]interface{}{
+		"status": models.DatabaseBackupFailed, "error": truncateBackupError(cause.Error()),
+		"finished_at": dates.NowTimestamp(), "update_time": dates.NowTimestamp(),
+	}).Error
+}
+
+func (s *databaseBackupService) runRestore(id int64) {
+	s.mu.Lock()
+	restoreSucceeded := false
+	defer func() {
+		s.mu.Unlock()
+		if restoreSucceeded {
+			s.prune()
+		}
+	}()
+
+	task := s.getRestore(id)
+	if task == nil {
 		return
 	}
-	updates["status"] = models.DatabaseBackupSuccess
-	updates["error"] = ""
-	updates["size"] = size
-	updates["checksum"] = checksum
-	if err := sqls.DB().Model(&models.DatabaseBackup{}).Where("id = ?", id).Updates(updates).Error; err != nil {
+	backup := s.get(task.BackupId)
+	if backup == nil || backup.Status != models.DatabaseBackupSuccess {
+		s.markRestoreFailed(id, errors.New("backup not found or is not successful"))
 		return
 	}
-	s.prune()
+	path, err := s.pathForBackup(backup)
+	if err != nil {
+		s.markRestoreFailed(id, err)
+		return
+	}
+	if err := s.verifyFile(path, config.DbTypeMySQL, backup.Checksum); err != nil {
+		s.markRestoreFailed(id, fmt.Errorf("backup validation failed: %w", err))
+		return
+	}
+
+	// The safety snapshot is completed before the selected dump is imported.
+	safetyBackup, err := s.createSafetyBackup(task.RequestedBy)
+	if err != nil {
+		s.markRestoreFailed(id, fmt.Errorf("safety backup failed: %w", err))
+		return
+	}
+	if err := sqls.DB().Model(&models.DatabaseRestore{}).Where("id = ?", id).Updates(map[string]interface{}{
+		"safety_backup_id": safetyBackup.Id, "update_time": dates.NowTimestamp(),
+	}).Error; err != nil {
+		s.markRestoreFailed(id, err)
+		return
+	}
+
+	if err := s.restoreMySQL(path); err != nil {
+		s.markRestoreFailed(id, err)
+		return
+	}
+	_ = sqls.DB().Model(&models.DatabaseRestore{}).Where("id = ?", id).Updates(map[string]interface{}{
+		"status": models.DatabaseRestoreSuccess, "error": "", "finished_at": dates.NowTimestamp(), "update_time": dates.NowTimestamp(),
+	}).Error
+	restoreSucceeded = true
+}
+
+func (s *databaseBackupService) createSafetyBackup(requestedBy int64) (*models.DatabaseBackup, error) {
+	backup, err := s.createBackupRecord(BackupTriggerRestoreSafety, requestedBy)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.executeBackup(backup); err != nil {
+		return backup, err
+	}
+	return backup, nil
+}
+
+func (s *databaseBackupService) restoreMySQL(path string) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Minute)
+	defer cancel()
+	args, env, err := s.restoreCommandArgs()
+	if err != nil {
+		return err
+	}
+	cmd := exec.CommandContext(ctx, "mysql", args...)
+	cmd.Env = append(os.Environ(), env...)
+	cmd.Stdin = file
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		message := strings.TrimSpace(stderr.String())
+		if message == "" {
+			message = err.Error()
+		}
+		return errors.New(message)
+	}
+	return nil
+}
+
+func (s *databaseBackupService) restoreCommandArgs() ([]string, []string, error) {
+	if s.databaseType() != config.DbTypeMySQL || config.Instance == nil {
+		return nil, nil, errors.New("database restore is only supported for MySQL")
+	}
+	cfg, err := mysql.ParseDSN(config.Instance.DB.Url)
+	if err != nil {
+		return nil, nil, fmt.Errorf("invalid MySQL connection string: %w", err)
+	}
+	args := []string{"--binary-mode", "--user=" + cfg.User, "--database=" + cfg.DBName}
+	if cfg.Net == "unix" {
+		args = append(args, "--socket="+cfg.Addr)
+	} else {
+		host, port := splitMySQLAddress(cfg.Addr)
+		args = append(args, "--host="+host)
+		if port != "" {
+			args = append(args, "--port="+port)
+		}
+	}
+	return args, []string{"MYSQL_PWD=" + cfg.Passwd}, nil
+}
+
+func (s *databaseBackupService) markRestoreFailed(id int64, cause error) {
+	_ = sqls.DB().Model(&models.DatabaseRestore{}).Where("id = ?", id).Updates(map[string]interface{}{
+		"status": models.DatabaseRestoreFailed, "error": truncateBackupError(cause.Error()),
+		"finished_at": dates.NowTimestamp(), "update_time": dates.NowTimestamp(),
+	}).Error
+}
+
+func (s *databaseBackupService) getRestore(id int64) *models.DatabaseRestore {
+	if db := sqls.DB(); db != nil {
+		var restore models.DatabaseRestore
+		if db.First(&restore, id).Error == nil {
+			return &restore
+		}
+	}
+	return nil
+}
+
+func (s *databaseBackupService) backupRunning(db *gorm.DB) bool {
+	var count int64
+	return db.Model(&models.DatabaseBackup{}).Where("status = ?", models.DatabaseBackupRunning).Count(&count).Error == nil && count > 0
+}
+
+func (s *databaseBackupService) restoreRunning(db *gorm.DB) bool {
+	var count int64
+	return db.Model(&models.DatabaseRestore{}).Where("status = ?", models.DatabaseRestoreRunning).Count(&count).Error == nil && count > 0
+}
+
+func (s *databaseBackupService) restoreStatus(db *gorm.DB) DatabaseRestoreStatus {
+	status := DatabaseRestoreStatus{}
+	var running models.DatabaseRestore
+	status.Running = db.Where("status = ?", models.DatabaseRestoreRunning).Order("id desc").First(&running).Error == nil
+	var successful models.DatabaseRestore
+	if db.Where("status = ?", models.DatabaseRestoreSuccess).Order("finished_at desc").First(&successful).Error == nil {
+		status.LastSuccessAt = successful.FinishedAt
+		status.LastBackupId = successful.BackupId
+	}
+	var failed models.DatabaseRestore
+	if db.Where("status = ?", models.DatabaseRestoreFailed).Order("finished_at desc").First(&failed).Error == nil {
+		status.LastFailureAt = failed.FinishedAt
+		status.LastError = failed.Error
+		status.LastBackupId = failed.BackupId
+	}
+	return status
 }
 
 func (s *databaseBackupService) List(limit int) []models.DatabaseBackup {
@@ -222,12 +462,21 @@ func (s *databaseBackupService) List(limit int) []models.DatabaseBackup {
 }
 
 func (s *databaseBackupService) Delete(id int64) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	backup := s.get(id)
 	if backup == nil {
 		return errors.New("backup not found")
 	}
 	if backup.Status == models.DatabaseBackupRunning {
 		return errors.New("running backups cannot be deleted")
+	}
+	if db := sqls.DB(); db != nil {
+		var runningRestore int64
+		if err := db.Model(&models.DatabaseRestore{}).Where("backup_id = ? AND status = ?", id, models.DatabaseRestoreRunning).Count(&runningRestore).Error; err == nil && runningRestore > 0 {
+			return errors.New("backup is being used by a running restore")
+		}
 	}
 	path, err := s.pathForBackup(backup)
 	if err != nil {
@@ -304,7 +553,7 @@ func (s *databaseBackupService) createFile(fileName, directory string) (string, 
 }
 
 func (s *databaseBackupService) dump(path string) error {
-	dbType := strings.ToLower(config.Instance.DB.Type)
+	dbType := s.databaseType()
 	switch dbType {
 	case config.DbTypeSQLite:
 		return s.dumpSQLite(path)
@@ -356,7 +605,10 @@ func (s *databaseBackupService) dumpCommand(path, commandName string) error {
 }
 
 func (s *databaseBackupService) dumpCommandArgs(commandName, path string) ([]string, []string, error) {
-	dbType := strings.ToLower(config.Instance.DB.Type)
+	dbType := s.databaseType()
+	if config.Instance == nil {
+		return nil, nil, errors.New("database configuration is not initialized")
+	}
 	if dbType == config.DbTypeMySQL && commandName == "mysqldump" {
 		cfg, err := mysql.ParseDSN(config.Instance.DB.Url)
 		if err != nil {
@@ -417,6 +669,9 @@ func (s *databaseBackupService) verifyFile(path, dbType, checksum string) error 
 	if dbType == config.DbTypeSQLite {
 		return verifySQLite(path)
 	}
+	if dbType == config.DbTypeMySQL {
+		return verifyMySQLDump(path)
+	}
 	file, err := os.Open(path)
 	if err != nil {
 		return err
@@ -431,6 +686,28 @@ func (s *databaseBackupService) verifyFile(path, dbType, checksum string) error 
 		return errors.New("backup file is empty")
 	}
 	return nil
+}
+
+func verifyMySQLDump(path string) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	content, err := io.ReadAll(io.LimitReader(file, 64*1024))
+	if err != nil {
+		return err
+	}
+	if len(content) == 0 || !utf8.Valid(content) || strings.ContainsRune(string(content), '\x00') {
+		return errors.New("MySQL backup is not a valid text dump")
+	}
+	upper := strings.ToUpper(string(content))
+	for _, marker := range []string{"MYSQL DUMP", "MARIADB DUMP", "CREATE TABLE", "INSERT INTO", "SET "} {
+		if strings.Contains(upper, marker) {
+			return nil
+		}
+	}
+	return errors.New("MySQL backup does not contain a recognized SQL dump header or statement")
 }
 
 func verifySQLite(path string) error {
@@ -526,10 +803,17 @@ func (s *databaseBackupService) newFileName(trigger string) string {
 	var suffix [4]byte
 	_, _ = rand.Read(suffix[:])
 	extension := ".sql"
-	if config.Instance != nil && strings.EqualFold(config.Instance.DB.Type, config.DbTypeSQLite) {
+	if s.databaseType() == config.DbTypeSQLite {
 		extension = ".sqlite3"
 	}
 	return fmt.Sprintf("bbs-go-%s-%s-%s%s", time.Now().UTC().Format("20060102-150405"), trigger, hex.EncodeToString(suffix[:]), extension)
+}
+
+func (s *databaseBackupService) databaseType() string {
+	if config.Instance == nil || strings.TrimSpace(config.Instance.DB.Type) == "" {
+		return config.DbTypeMySQL
+	}
+	return strings.ToLower(config.Instance.DB.Type)
 }
 
 func fileChecksum(path string) (string, error) {

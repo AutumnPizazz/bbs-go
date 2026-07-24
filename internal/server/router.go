@@ -248,6 +248,7 @@ func registerAdminRoutes(group *gin.RouterGroup) {
 	backupGroup.POST("/config", adminHandlers.DatabaseBackupSaveConfig)
 	backupGroup.GET("/list", adminHandlers.DatabaseBackupList)
 	backupGroup.POST("/create", adminHandlers.DatabaseBackupCreate)
+	backupGroup.POST("/restore", adminHandlers.DatabaseBackupRestore)
 	backupGroup.POST("/delete", adminHandlers.DatabaseBackupRemove)
 	backupGroup.GET("/download/:id", adminHandlers.DatabaseBackupDownload)
 

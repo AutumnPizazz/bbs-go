@@ -4,10 +4,12 @@ import * as React from "react"
 import {
   ActivityIcon,
   CheckCircle2Icon,
+  CircleHelpIcon,
   DatabaseBackupIcon,
   DownloadIcon,
   PlayIcon,
   RefreshCwIcon,
+  RotateCcwIcon,
   SaveIcon,
   Trash2Icon,
   XCircleIcon,
@@ -16,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   ConfirmDialog,
   type ConfirmDialogState,
@@ -53,6 +56,13 @@ type BackupStatus = {
   lastError?: string
   retention?: number
   directory?: string
+  restore?: {
+    running?: boolean
+    lastSuccessAt?: number
+    lastFailureAt?: number
+    lastError?: string
+    lastBackupId?: number
+  }
 }
 
 type BackupRecord = {
@@ -97,6 +107,7 @@ export default function DashboardHealthRoute() {
   const canBackupDownload = userHasPermission(currentUser, PERMISSIONS.DASHBOARD_BACKUP_DOWNLOAD)
   const canBackupDelete = userHasPermission(currentUser, PERMISSIONS.DASHBOARD_BACKUP_DELETE)
   const canBackupConfig = userHasPermission(currentUser, PERMISSIONS.DASHBOARD_BACKUP_CONFIG)
+  const canBackupRestore = userHasPermission(currentUser, PERMISSIONS.DASHBOARD_BACKUP_RESTORE)
 
   const load = React.useCallback(async () => {
     setLoading(true)
@@ -178,6 +189,16 @@ export default function DashboardHealthRoute() {
     }
   }
 
+  async function restoreBackup(id: number) {
+    try {
+      await adminPostForm("/api/admin/backup/restore", { id, confirm: "RESTORE_BACKUP" })
+      msgSuccess(t("dashboard.pages.health.backup.restoreStarted"))
+      await load()
+    } catch (error) {
+      msgError(error instanceof Error ? error.message : t("dashboard.pages.health.actionFailed"))
+    }
+  }
+
   const canSearch = userHasPermission(currentUser, PERMISSIONS.DASHBOARD_SEARCH_REINDEX)
   const canSitemap = userHasPermission(currentUser, PERMISSIONS.DASHBOARD_SITEMAP_GENERATE)
 
@@ -253,7 +274,7 @@ export default function DashboardHealthRoute() {
                     onConfirm: () => void createBackup(),
                   })
                 }
-                disabled={Boolean(tasks?.tasks?.databaseBackup?.running)}
+                disabled={Boolean(backup?.status?.running || backup?.status?.restore?.running)}
               >
                 <DatabaseBackupIcon className="size-4" />
                 {t("dashboard.pages.health.backup.create")}
@@ -269,7 +290,9 @@ export default function DashboardHealthRoute() {
             <DatabaseBackupIcon className="size-4 text-muted-foreground" />
             <h2 className="font-medium">{t("dashboard.pages.health.backup.title")}</h2>
             <span className="ml-auto text-sm text-muted-foreground">
-              {backup?.status?.lastError || t("dashboard.pages.health.backup.noErrors")}
+              {backup?.status?.restore?.running
+                ? t("dashboard.pages.health.backup.restoreRunning")
+                : backup?.status?.restore?.lastError || backup?.status?.lastError || t("dashboard.pages.health.backup.noErrors")}
             </span>
           </div>
 
@@ -284,7 +307,23 @@ export default function DashboardHealthRoute() {
                 {t("dashboard.pages.health.backup.enabled")}
               </label>
               <div className="space-y-2">
-                <Label htmlFor="backup-schedule">{t("dashboard.pages.health.backup.schedule")}</Label>
+                <div className="flex items-center gap-1">
+                  <Label htmlFor="backup-schedule">{t("dashboard.pages.health.backup.schedule")}</Label>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        aria-label={t("dashboard.pages.health.backup.scheduleHelpLabel")}
+                        className="text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        <CircleHelpIcon className="size-4" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-sm whitespace-pre-line">
+                      {t("dashboard.pages.health.backup.scheduleHelp")}
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
                 <Input
                   id="backup-schedule"
                   value={backupConfig.schedule || ""}
@@ -373,6 +412,24 @@ export default function DashboardHealthRoute() {
                           >
                             <DownloadIcon className="size-4" />
                             {t("dashboard.pages.health.backup.download")}
+                          </Button>
+                        ) : null}
+                        {canBackupRestore && record.status === 2 && record.databaseType?.toLowerCase() === "mysql" ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              setConfirmState({
+                                title: t("dashboard.pages.health.backup.restoreTitle"),
+                                description: t("dashboard.pages.health.backup.restoreDescription"),
+                                confirmText: t("dashboard.pages.health.backup.restore"),
+                                onConfirm: () => void restoreBackup(record.id),
+                              })
+                            }
+                            disabled={Boolean(backup?.status?.restore?.running)}
+                          >
+                            <RotateCcwIcon className="size-4" />
+                            {t("dashboard.pages.health.backup.restore")}
                           </Button>
                         ) : null}
                         {canBackupDelete && record.status !== 1 ? (

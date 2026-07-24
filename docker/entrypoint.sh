@@ -3,7 +3,7 @@ set -eu
 
 export BBSGO_SERVER_URL="${BBSGO_SERVER_URL:-http://127.0.0.1:8082}"
 
-mkdir -p /app/data /app/logs /app/res/uploads
+mkdir -p /app/data /app/logs /app/backups /app/res/uploads
 if [ ! -f /app/data/bbs-go.yaml ]; then
 	cp /app/defaults/bbs-go.yaml /app/data/bbs-go.yaml
 fi

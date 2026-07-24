@@ -88,6 +88,7 @@ export const PERMISSIONS = {
   DASHBOARD_BACKUP_DOWNLOAD: "dashboard.backup.download",
   DASHBOARD_BACKUP_DELETE: "dashboard.backup.delete",
   DASHBOARD_BACKUP_CONFIG: "dashboard.backup.config",
+  DASHBOARD_BACKUP_RESTORE: "dashboard.backup.restore",
 } as const
 
 export type PermissionCode =
@@ -181,4 +182,5 @@ export const PERMISSION_LIST = [
   PERMISSIONS.DASHBOARD_BACKUP_DOWNLOAD,
   PERMISSIONS.DASHBOARD_BACKUP_DELETE,
   PERMISSIONS.DASHBOARD_BACKUP_CONFIG,
+  PERMISSIONS.DASHBOARD_BACKUP_RESTORE,
 ] as const

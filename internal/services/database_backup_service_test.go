@@ -73,6 +73,57 @@ func TestDatabaseBackupDumpArgsDoNotExposePasswords(t *testing.T) {
 	}
 }
 
+func TestDatabaseBackupRestoreArgsDoNotExposePasswords(t *testing.T) {
+	original := config.Instance
+	t.Cleanup(func() { config.Instance = original })
+	config.Instance = &config.Config{DB: config.DBConfig{
+		Type: config.DbTypeMySQL,
+		Url:  "restore-user:restore-secret@tcp(db.example:3308)/bbsgo?parseTime=true",
+	}}
+	service := &databaseBackupService{}
+	args, env, err := service.restoreCommandArgs()
+	if err != nil {
+		t.Fatalf("expected mysql restore args: %v", err)
+	}
+	for _, arg := range args {
+		if strings.Contains(arg, "restore-secret") {
+			t.Fatalf("password leaked into restore args: %q", arg)
+		}
+	}
+	if len(env) != 1 || env[0] != "MYSQL_PWD=restore-secret" {
+		t.Fatalf("expected password to be passed through MYSQL_PWD, got %#v", env)
+	}
+}
+
+func TestDatabaseBackupVerifiesMySQLDumpContent(t *testing.T) {
+	service := &databaseBackupService{}
+	path := filepath.Join(t.TempDir(), "backup.sql")
+	content := []byte("-- MySQL dump 10.13\nSET @@SESSION.SQL_MODE='NO_AUTO_VALUE_ON_ZERO';\n")
+	if err := os.WriteFile(path, content, 0o600); err != nil {
+		t.Fatalf("write mysql dump: %v", err)
+	}
+	checksum, err := fileChecksum(path)
+	if err != nil {
+		t.Fatalf("checksum mysql dump: %v", err)
+	}
+	if err := service.verifyFile(path, config.DbTypeMySQL, checksum); err != nil {
+		t.Fatalf("expected valid mysql dump: %v", err)
+	}
+
+	invalidPath := filepath.Join(t.TempDir(), "invalid.sql")
+	invalid := []byte("this is not a SQL dump")
+	if err := os.WriteFile(invalidPath, invalid, 0o600); err != nil {
+		t.Fatalf("write invalid dump: %v", err)
+	}
+	invalidChecksum, err := fileChecksum(invalidPath)
+	if err != nil {
+		t.Fatalf("checksum invalid dump: %v", err)
+	}
+	if err := service.verifyFile(invalidPath, config.DbTypeMySQL, invalidChecksum); err == nil {
+		t.Fatal("expected invalid mysql dump to be rejected")
+	}
+}
+
 func TestDatabaseBackupSQLiteCreatesAndVerifiesSnapshot(t *testing.T) {
 	previousDB := sqls.DB()
 	previousConfig := config.Instance
@@ -117,7 +168,7 @@ func TestDatabaseBackupSQLiteCreatesAndVerifiesSnapshot(t *testing.T) {
 	if err := service.verifyFile(path, config.DbTypeSQLite, checksum); err != nil {
 		t.Fatalf("verify sqlite backup: %v", err)
 	}
-	if err := db.AutoMigrate(&models.DatabaseBackup{}); err != nil {
+	if err := db.AutoMigrate(&models.DatabaseBackup{}, &models.DatabaseRestore{}); err != nil {
 		t.Fatalf("migrate backup table: %v", err)
 	}
 	stale := &models.DatabaseBackup{
@@ -145,5 +196,20 @@ func TestDatabaseBackupSQLiteCreatesAndVerifiesSnapshot(t *testing.T) {
 	}
 	if _, err := os.Stat(stalePath); !os.IsNotExist(err) {
 		t.Fatalf("expected stale backup file to be removed, stat err=%v", err)
+	}
+	staleRestore := &models.DatabaseRestore{
+		BackupId: stale.Id, DatabaseType: config.DbTypeSQLite, Status: models.DatabaseRestoreRunning,
+		CreateTime: 1, UpdateTime: 1,
+	}
+	if err := db.Create(staleRestore).Error; err != nil {
+		t.Fatalf("create stale restore record: %v", err)
+	}
+	service.RecoverStale()
+	var recoveredRestore models.DatabaseRestore
+	if err := db.First(&recoveredRestore, staleRestore.Id).Error; err != nil {
+		t.Fatalf("load recovered restore: %v", err)
+	}
+	if recoveredRestore.Status != models.DatabaseRestoreFailed || recoveredRestore.Error == "" {
+		t.Fatalf("expected stale restore to be marked failed, got %#v", recoveredRestore)
 	}
 }

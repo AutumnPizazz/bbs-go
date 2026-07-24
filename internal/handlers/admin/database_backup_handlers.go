@@ -83,6 +83,33 @@ func DatabaseBackupCreate(ctx *gin.Context) {
 	ginx.WriteJSON(ctx, backup)
 }
 
+func DatabaseBackupRestore(ctx *gin.Context) {
+	operator, err := common.CheckLogin(ctx)
+	if err != nil {
+		ginx.WriteJSON(ctx, err)
+		return
+	}
+	id, err := strconv.ParseInt(params.FormValue(ctx, "id"), 10, 64)
+	if err != nil || id <= 0 {
+		ginx.WriteJSON(ctx, ginx.ErrorMessage("invalid backup id"))
+		return
+	}
+	if params.FormValue(ctx, "confirm") != services.BackupRestoreConfirmText {
+		err := ginx.ErrorMessage("confirmation text does not match")
+		services.OperateLogService.AddOperateLogFailure(operator.Id, constants.OpTypeUpdate, "databaseBackup", id, "恢复数据库备份", err, ctx.Request)
+		ginx.WriteJSON(ctx, err)
+		return
+	}
+	task, err := services.DatabaseBackupService.StartRestore(id, operator.Id)
+	if err != nil {
+		services.OperateLogService.AddOperateLogFailure(operator.Id, constants.OpTypeUpdate, "databaseBackup", id, "恢复数据库备份", err, ctx.Request)
+		ginx.WriteJSON(ctx, err)
+		return
+	}
+	services.OperateLogService.AddOperateLog(operator.Id, constants.OpTypeUpdate, "databaseBackup", id, "恢复数据库备份", ctx.Request)
+	ginx.WriteJSON(ctx, task)
+}
+
 func DatabaseBackupRemove(ctx *gin.Context) {
 	operator, err := common.CheckLogin(ctx)
 	if err != nil {

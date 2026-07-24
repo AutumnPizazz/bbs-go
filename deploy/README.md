@@ -41,4 +41,4 @@ docker compose down
 docker compose up -d
 ```
 
-运行数据保存在 MySQL 命名卷以及当前目录的 `data/`、`logs/`、`uploads/` 中，不属于发行包。
+运行数据保存在 MySQL 命名卷以及当前目录的 `data/`、`data/backups/`、`logs/`、`uploads/` 中，不属于发行包。后台使用相对路径 `backups` 时，备份文件实际保存在宿主机的 `data/backups/`。

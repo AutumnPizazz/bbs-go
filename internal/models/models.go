@@ -17,7 +17,7 @@ var Models = []interface{}{
 	&Attachment{},
 	&MessageSendTask{}, &MessageDelivery{},
 	&AnnouncementPublishRecord{}, &DashboardViewPreference{},
-	&DatabaseBackup{},
+	&DatabaseBackup{}, &DatabaseRestore{},
 }
 
 type Model struct {
@@ -379,15 +379,15 @@ type UserReport struct {
 // Attachment 帖子附件
 type Attachment struct {
 	Id            string `gorm:"primaryKey;size:64" json:"id" form:"id"`
-	TopicId       int64  `gorm:"not null;default:0;index:idx_attachment_topic_id" json:"topicId" form:"topicId"`          // 所属帖子 ID
-	UserId        int64  `gorm:"not null;index:idx_attachment_user_id" json:"userId" form:"userId"`                       // 上传者（发帖人）ID
-	FileName      string `gorm:"size:256" json:"fileName" form:"fileName"`                                                // 原始文件名
-	FileUrl       string `gorm:"size:1024" json:"fileUrl" form:"fileUrl"`                                                 // 访问地址（相对路径或完整 URL，上传返回）
+	TopicId       int64  `gorm:"not null;default:0;index:idx_attachment_topic_id" json:"topicId" form:"topicId"`            // 所属帖子 ID
+	UserId        int64  `gorm:"not null;index:idx_attachment_user_id" json:"userId" form:"userId"`                         // 上传者（发帖人）ID
+	FileName      string `gorm:"size:256" json:"fileName" form:"fileName"`                                                  // 原始文件名
+	FileUrl       string `gorm:"size:1024" json:"fileUrl" form:"fileUrl"`                                                   // 访问地址（相对路径或完整 URL，上传返回）
 	StorageKey    string `gorm:"size:1024;index:idx_attachment_storage_key,length:512" json:"storageKey" form:"storageKey"` // 对象存储 key；前缀索引避免 utf8mb4 超过 MySQL 索引长度限制
-	FileSize      int64  `gorm:"not null;default:0" json:"fileSize" form:"fileSize"`                                      // 文件大小（字节）
-	FileType      string `gorm:"size:64" json:"fileType" form:"fileType"`                                                 // MIME 或扩展名
-	DownloadCount int    `gorm:"type:int;not null;default:0" json:"downloadCount" form:"downloadCount"`                   // 下载次数
-	Status        int    `gorm:"type:int;not null;index:idx_attachment_status" json:"status" form:"status"`               // 状态：正常/删除
-	CreateTime    int64  `gorm:"not null;default:0;index:idx_attachment_create_time" json:"createTime" form:"createTime"` // 创建时间（毫秒）
-	UpdateTime    int64  `gorm:"not null;default:0" json:"updateTime" form:"updateTime"`                                  // 更新时间（毫秒）
+	FileSize      int64  `gorm:"not null;default:0" json:"fileSize" form:"fileSize"`                                        // 文件大小（字节）
+	FileType      string `gorm:"size:64" json:"fileType" form:"fileType"`                                                   // MIME 或扩展名
+	DownloadCount int    `gorm:"type:int;not null;default:0" json:"downloadCount" form:"downloadCount"`                     // 下载次数
+	Status        int    `gorm:"type:int;not null;index:idx_attachment_status" json:"status" form:"status"`                 // 状态：正常/删除
+	CreateTime    int64  `gorm:"not null;default:0;index:idx_attachment_create_time" json:"createTime" form:"createTime"`   // 创建时间（毫秒）
+	UpdateTime    int64  `gorm:"not null;default:0" json:"updateTime" form:"updateTime"`                                    // 更新时间（毫秒）
 }

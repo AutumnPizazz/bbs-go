@@ -39,6 +39,7 @@ services:
       # so deleting/recreating the container does not reset the install config.
       - ./docker-data/data:/app/data
       - ./docker-data/logs:/app/logs
+      - ./docker-data/backups:/app/backups
       - ./docker-data/uploads:/app/res/uploads
     ports:
       - "3000:3000"

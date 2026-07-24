@@ -25,6 +25,10 @@ const (
 	DatabaseBackupRunning = 1
 	DatabaseBackupSuccess = 2
 	DatabaseBackupFailed  = 3
+
+	DatabaseRestoreRunning = 1
+	DatabaseRestoreSuccess = 2
+	DatabaseRestoreFailed  = 3
 )
 
 // DatabaseBackup is the durable record for a generated database backup.
@@ -44,4 +48,21 @@ type DatabaseBackup struct {
 	FinishedAt   int64  `gorm:"not null;default:0" json:"finishedAt" form:"finishedAt"`
 	CreateTime   int64  `gorm:"not null;index:idx_database_backup_create_time" json:"createTime" form:"createTime"`
 	UpdateTime   int64  `gorm:"not null" json:"updateTime" form:"updateTime"`
+}
+
+// DatabaseRestore is the durable record for a controlled database restore.
+// Restore requests only reference a generated backup record; no SQL or command
+// arguments are accepted from the HTTP request.
+type DatabaseRestore struct {
+	Model
+	BackupId       int64  `gorm:"not null;index:idx_database_restore_backup_id" json:"backupId" form:"backupId"`
+	DatabaseType   string `gorm:"size:16;not null" json:"databaseType" form:"databaseType"`
+	Status         int    `gorm:"not null;index:idx_database_restore_status" json:"status" form:"status"`
+	RequestedBy    int64  `gorm:"not null;default:0;index:idx_database_restore_requested_by" json:"requestedBy" form:"requestedBy"`
+	SafetyBackupId int64  `gorm:"not null;default:0" json:"safetyBackupId" form:"safetyBackupId"`
+	Error          string `gorm:"type:text" json:"error" form:"error"`
+	StartedAt      int64  `gorm:"not null;default:0" json:"startedAt" form:"startedAt"`
+	FinishedAt     int64  `gorm:"not null;default:0" json:"finishedAt" form:"finishedAt"`
+	CreateTime     int64  `gorm:"not null;index:idx_database_restore_create_time" json:"createTime" form:"createTime"`
+	UpdateTime     int64  `gorm:"not null" json:"updateTime" form:"updateTime"`
 }

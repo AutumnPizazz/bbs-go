@@ -80,7 +80,7 @@ func TaskStatus(ctx *gin.Context) {
 			"attachmentCleanup": attachmentCleanup,
 			"databaseBackup":    databaseBackup,
 		},
-		"failed":       search.Error != "" || sitemap.Error != "" || attachmentCleanup.Error != "" || databaseBackup.LastError != "",
+		"failed":       search.Error != "" || sitemap.Error != "" || attachmentCleanup.Error != "" || databaseBackup.LastError != "" || databaseBackup.Restore.LastError != "",
 		"active":       search.Running || sitemap.Running || attachmentCleanup.Running || databaseBackup.Running,
 		"checkedAt":    dates.NowTimestamp(),
 		"retrySupport": map[string]bool{"searchReindex": true, "sitemap": true, "attachmentCleanup": false, "databaseBackup": true},

@@ -135,13 +135,14 @@ var (
 	PermissionAnnouncementView    = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.announcement.view", GroupName: GroupCommunity, SortNo: 855, NameEn: "View Announcement History", NameZh: "查看公告记录"}
 	PermissionAnnouncementPublish = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.announcement.publish", GroupName: GroupCommunity, SortNo: 856, NameEn: "Publish Announcements", NameZh: "发布站点公告"}
 
-	PermissionHealthView = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.health.view", GroupName: GroupSystem, SortNo: 1450, NameEn: "View System Health", NameZh: "查看系统健康状态"}
-	PermissionTaskView   = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.task.view", GroupName: GroupSystem, SortNo: 1460, NameEn: "View Background Tasks", NameZh: "查看后台任务"}
+	PermissionHealthView     = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.health.view", GroupName: GroupSystem, SortNo: 1450, NameEn: "View System Health", NameZh: "查看系统健康状态"}
+	PermissionTaskView       = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.task.view", GroupName: GroupSystem, SortNo: 1460, NameEn: "View Background Tasks", NameZh: "查看后台任务"}
 	PermissionBackupView     = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.backup.view", GroupName: GroupSystem, SortNo: 1470, NameEn: "View Database Backups", NameZh: "查看数据库备份"}
 	PermissionBackupCreate   = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.backup.create", GroupName: GroupSystem, SortNo: 1480, NameEn: "Create Database Backups", NameZh: "创建数据库备份"}
 	PermissionBackupDownload = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.backup.download", GroupName: GroupSystem, SortNo: 1490, NameEn: "Download Database Backups", NameZh: "下载数据库备份"}
 	PermissionBackupDelete   = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.backup.delete", GroupName: GroupSystem, SortNo: 1500, NameEn: "Delete Database Backups", NameZh: "删除数据库备份"}
 	PermissionBackupConfig   = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.backup.config", GroupName: GroupSystem, SortNo: 1510, NameEn: "Configure Database Backups", NameZh: "配置数据库备份"}
+	PermissionBackupRestore  = PermissionDefinition{Type: TypeDashboard, Code: "dashboard.backup.restore", GroupName: GroupSystem, SortNo: 1520, NameEn: "Restore Database Backups", NameZh: "恢复数据库备份"}
 )
 
 var Permissions = []PermissionDefinition{
@@ -232,6 +233,7 @@ var Permissions = []PermissionDefinition{
 	PermissionBackupDownload,
 	PermissionBackupDelete,
 	PermissionBackupConfig,
+	PermissionBackupRestore,
 }
 
 func FindByCode(code string) (PermissionDefinition, bool) {

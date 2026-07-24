@@ -39,6 +39,7 @@ services:
     volumes:
       - ./runtime/data:/app/data
       - ./runtime/logs:/app/logs
+      - ./runtime/backups:/app/backups
       - ./runtime/uploads:/app/res/uploads
     ports:
       - "${BBSGO_HTTP_PORT:-3000}:3000"

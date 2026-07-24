@@ -42,8 +42,8 @@ ENV NODE_ENV=production \
 	BBSGO_SERVER_URL=http://127.0.0.1:8082 \
 	TZ=Asia/Shanghai
 
-RUN apk add --no-cache ca-certificates tzdata wget \
-	&& mkdir -p /app/data /app/logs /app/res/uploads /app/defaults
+RUN apk add --no-cache ca-certificates tzdata wget mariadb-client \
+	&& mkdir -p /app/data /app/logs /app/backups /app/res/uploads /app/defaults
 
 COPY --from=server-builder /out/bbs-go /app/bbs-go
 COPY locales /app/locales
@@ -60,7 +60,7 @@ RUN sed -i 's/\r$//' /app/entrypoint.sh \
 	&& chmod +x /app/entrypoint.sh
 
 EXPOSE 3000 8082
-VOLUME ["/app/data", "/app/logs", "/app/res/uploads"]
+VOLUME ["/app/data", "/app/logs", "/app/backups", "/app/res/uploads"]
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
 	CMD wget -qO- http://127.0.0.1:3000/api/install/status >/dev/null || exit 1
