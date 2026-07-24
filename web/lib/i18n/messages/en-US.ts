@@ -907,6 +907,8 @@ const enUS = {
           scheduleHelp: "Five fields: minute, hour, day of month, month, day of week.\n0 3 * * * = every day at 03:00\n*/15 * * * * = every 15 minutes\n0 2 * * 0 = every Sunday at 02:00",
           retention: "Retention count",
           directory: "Backup directory",
+          directoryHelpLabel: "Explain backup directory",
+          directoryHelp: "Do not change the backup directory casually. This value is a relative path inside the container; absolute paths are not allowed.\nWith the project's Docker Compose files, keeping the default backups value stores files outside Docker through the host mount: ./docker-data/backups for local development, ./data/backups for the deployment package, or ./runtime/backups for an instance deployment.\nIf you change the directory, update the Docker Compose host mount as well. Otherwise backups may remain inside the container and be lost when it is removed or recreated.",
           file: "File",
           status: "Status",
           size: "Size (bytes)",

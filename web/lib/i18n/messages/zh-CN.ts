@@ -896,6 +896,8 @@ const zhCN = {
           scheduleHelp: "格式为五段：分钟、小时、日期、月份、星期。\n0 3 * * * = 每天 03:00\n*/15 * * * * = 每 15 分钟\n0 2 * * 0 = 每周日 02:00",
           retention: "保留份数",
           directory: "备份目录",
+          directoryHelpLabel: "查看备份目录说明",
+          directoryHelp: "请勿轻易修改备份目录。此处填写的是容器内相对路径，不能填写绝对路径。\n在项目提供的 Docker Compose 配置中，保持默认值 backups 时，备份文件会通过挂载保存到 Docker 外部：本地开发为 ./docker-data/backups，部署包为 ./data/backups（实例部署为 ./runtime/backups）。\n如果改成其他目录，必须同步修改 Docker Compose 的宿主机挂载，否则备份可能只保存在容器内，删除或重建容器后会丢失。",
           file: "文件",
           status: "状态",
           size: "大小（字节）",

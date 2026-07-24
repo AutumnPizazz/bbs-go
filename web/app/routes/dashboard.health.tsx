@@ -342,7 +342,23 @@ export default function DashboardHealthRoute() {
                 />
               </div>
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="backup-directory">{t("dashboard.pages.health.backup.directory")}</Label>
+                <div className="flex items-center gap-1">
+                  <Label htmlFor="backup-directory">{t("dashboard.pages.health.backup.directory")}</Label>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        aria-label={t("dashboard.pages.health.backup.directoryHelpLabel")}
+                        className="text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        <CircleHelpIcon className="size-4" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-sm whitespace-pre-line">
+                      {t("dashboard.pages.health.backup.directoryHelp")}
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
                 <Input
                   id="backup-directory"
                   value={backupConfig.directory || ""}
