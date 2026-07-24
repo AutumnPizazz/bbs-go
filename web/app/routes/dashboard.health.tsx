@@ -145,6 +145,18 @@ export default function DashboardHealthRoute() {
     void load()
   }, [load])
 
+  React.useEffect(() => {
+    if (!backup?.status?.restore?.running) {
+      return
+    }
+
+    const timer = window.setInterval(() => {
+      void load()
+    }, 2000)
+
+    return () => window.clearInterval(timer)
+  }, [backup?.status?.restore?.running, load])
+
   async function startTask(endpoint: string) {
     try {
       await adminPostForm(endpoint, {})
