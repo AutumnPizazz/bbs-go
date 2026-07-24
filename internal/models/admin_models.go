@@ -44,6 +44,8 @@ type DatabaseBackup struct {
 	Size         int64  `gorm:"not null;default:0" json:"size" form:"size"`
 	Checksum     string `gorm:"size:64" json:"checksum" form:"checksum"`
 	Error        string `gorm:"type:text" json:"error" form:"error"`
+	Progress     int    `gorm:"not null;default:0" json:"progress" form:"progress"`
+	Phase        string `gorm:"size:32;not null;default:''" json:"phase" form:"phase"`
 	StartedAt    int64  `gorm:"not null;default:0" json:"startedAt" form:"startedAt"`
 	FinishedAt   int64  `gorm:"not null;default:0" json:"finishedAt" form:"finishedAt"`
 	CreateTime   int64  `gorm:"not null;index:idx_database_backup_create_time" json:"createTime" form:"createTime"`
@@ -61,6 +63,8 @@ type DatabaseRestore struct {
 	RequestedBy    int64  `gorm:"not null;default:0;index:idx_database_restore_requested_by" json:"requestedBy" form:"requestedBy"`
 	SafetyBackupId int64  `gorm:"not null;default:0" json:"safetyBackupId" form:"safetyBackupId"`
 	Error          string `gorm:"type:text" json:"error" form:"error"`
+	Progress       int    `gorm:"not null;default:0" json:"progress" form:"progress"`
+	Phase          string `gorm:"size:32;not null;default:''" json:"phase" form:"phase"`
 	StartedAt      int64  `gorm:"not null;default:0" json:"startedAt" form:"startedAt"`
 	FinishedAt     int64  `gorm:"not null;default:0" json:"finishedAt" form:"finishedAt"`
 	CreateTime     int64  `gorm:"not null;index:idx_database_restore_create_time" json:"createTime" form:"createTime"`

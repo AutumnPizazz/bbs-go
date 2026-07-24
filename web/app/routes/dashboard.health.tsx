@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Progress } from "@/components/ui/progress"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   ConfirmDialog,
@@ -51,6 +52,8 @@ type BackupConfig = {
 
 type BackupStatus = {
   running?: boolean
+  progress?: number
+  phase?: string
   lastSuccessAt?: number
   lastFailureAt?: number
   lastError?: string
@@ -58,6 +61,8 @@ type BackupStatus = {
   directory?: string
   restore?: {
     running?: boolean
+    progress?: number
+    phase?: string
     lastSuccessAt?: number
     lastFailureAt?: number
     lastError?: string
@@ -215,6 +220,28 @@ export default function DashboardHealthRoute() {
 
   const canSearch = userHasPermission(currentUser, PERMISSIONS.DASHBOARD_SEARCH_REINDEX)
   const canSitemap = userHasPermission(currentUser, PERMISSIONS.DASHBOARD_SITEMAP_GENERATE)
+  const restoreRunning = Boolean(backup?.status?.restore?.running)
+  const backupRunning = Boolean(backup?.status?.running && !restoreRunning)
+  const operationProgress = Math.max(
+    0,
+    Math.min(100, restoreRunning ? backup?.status?.restore?.progress || 0 : backup?.status?.progress || 0)
+  )
+  const operationPhase = restoreRunning ? backup?.status?.restore?.phase : backup?.status?.phase
+  const operationTitle = restoreRunning
+    ? t("dashboard.pages.health.backup.restoreProgressTitle")
+    : t("dashboard.pages.health.backup.progressTitle")
+  const operationPhaseLabel =
+    operationPhase === "preparing"
+      ? t("dashboard.pages.health.backup.phasePreparing")
+      : operationPhase === "dumping"
+        ? t("dashboard.pages.health.backup.phaseDumping")
+        : operationPhase === "verifying"
+          ? t("dashboard.pages.health.backup.phaseVerifying")
+          : operationPhase === "safety-backup"
+            ? t("dashboard.pages.health.backup.phaseSafetyBackup")
+            : operationPhase === "restoring"
+              ? t("dashboard.pages.health.backup.phaseRestoring")
+              : t("dashboard.pages.health.backup.phaseWorking")
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
@@ -395,6 +422,19 @@ export default function DashboardHealthRoute() {
                   {t("dashboard.actions.save")}
                 </Button>
               </div>
+            </div>
+          ) : null}
+
+          {restoreRunning || backupRunning ? (
+            <div className="mt-4 rounded-md border bg-muted/20 p-3">
+              <div className="mb-2 flex items-center justify-between gap-3 text-sm">
+                <span className="font-medium">{operationTitle}</span>
+                <span className="text-muted-foreground">{operationProgress}%</span>
+              </div>
+              <Progress value={operationProgress} aria-label={operationTitle} />
+              <p className="mt-2 text-xs text-muted-foreground">
+                {t("dashboard.pages.health.backup.progressPhase")}: {operationPhaseLabel}
+              </p>
             </div>
           ) : null}
 

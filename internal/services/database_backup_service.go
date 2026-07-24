@@ -40,6 +40,16 @@ const (
 	BackupDownloadConfirmText  = "DOWNLOAD_BACKUP"
 	BackupRestoreConfirmText   = "RESTORE_BACKUP"
 	maxBackupErrorLength       = 1024
+
+	backupPhaseDumping       = "dumping"
+	backupPhaseVerifying     = "verifying"
+	backupPhaseFailed        = "failed"
+	backupPhaseCompleted     = "completed"
+	restorePhasePreparing    = "preparing"
+	restorePhaseSafetyBackup = "safety-backup"
+	restorePhaseRestoring    = "restoring"
+	restorePhaseFailed       = "failed"
+	restorePhaseCompleted    = "completed"
 )
 
 type DatabaseBackupStatus struct {
@@ -49,6 +59,8 @@ type DatabaseBackupStatus struct {
 	LastError     string                `json:"lastError,omitempty"`
 	Retention     int                   `json:"retention"`
 	Directory     string                `json:"directory"`
+	Progress      int                   `json:"progress"`
+	Phase         string                `json:"phase,omitempty"`
 	Restore       DatabaseRestoreStatus `json:"restore"`
 }
 
@@ -58,6 +70,8 @@ type DatabaseRestoreStatus struct {
 	LastFailureAt int64  `json:"lastFailureAt"`
 	LastError     string `json:"lastError,omitempty"`
 	LastBackupId  int64  `json:"lastBackupId"`
+	Progress      int    `json:"progress"`
+	Phase         string `json:"phase,omitempty"`
 }
 
 type DatabaseBackupConfig struct {
@@ -86,7 +100,11 @@ func (s *databaseBackupService) Status() DatabaseBackupStatus {
 	status := DatabaseBackupStatus{}
 	if db := sqls.DB(); db != nil {
 		var running models.DatabaseBackup
-		status.Running = db.Where("status = ?", models.DatabaseBackupRunning).Order("id desc").First(&running).Error == nil
+		if db.Where("status = ?", models.DatabaseBackupRunning).Order("id desc").First(&running).Error == nil {
+			status.Running = true
+			status.Progress = running.Progress
+			status.Phase = running.Phase
+		}
 		var successful models.DatabaseBackup
 		if db.Where("status = ?", models.DatabaseBackupSuccess).Order("finished_at desc").First(&successful).Error == nil {
 			status.LastSuccessAt = successful.FinishedAt
@@ -175,6 +193,7 @@ func (s *databaseBackupService) StartRestore(backupId, requestedBy int64) (*mode
 	now := dates.NowTimestamp()
 	task := &models.DatabaseRestore{
 		BackupId: backupId, DatabaseType: config.DbTypeMySQL, Status: models.DatabaseRestoreRunning,
+		Progress: 5, Phase: restorePhasePreparing,
 		RequestedBy: requestedBy, StartedAt: now, CreateTime: now, UpdateTime: now,
 	}
 	if err := db.Create(task).Error; err != nil {
@@ -201,7 +220,7 @@ func (s *databaseBackupService) RecoverStale() {
 			_ = os.Remove(path)
 		}
 		if err := db.Model(&models.DatabaseBackup{}).Where("id = ? AND status = ?", backup.Id, models.DatabaseBackupRunning).Updates(map[string]interface{}{
-			"status": models.DatabaseBackupFailed, "error": "backup interrupted by process restart", "finished_at": dates.NowTimestamp(), "update_time": dates.NowTimestamp(),
+			"status": models.DatabaseBackupFailed, "phase": backupPhaseFailed, "error": "backup interrupted by process restart", "finished_at": dates.NowTimestamp(), "update_time": dates.NowTimestamp(),
 		}).Error; err != nil {
 			slog.Warn("failed to mark interrupted database backup", slog.Int64("id", backup.Id), slog.Any("error", err))
 		}
@@ -213,7 +232,7 @@ func (s *databaseBackupService) RecoverStale() {
 	}
 	for _, restore := range restores {
 		if err := db.Model(&models.DatabaseRestore{}).Where("id = ? AND status = ?", restore.Id, models.DatabaseRestoreRunning).Updates(map[string]interface{}{
-			"status": models.DatabaseRestoreFailed, "error": "restore interrupted by process restart", "finished_at": dates.NowTimestamp(), "update_time": dates.NowTimestamp(),
+			"status": models.DatabaseRestoreFailed, "phase": restorePhaseFailed, "error": "restore interrupted by process restart", "finished_at": dates.NowTimestamp(), "update_time": dates.NowTimestamp(),
 		}).Error; err != nil {
 			slog.Warn("failed to mark interrupted database restore", slog.Int64("id", restore.Id), slog.Any("error", err))
 		}
@@ -256,7 +275,7 @@ func (s *databaseBackupService) createBackupRecord(trigger string, requestedBy i
 	backup := &models.DatabaseBackup{
 		TriggerType: trigger, DatabaseType: s.databaseType(),
 		FileName: s.newFileName(trigger), Directory: s.Config().Directory,
-		Status:      models.DatabaseBackupRunning,
+		Status: models.DatabaseBackupRunning, Progress: 5, Phase: backupPhaseDumping,
 		RequestedBy: requestedBy, StartedAt: now, CreateTime: now, UpdateTime: now,
 	}
 	if err := sqls.DB().Create(backup).Error; err != nil {
@@ -266,18 +285,20 @@ func (s *databaseBackupService) createBackupRecord(trigger string, requestedBy i
 }
 
 func (s *databaseBackupService) executeBackup(backup *models.DatabaseBackup) error {
+	s.updateBackupProgress(backup.Id, 10, backupPhaseDumping)
 	path, size, checksum, err := s.createFile(backup.FileName, backup.Directory)
 	if err != nil {
 		s.markBackupFailed(backup.Id, err)
 		return err
 	}
+	s.updateBackupProgress(backup.Id, 85, backupPhaseVerifying)
 	if err := s.verifyFile(path, backup.DatabaseType, checksum); err != nil {
 		_ = os.Remove(path)
 		s.markBackupFailed(backup.Id, err)
 		return err
 	}
 	updates := map[string]interface{}{
-		"status": models.DatabaseBackupSuccess, "error": "", "size": size,
+		"status": models.DatabaseBackupSuccess, "phase": backupPhaseCompleted, "progress": 100, "error": "", "size": size,
 		"checksum": checksum, "finished_at": dates.NowTimestamp(), "update_time": dates.NowTimestamp(),
 	}
 	if err := sqls.DB().Model(&models.DatabaseBackup{}).Where("id = ?", backup.Id).Updates(updates).Error; err != nil {
@@ -288,7 +309,7 @@ func (s *databaseBackupService) executeBackup(backup *models.DatabaseBackup) err
 
 func (s *databaseBackupService) markBackupFailed(id int64, cause error) {
 	_ = sqls.DB().Model(&models.DatabaseBackup{}).Where("id = ?", id).Updates(map[string]interface{}{
-		"status": models.DatabaseBackupFailed, "error": truncateBackupError(cause.Error()),
+		"status": models.DatabaseBackupFailed, "phase": backupPhaseFailed, "error": truncateBackupError(cause.Error()),
 		"finished_at": dates.NowTimestamp(), "update_time": dates.NowTimestamp(),
 	}).Error
 }
@@ -307,6 +328,7 @@ func (s *databaseBackupService) runRestore(id int64) {
 	if task == nil {
 		return
 	}
+	s.updateRestoreProgress(id, 10, restorePhasePreparing)
 	backup := s.get(task.BackupId)
 	if backup == nil || backup.Status != models.DatabaseBackupSuccess {
 		s.markRestoreFailed(id, errors.New("backup not found or is not successful"))
@@ -323,6 +345,7 @@ func (s *databaseBackupService) runRestore(id int64) {
 	}
 
 	// The safety snapshot is completed before the selected dump is imported.
+	s.updateRestoreProgress(id, 25, restorePhaseSafetyBackup)
 	safetyBackup, err := s.createSafetyBackup(task.RequestedBy)
 	if err != nil {
 		s.markRestoreFailed(id, fmt.Errorf("safety backup failed: %w", err))
@@ -335,12 +358,13 @@ func (s *databaseBackupService) runRestore(id int64) {
 		return
 	}
 
+	s.updateRestoreProgress(id, 55, restorePhaseRestoring)
 	if err := s.restoreMySQL(path); err != nil {
 		s.markRestoreFailed(id, err)
 		return
 	}
 	_ = sqls.DB().Model(&models.DatabaseRestore{}).Where("id = ?", id).Updates(map[string]interface{}{
-		"status": models.DatabaseRestoreSuccess, "error": "", "finished_at": dates.NowTimestamp(), "update_time": dates.NowTimestamp(),
+		"status": models.DatabaseRestoreSuccess, "phase": restorePhaseCompleted, "progress": 100, "error": "", "finished_at": dates.NowTimestamp(), "update_time": dates.NowTimestamp(),
 	}).Error
 	restoreSucceeded = true
 }
@@ -407,9 +431,35 @@ func (s *databaseBackupService) restoreCommandArgs() ([]string, []string, error)
 
 func (s *databaseBackupService) markRestoreFailed(id int64, cause error) {
 	_ = sqls.DB().Model(&models.DatabaseRestore{}).Where("id = ?", id).Updates(map[string]interface{}{
-		"status": models.DatabaseRestoreFailed, "error": truncateBackupError(cause.Error()),
+		"status": models.DatabaseRestoreFailed, "phase": restorePhaseFailed, "error": truncateBackupError(cause.Error()),
 		"finished_at": dates.NowTimestamp(), "update_time": dates.NowTimestamp(),
 	}).Error
+}
+
+func (s *databaseBackupService) updateBackupProgress(id int64, progress int, phase string) {
+	if db := sqls.DB(); db != nil {
+		_ = db.Model(&models.DatabaseBackup{}).Where("id = ? AND status = ?", id, models.DatabaseBackupRunning).Updates(map[string]interface{}{
+			"progress": clampBackupProgress(progress), "phase": phase, "update_time": dates.NowTimestamp(),
+		}).Error
+	}
+}
+
+func (s *databaseBackupService) updateRestoreProgress(id int64, progress int, phase string) {
+	if db := sqls.DB(); db != nil {
+		_ = db.Model(&models.DatabaseRestore{}).Where("id = ? AND status = ?", id, models.DatabaseRestoreRunning).Updates(map[string]interface{}{
+			"progress": clampBackupProgress(progress), "phase": phase, "update_time": dates.NowTimestamp(),
+		}).Error
+	}
+}
+
+func clampBackupProgress(progress int) int {
+	if progress < 0 {
+		return 0
+	}
+	if progress > 100 {
+		return 100
+	}
+	return progress
 }
 
 func (s *databaseBackupService) getRestore(id int64) *models.DatabaseRestore {
@@ -435,7 +485,11 @@ func (s *databaseBackupService) restoreRunning(db *gorm.DB) bool {
 func (s *databaseBackupService) restoreStatus(db *gorm.DB) DatabaseRestoreStatus {
 	status := DatabaseRestoreStatus{}
 	var running models.DatabaseRestore
-	status.Running = db.Where("status = ?", models.DatabaseRestoreRunning).Order("id desc").First(&running).Error == nil
+	if db.Where("status = ?", models.DatabaseRestoreRunning).Order("id desc").First(&running).Error == nil {
+		status.Running = true
+		status.Progress = running.Progress
+		status.Phase = running.Phase
+	}
 	var successful models.DatabaseRestore
 	if db.Where("status = ?", models.DatabaseRestoreSuccess).Order("finished_at desc").First(&successful).Error == nil {
 		status.LastSuccessAt = successful.FinishedAt
