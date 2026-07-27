@@ -266,8 +266,12 @@ func (s *userService) ResetPasswordByAdmin(operator *models.User, targetUserId i
 		return "", err
 	}
 	newPassword := str.GenerateRandomPassword()
+	var activeTokens []models.UserToken
 	if err := sqls.DB().Transaction(func(tx *gorm.DB) error {
 		if err := repositories.UserRepository.UpdateColumn(tx, target.Id, "password", passwd.EncodePassword(newPassword)); err != nil {
+			return err
+		}
+		if err := tx.Where("user_id = ? AND status = ?", target.Id, constants.StatusOk).Find(&activeTokens).Error; err != nil {
 			return err
 		}
 		return tx.Model(&models.UserToken{}).Where("user_id = ? AND status = ?", target.Id, constants.StatusOk).
@@ -275,7 +279,10 @@ func (s *userService) ResetPasswordByAdmin(operator *models.User, targetUserId i
 	}); err != nil {
 		return "", err
 	}
-	s.invalidateUserTokens(target.Id)
+	for _, token := range activeTokens {
+		cache.UserTokenCache.Invalidate(token.Token)
+	}
+	cache.UserCache.Invalidate(target.Id)
 	OperateLogService.AddOperateLog(operator.Id, constants.OpTypeUpdate, constants.EntityUser, target.Id, "管理员重置用户密码", r)
 	return newPassword, nil
 }
@@ -292,14 +299,6 @@ func (s *userService) validatePasswordTarget(operator *models.User, targetUserId
 		return nil, errs.NoPermission()
 	}
 	return target, nil
-}
-
-func (s *userService) invalidateUserTokens(userId int64) {
-	activeTokens := repositories.UserTokenRepository.Find(sqls.DB(), sqls.NewCnd().Eq("user_id", userId).Eq("status", constants.StatusOk))
-	for _, token := range activeTokens {
-		cache.UserTokenCache.Invalidate(token.Token)
-	}
-	cache.UserCache.Invalidate(userId)
 }
 
 func validateManagedUser(operator *models.User, mode constants.ContentAccessMode, categoryIds, roleIds []int64) error {

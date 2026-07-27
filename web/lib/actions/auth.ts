@@ -79,4 +79,9 @@ export async function googleOneTapSignin(
 
 export async function signoutAction() {
   await apiFetch<void>("/api/login/signout")
+  // Clear any JS-set cookies that may survive the server-side cookie removal.
+  // The HttpOnly bbsgo_token is removed by the backend — these clean up
+  // non-HttpOnly leftovers from older front-end code or CSRF.
+  document.cookie = "bbsgo_token=; Path=/; Max-Age=0; SameSite=Lax"
+  document.cookie = "bbsgo_csrf=; Path=/; Max-Age=0; SameSite=Lax"
 }
