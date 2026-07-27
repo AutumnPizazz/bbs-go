@@ -963,6 +963,20 @@ const zhCN = {
       },
       logout: "退出登录",
     },
+    batchRegister: {
+      title: "批量注册",
+      description: "输入邮箱列表（分号分隔），系统将自动用邮箱前缀作为用户名、随机生成强密码完成注册。",
+      emailsLabel: "邮箱列表",
+      emailsPlaceholder: "xjhuang@tsntec.com;caihang@tsntec.com;chenbin@tsntec.com;",
+      submit: "开始批量注册",
+      submitting: "注册中...",
+      resultTitle: "注册结果",
+      copyAll: "复制全部",
+      copied: "已复制到剪贴板",
+      columns: { username: "用户名", email: "邮箱", password: "密码", status: "状态" },
+      status: { created: "已创建", skipped: "已跳过", failed: "失败" },
+      summary: "共 {total} 个，成功 {created}，跳过 {skipped}，失败 {failed}",
+    },
     overview: {
       hero: {
         eyebrow: "社区运营工作台",

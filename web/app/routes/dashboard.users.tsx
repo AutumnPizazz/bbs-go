@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { KeyRoundIcon } from "lucide-react"
+import { CheckCircleIcon, CopyIcon, KeyRoundIcon, MailIcon, XCircleIcon } from "lucide-react"
 
 import {
   DashboardDataPage,
@@ -13,7 +13,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useI18n } from "@/lib/i18n/provider"
 import { PERMISSIONS } from "@/lib/auth/permissions.generated"
+import { adminPostJson } from "@/lib/api/admin"
+import { toast } from "@/lib/toast"
 import type { AdminRecord } from "@/lib/api/admin"
+import { useAppState } from "@/components/app/app-provider"
+import { userHasPermission } from "@/lib/auth/roles"
 
 const OWNER_ROLE = "owner"
 
@@ -338,6 +342,7 @@ export default function DashboardUsersRoute() {
 
   return (
     <>
+      <BatchRegisterPanel />
       <DashboardDataPage config={config} />
       {passwordChangePending ? (
         <DashboardPasswordChangeDialog
@@ -346,4 +351,190 @@ export default function DashboardUsersRoute() {
       ) : null}
     </>
   )
+}
+
+function BatchRegisterPanel() {
+  const { t } = useI18n()
+  const { currentUser } = useAppState()
+  const canCreate = userHasPermission(currentUser, PERMISSIONS.DASHBOARD_USER_CREATE)
+  const [expanded, setExpanded] = React.useState(false)
+  const [emails, setEmails] = React.useState("")
+  const [pending, setPending] = React.useState(false)
+  const [results, setResults] = React.useState<BatchRegisterResult[] | null>(null)
+  const [summary, setSummary] = React.useState<BatchRegisterSummary | null>(null)
+  const [copied, setCopied] = React.useState(false)
+
+  if (!canCreate) return null
+
+  async function submit() {
+    if (!emails.trim()) return
+    setPending(true)
+    setResults(null)
+    setSummary(null)
+    try {
+      const data = await adminPostJson<BatchRegisterResponse>("/api/admin/user/batch_register", { emails })
+      setResults(data.results)
+      setSummary(data.summary)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t("composables.unknownError"))
+    } finally {
+      setPending(false)
+    }
+  }
+
+  function copyAll() {
+    if (!results) return
+    const lines = results.map((r) => `${r.username}\t${r.email}\t${r.password ?? "-"}\t${t(`dashboard.batchRegister.status.${r.status}`)}`)
+    void navigator.clipboard.writeText(lines.join("\n"))
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  function copyPassword(pw: string) {
+    void navigator.clipboard.writeText(pw)
+    toast.success(t("dashboard.batchRegister.copied"))
+  }
+
+  return (
+    <section className="border-b px-4 py-3 md:px-6">
+      <button
+        type="button"
+        className="flex w-full items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <MailIcon className="size-4" />
+        {t("dashboard.batchRegister.title")}
+        <span className="text-xs">{expanded ? "▲" : "▼"}</span>
+      </button>
+
+      {expanded ? (
+        <div className="mt-3 space-y-4">
+          <p className="text-sm text-muted-foreground">
+            {t("dashboard.batchRegister.description")}
+          </p>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">
+              {t("dashboard.batchRegister.emailsLabel")}
+            </label>
+            <textarea
+              className="w-full min-h-24 rounded-md border bg-background px-3 py-2 text-sm"
+              placeholder={t("dashboard.batchRegister.emailsPlaceholder")}
+              value={emails}
+              onChange={(e) => setEmails(e.target.value)}
+              disabled={pending}
+            />
+          </div>
+
+          <Button type="button" disabled={pending || !emails.trim()} onClick={() => void submit()}>
+            {pending ? t("dashboard.batchRegister.submitting") : t("dashboard.batchRegister.submit")}
+          </Button>
+
+          {results ? (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold">
+                  {t("dashboard.batchRegister.resultTitle")}
+                </h3>
+                <Button type="button" variant="outline" size="sm" onClick={copyAll}>
+                  <CopyIcon className="size-3.5" />
+                  {copied ? t("dashboard.batchRegister.copied") : t("dashboard.batchRegister.copyAll")}
+                </Button>
+              </div>
+
+              {summary ? (
+                <p className="text-xs text-muted-foreground">
+                  {t("dashboard.batchRegister.summary")
+                    .replace("{total}", String(summary.total))
+                    .replace("{created}", String(summary.created))
+                    .replace("{skipped}", String(summary.skipped))
+                    .replace("{failed}", String(summary.failed))}
+                </p>
+              ) : null}
+
+              <div className="overflow-x-auto rounded-md border">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted">
+                    <tr>
+                      <th className="px-3 py-2 text-left">{t("dashboard.batchRegister.columns.username")}</th>
+                      <th className="px-3 py-2 text-left">{t("dashboard.batchRegister.columns.email")}</th>
+                      <th className="px-3 py-2 text-left">{t("dashboard.batchRegister.columns.password")}</th>
+                      <th className="px-3 py-2 text-left">{t("dashboard.batchRegister.columns.status")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {results.map((r, i) => (
+                      <tr key={i} className="border-t">
+                        <td className="px-3 py-1.5">{r.username}</td>
+                        <td className="px-3 py-1.5">{r.email}</td>
+                        <td className="px-3 py-1.5">
+                          {r.password ? (
+                            <span className="inline-flex items-center gap-1">
+                              <code className="text-xs">{r.password}</code>
+                              <button
+                                type="button"
+                                className="text-muted-foreground hover:text-foreground"
+                                onClick={() => copyPassword(r.password!)}
+                              >
+                                <CopyIcon className="size-3" />
+                              </button>
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-1.5">
+                          <span
+                            className={`inline-flex items-center gap-1 text-xs ${
+                              r.status === "created"
+                                ? "text-green-600"
+                                : r.status === "skipped"
+                                  ? "text-amber-600"
+                                  : "text-red-600"
+                            }`}
+                          >
+                            {r.status === "created" ? (
+                              <CheckCircleIcon className="size-3" />
+                            ) : r.status === "skipped" ? (
+                              <span className="text-xs">⚠</span>
+                            ) : (
+                              <XCircleIcon className="size-3" />
+                            )}
+                            {t(`dashboard.batchRegister.status.${r.status}`)}
+                            {r.reason ? (
+                              <span className="text-muted-foreground">({r.reason})</span>
+                            ) : null}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </section>
+  )
+}
+
+type BatchRegisterResult = {
+  username: string
+  email: string
+  password?: string
+  status: string
+  reason?: string
+}
+
+type BatchRegisterSummary = {
+  total: number
+  created: number
+  skipped: number
+  failed: number
+}
+
+type BatchRegisterResponse = {
+  results: BatchRegisterResult[]
+  summary: BatchRegisterSummary
 }

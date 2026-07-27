@@ -268,6 +268,7 @@ func registerAdminRoutes(group *gin.RouterGroup) {
 	userGroup.POST("/batch", adminHandlers.UserBatch)
 	userGroup.POST("/update_password", adminHandlers.UserUpdatePassword)
 	userGroup.POST("/reset_password", adminHandlers.UserResetPassword)
+	userGroup.POST("/batch_register", adminHandlers.UserBatchRegister)
 	userGroup.GET("/:id", adminHandlers.UserDetail)
 
 	tagGroup := group.Group("/tag")

@@ -4,6 +4,7 @@ import (
 	"bbs-go/internal/cache"
 	"bbs-go/internal/models/constants"
 	modelReq "bbs-go/internal/models/req"
+	"bbs-go/internal/permissions"
 	"bbs-go/internal/pkg/common"
 	"bbs-go/internal/pkg/errs"
 	"bbs-go/internal/pkg/idcodec"
@@ -169,6 +170,25 @@ func UserUpdate(ctx *gin.Context) {
 	}
 	ginx.WriteJSON(ctx, result)
 
+}
+
+func UserBatchRegister(ctx *gin.Context) {
+	operator, err := common.CheckLogin(ctx)
+	if err != nil {
+		ginx.WriteJSON(ctx, err)
+		return
+	}
+	if !operator.IsOwner() && !services.PermissionService.HasPermission(operator, permissions.PermissionUserCreate.Code) {
+		ginx.WriteJSON(ctx, errs.NoPermission())
+		return
+	}
+	var req modelReq.AdminBatchRegisterReq
+	if err := ginx.Bind(ctx, &req); err != nil {
+		ginx.WriteJSON(ctx, err)
+		return
+	}
+	resp := services.UserService.BatchRegisterUsers(operator, req.Emails, ctx.Request)
+	ginx.WriteJSON(ctx, resp)
 }
 
 func UserForbidden(ctx *gin.Context) {

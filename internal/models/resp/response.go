@@ -257,6 +257,28 @@ type DictResponse struct {
 	UpdateTime int64  `json:"updateTime"` // 更新时间
 }
 
+// BatchRegisterResult 批量注册单条结果
+type BatchRegisterResult struct {
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Password string `json:"password,omitempty"`
+	Status   string `json:"status"` // created / skipped / failed
+	Reason   string `json:"reason,omitempty"`
+}
+
+// BatchRegisterSummary 批量注册汇总
+type BatchRegisterSummary struct {
+	Total   int `json:"total"`
+	Created int `json:"created"`
+	Skipped int `json:"skipped"`
+	Failed  int `json:"failed"`
+}
+
+// BatchRegisterResponse 批量注册返回
+type BatchRegisterResponse struct {
+	Results []BatchRegisterResult `json:"results"`
+	Summary BatchRegisterSummary  `json:"summary"`
+}
 type DictListResponse struct {
 	DictResponse
 	Children []DictListResponse `json:"children"`

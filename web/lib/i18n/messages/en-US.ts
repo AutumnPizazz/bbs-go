@@ -974,6 +974,20 @@ const enUS = {
       },
       logout: "Log out",
     },
+    batchRegister: {
+      title: "Batch register",
+      description: "Paste a semicolon-separated list of emails. Each user will be registered with the email prefix as username and a random strong password.",
+      emailsLabel: "Email list",
+      emailsPlaceholder: "xjhuang@tsntec.com;caihang@tsntec.com;chenbin@tsntec.com;",
+      submit: "Start batch registration",
+      submitting: "Registering...",
+      resultTitle: "Results",
+      copyAll: "Copy all",
+      copied: "Copied to clipboard",
+      columns: { username: "Username", email: "Email", password: "Password", status: "Status" },
+      status: { created: "Created", skipped: "Skipped", failed: "Failed" },
+      summary: "Total {total}, created {created}, skipped {skipped}, failed {failed}",
+    },
     overview: {
       hero: {
         eyebrow: "Community operations",

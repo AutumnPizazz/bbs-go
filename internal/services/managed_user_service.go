@@ -5,6 +5,7 @@ import (
 	"bbs-go/internal/models"
 	"bbs-go/internal/models/constants"
 	modelReq "bbs-go/internal/models/req"
+	"bbs-go/internal/models/resp"
 	"bbs-go/internal/pkg/errs"
 	"bbs-go/internal/pkg/locales"
 	"bbs-go/internal/pkg/search"
@@ -38,6 +39,101 @@ func (s *userService) CreateInitialOwner(user *models.User) error {
 	cache.UserCache.Invalidate(user.Id)
 	search.UpdateUserIndex(user)
 	return nil
+}
+
+// BatchRegisterUsers creates users from a semicolon-separated list of emails.
+// Returns per-email results with generated passwords.
+func (s *userService) BatchRegisterUsers(operator *models.User, emails string, r *http.Request) *resp.BatchRegisterResponse {
+	parts := strings.Split(emails, ";")
+	results := make([]resp.BatchRegisterResult, 0, len(parts))
+	summary := resp.BatchRegisterSummary{Total: 0}
+
+	for _, part := range parts {
+		email := strings.TrimSpace(part)
+		if email == "" {
+			continue
+		}
+		summary.Total++
+
+		// Validate email format
+		atIndex := strings.Index(email, "@")
+		if atIndex <= 0 || atIndex == len(email)-1 {
+			results = append(results, resp.BatchRegisterResult{
+				Email:  email,
+				Status: "failed",
+				Reason: "邮箱格式无效",
+			})
+			summary.Failed++
+			continue
+		}
+
+		username := email[:atIndex]
+
+		// Check username validity
+		if err := validate.IsUsername(username); err != nil {
+			results = append(results, resp.BatchRegisterResult{
+				Username: username,
+				Email:    email,
+				Status:   "failed",
+				Reason:   err.Error(),
+			})
+			summary.Failed++
+			continue
+		}
+
+		// Check if username already exists
+		if s.GetByUsername(username) != nil {
+			results = append(results, resp.BatchRegisterResult{
+				Username: username,
+				Email:    email,
+				Status:   "skipped",
+				Reason:   "用户名已存在",
+			})
+			summary.Skipped++
+			continue
+		}
+
+		password := str.GenerateRandomPassword()
+
+		user := &models.User{
+			Username:          sqls.SqlNullString(username),
+			Nickname:          username,
+			Password:          passwd.EncodePassword(password),
+			Status:            constants.StatusOk,
+			ContentAccessMode: constants.ContentAccessModeAll,
+			CreateTime:        dates.NowTimestamp(),
+			UpdateTime:        dates.NowTimestamp(),
+		}
+
+		if err := repositories.UserRepository.Create(sqls.DB(), user); err != nil {
+			results = append(results, resp.BatchRegisterResult{
+				Username: username,
+				Email:    email,
+				Status:   "failed",
+				Reason:   fmt.Sprintf("创建失败: %v", err),
+			})
+			summary.Failed++
+			continue
+		}
+
+		cache.UserCache.Invalidate(user.Id)
+		search.UpdateUserIndex(user)
+		OperateLogService.AddOperateLog(operator.Id, constants.OpTypeCreate, constants.EntityUser, user.Id,
+			fmt.Sprintf("批量注册用户 %s (%s)", username, email), r)
+
+		results = append(results, resp.BatchRegisterResult{
+			Username: username,
+			Email:    email,
+			Password: password,
+			Status:   "created",
+		})
+		summary.Created++
+	}
+
+	return &resp.BatchRegisterResponse{
+		Results: results,
+		Summary: summary,
+	}
 }
 
 func (s *userService) CreateManagedUser(operator *models.User, form modelReq.AdminUserCreateReq, r *http.Request) (*models.User, error) {

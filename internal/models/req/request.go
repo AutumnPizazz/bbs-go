@@ -138,6 +138,10 @@ type AdminPasswordUpdateReq struct {
 	RePassword      string `json:"rePassword" form:"rePassword"`
 }
 
+type AdminBatchRegisterReq struct {
+	Emails string `json:"emails" form:"emails"`
+}
+
 type RolePermissionsReq struct {
 	Id            int64  `json:"id" form:"id"`
 	PermissionIds string `json:"permissionIds" form:"permissionIds"`
