@@ -37,7 +37,6 @@ require (
 	github.com/spf13/viper v1.19.0
 	github.com/tencentyun/cos-go-sdk-v5 v0.7.65
 	github.com/tidwall/gjson v1.17.3
-	github.com/wenlng/go-captcha-assets v1.0.5
 	github.com/wenlng/go-captcha/v2 v2.0.3
 	golang.org/x/oauth2 v0.18.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1

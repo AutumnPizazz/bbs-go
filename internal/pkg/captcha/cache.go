@@ -26,3 +26,7 @@ func Get(captchaId string) *rotate.Block {
 func Set(captchaId string, captcha *rotate.Block) {
 	captchaCache.Put(captchaId, captcha)
 }
+
+func Delete(captchaId string) {
+	captchaCache.Invalidate(captchaId)
+}

@@ -159,7 +159,7 @@ function PasswordLoginForm({ redirect }: { redirect?: string }) {
               method: "POST",
               body: new FormData(formRef.current!),
             })
-            document.cookie = `bbsgo_token=${encodeURIComponent(result.token)}; Path=/; Max-Age=31536000; SameSite=Lax`
+            document.cookie = `bbsgo_token=${encodeURIComponent(result.token)}; Path=/; Max-Age=86400; SameSite=Lax`
             setState({ ok: true, redirect: safeRedirect(result.redirect, `/user/${result.user.id}`) })
           } catch (error) {
             setState({ ok: false, message: error instanceof Error ? error.message : "Sign in failed" })

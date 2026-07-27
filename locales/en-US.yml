@@ -65,6 +65,8 @@ errors:
 auth:
   password_login_disabled: "Password login/registration is disabled"
   login_data_error: "Sign-in data is invalid or expired. Please sign in again"
+  login_too_many: "Too many login attempts. Please wait a moment and try again."
+  login_account_locked: "Account temporarily locked due to too many failed attempts. Please try again in 15 minutes."
   weixin_login_disabled: "WeChat login is disabled"
   google_login_disabled: "Google sign-in is disabled"
   github_login_disabled: "GitHub sign-in is disabled"

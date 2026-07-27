@@ -65,6 +65,8 @@ errors:
 auth:
   password_login_disabled: "账号密码登录/注册已禁用"
   login_data_error: "登录数据错误"
+  login_too_many: "登录尝试过于频繁，请稍后再试。"
+  login_account_locked: "登录失败次数过多，账号已临时锁定，请15分钟后再试。"
   weixin_login_disabled: "微信登录已禁用"
   google_login_disabled: "Google登录未启用"
   github_login_disabled: "GitHub登录未启用"

@@ -40,6 +40,13 @@ func LoginSignin(ctx *gin.Context) {
 		req.Redirect = ctx.Query("redirect")
 	}
 
+	// IP-based rate limiting (before captcha to prevent captcha-solving farms)
+	clientIP := ctx.ClientIP()
+	if err := services.LoginGuard.CheckIP(clientIP); err != nil {
+		ginx.WriteJSON(ctx, err)
+		return
+	}
+
 	// 根据验证码协议版本校验验证码
 	if req.CaptchaProtocol == 2 {
 		if !captcha2.Verify(req.CaptchaId, req.CaptchaCode) {
@@ -55,10 +62,23 @@ func LoginSignin(ctx *gin.Context) {
 
 	signInResult, err := services.UserService.SignInWithPassword(req.Username, req.Password)
 	if err != nil {
+		// Record failure for the user if we can identify them
+		if user := services.UserService.GetByUsername(req.Username); user != nil {
+			services.LoginGuard.RecordFailure(user.Id)
+		}
 		ginx.WriteJSON(ctx, err)
 		return
 	}
 	user := signInResult.User
+
+	// Check account lockout
+	if err := services.LoginGuard.CheckUser(user.Id); err != nil {
+		ginx.WriteJSON(ctx, err)
+		return
+	}
+
+	// Successful login — clear failure counter
+	services.LoginGuard.RecordSuccess(user.Id)
 
 	// 站长可以突破密码登录的限制，因为后台只能密码登录
 	if !user.IsOwner() {
