@@ -3,8 +3,8 @@ package constants
 const (
 	DefaultTokenExpireDays       = 7   // 用户登录token默认有效期
 	SummaryLen                   = 256 // 摘要长度
-	UploadMaxM                   = 10
-	UploadMaxBytes         int64 = 1024 * 1024 * 1024 * UploadMaxM
+	UploadMaxM                   = 100
+	UploadMaxBytes         int64 = UploadMaxM * 1024 * 1024
 	CookieTokenKey               = "bbsgo_token"
 	CookieCSRFTokenKey           = "bbsgo_csrf"
 	TopicListPageSize            = 30 // 帖子列表分页大小
@@ -12,10 +12,10 @@ const (
 
 // 昵称长度限制
 const (
-	NicknameMinLengthZhCN = 2
-	NicknameMaxLengthZhCN = 12
-	NicknameMinLengthEnUS = 2
-	NicknameMaxLengthEnUS = 20
+	NicknameMinLengthZhCN = 1
+	NicknameMaxLengthZhCN = 256
+	NicknameMinLengthEnUS = 1
+	NicknameMaxLengthEnUS = 256
 )
 
 // 系统配置

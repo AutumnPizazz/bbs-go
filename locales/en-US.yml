@@ -37,7 +37,7 @@ user:
   avatar_empty: "Avatar cannot be empty"
   upload_image_required: "Please upload an image"
   username_required: "Username is required"
-  username_invalid: "Username must be 5-12 characters, use letters, numbers, underscores, or hyphens, and start with a letter"
+  username_invalid: "Username can only contain letters, digits, underscores, and hyphens, max 256 characters"
   username_occupied: "Username: %s is already taken"
   username_already_set: "Username is already set and cannot be changed"
   password_required: "Password is required"
@@ -139,7 +139,7 @@ install:
   already_installed: "System already installed, no need to reinstall"
 
 upload:
-  image_too_large: "Image cannot exceed %d M"
+  image_too_large: "Image cannot exceed %d MB"
 
 attachment:
   not_found: "Attachment not found or unavailable"

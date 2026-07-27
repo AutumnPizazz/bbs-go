@@ -9,16 +9,15 @@ import (
 	"github.com/mlogclub/simple/common/strs"
 )
 
-// IsUsername 验证用户名合法性，用户名必须由5-12位(数字、字母、_、-)组成，且必须以字母开头。
+// IsUsername 验证用户名合法性，用户名只允许数字、字母、_、-，长度 1-256 字符。
 func IsUsername(username string) error {
 	if strs.IsBlank(username) {
 		return errors.New(locales.Get("user.username_required"))
 	}
-	matched, err := regexp.MatchString("^[0-9a-zA-Z_-]{5,12}$", username)
-	if err != nil || !matched {
+	if strs.RuneLen(username) > 256 {
 		return errors.New(locales.Get("user.username_invalid"))
 	}
-	matched, err = regexp.MatchString("^[a-zA-Z]", username)
+	matched, err := regexp.MatchString("^[0-9a-zA-Z_-]+$", username)
 	if err != nil || !matched {
 		return errors.New(locales.Get("user.username_invalid"))
 	}

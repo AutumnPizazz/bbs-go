@@ -1,7 +1,6 @@
 package services
 
 import (
-	"errors"
 	"strings"
 
 	"github.com/mlogclub/simple/common/dates"
@@ -13,17 +12,12 @@ import (
 	"bbs-go/internal/models/constants"
 )
 
-const maxAnnouncementLength = 100 * 1024
-
 type announcementService struct{}
 
 var AnnouncementService = &announcementService{}
 
 func (s *announcementService) Publish(operatorId int64, content string) (*models.AnnouncementPublishRecord, error) {
 	content = strings.TrimSpace(content)
-	if len(content) > maxAnnouncementLength {
-		return nil, errors.New("announcement is too long")
-	}
 	now := dates.NowTimestamp()
 	previous := cache.SysConfigCache.GetStr(constants.SysConfigSiteNotification)
 	record := &models.AnnouncementPublishRecord{

@@ -37,7 +37,7 @@ user:
   avatar_empty: "头像不能为空"
   upload_image_required: "请上传图片"
   username_required: "请输入用户名"
-  username_invalid: "用户名必须由5-12位(数字、字母、_、-)组成，且必须以字母开头"
+  username_invalid: "用户名只允许字母、数字、下划线和连字符，最长256字符"
   username_occupied: "用户名：%s 已被占用"
   username_already_set: "你已设置了用户名，无法重复设置。"
   password_required: "请输入密码"

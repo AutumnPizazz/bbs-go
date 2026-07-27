@@ -263,18 +263,14 @@ func (s *userService) UpdateBackgroundImage(userId int64, backgroundImage string
 	return s.UpdateColumn(userId, "background_image", backgroundImage)
 }
 
-// SetUsername 设置用户名
+// SetUsername 设置/修改用户名
 func (s *userService) SetUsername(userId int64, username string) error {
 	username = strings.TrimSpace(username)
 	if err := validate.IsUsername(username); err != nil {
 		return err
 	}
 
-	user := s.Get(userId)
-	if len(user.Username.String) > 0 {
-		return errors.New(locales.Get("user.username_already_set"))
-	}
-	if s.isUsernameExists(username) {
+	if s.isUsernameExists(username) && s.GetByUsername(username).Id != userId {
 		return errors.New(locales.Getf("user.username_occupied", username))
 	}
 	return s.UpdateColumn(userId, "username", username)
