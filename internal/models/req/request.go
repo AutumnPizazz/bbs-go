@@ -105,6 +105,7 @@ type AdminUserUpdateReq struct {
 	Gender            string `json:"gender" form:"gender"`
 	HomePage          string `json:"homePage" form:"homePage"`
 	Description       string `json:"description" form:"description"`
+	Password          string `json:"password" form:"password"`
 	RoleIds           string `json:"roleIds" form:"roleIds"`
 	Status            int    `json:"status" form:"status"`
 	ContentAccessMode string `json:"contentAccessMode" form:"contentAccessMode"`

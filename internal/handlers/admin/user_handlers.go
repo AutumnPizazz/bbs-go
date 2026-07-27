@@ -158,12 +158,16 @@ func UserUpdate(ctx *gin.Context) {
 		return
 	}
 
-	user, err := services.UserService.UpdateManagedUser(operator, req, ctx.Request)
+	user, pendingAdminPassword, err := services.UserService.UpdateManagedUser(operator, req, ctx.Request)
 	if err != nil {
 		ginx.WriteJSON(ctx, err)
 		return
 	}
-	ginx.WriteJSON(ctx, userBuildUserItem(user, true))
+	result := userBuildUserItem(user, true)
+	if pendingAdminPassword {
+		result["pendingAdminPassword"] = true
+	}
+	ginx.WriteJSON(ctx, result)
 
 }
 

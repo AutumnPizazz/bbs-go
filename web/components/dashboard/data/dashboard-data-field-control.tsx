@@ -10,7 +10,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import type { AdminFormValue } from "@/lib/api/admin"
+import type { AdminFormValue, AdminRecord } from "@/lib/api/admin"
 import { cn } from "@/lib/utils"
 
 import type {
@@ -25,6 +25,7 @@ export function DashboardDataFieldControl({
   options,
   disabled,
   error,
+  record,
   onChange,
 }: {
   field: DashboardDataFormField
@@ -32,6 +33,7 @@ export function DashboardDataFieldControl({
   options: DashboardDataOption[]
   disabled?: boolean
   error?: string
+  record?: AdminRecord
   onChange: (value: AdminFormValue) => void
 }) {
   const [portalContainer, setPortalContainer] = React.useState<HTMLElement | null>(
@@ -67,7 +69,9 @@ export function DashboardDataFieldControl({
       )}
     >
       <Label>{field.label}</Label>
-      {field.type === "select" ? (
+      {field.type === "custom" && field.render ? (
+        field.render({ value, onChange, record })
+      ) : field.type === "select" ? (
         <DashboardSelect
           value={value}
           options={options}

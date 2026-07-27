@@ -1,15 +1,37 @@
 "use client"
 
+import * as React from "react"
+import { KeyRoundIcon } from "lucide-react"
+
 import {
   DashboardDataPage,
   type DashboardDataPageConfig,
 } from "@/components/dashboard/data"
 import * as dashboardData from "@/components/dashboard/data/dashboard-data-route-utils"
+import { DashboardPasswordChangeDialog } from "@/components/dashboard/dashboard-password-change-dialog"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { useI18n } from "@/lib/i18n/provider"
 import { PERMISSIONS } from "@/lib/auth/permissions.generated"
+import type { AdminRecord } from "@/lib/api/admin"
+
+const OWNER_ROLE = "owner"
+
+function isOwnerRecord(record: AdminRecord) {
+  const roles = record.roles
+  if (typeof roles === "string") {
+    return roles.split(",").some((r) => r.trim() === OWNER_ROLE)
+  }
+  if (Array.isArray(roles)) {
+    return roles.some((r: unknown) => typeof r === "string" && r === OWNER_ROLE)
+  }
+  return false
+}
 
 export default function DashboardUsersRoute() {
   const { t } = useI18n()
+  const [passwordChangePending, setPasswordChangePending] = React.useState(false)
+
   const config: DashboardDataPageConfig = {
     title: dashboardData.title(t, "users"),
     description: dashboardData.desc(t, "users"),
@@ -140,7 +162,43 @@ export default function DashboardUsersRoute() {
       {
         name: "password",
         label: dashboardData.label(t, "password"),
-        type: "password",
+        type: "custom",
+        render: ({ value, onChange, record }) => {
+          // Create mode: show a normal password input
+          if (!record) {
+            return (
+              <Input
+                type="password"
+                autoComplete="new-password"
+                value={value === undefined || value === null ? "" : String(value)}
+                onChange={(event) => onChange(event.target.value)}
+              />
+            )
+          }
+          // Edit mode — owner: show "修改密码" button that opens the staged dialog
+          if (isOwnerRecord(record)) {
+            return (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => setPasswordChangePending(true)}
+              >
+                <KeyRoundIcon className="mr-2 size-4" />
+                {t("dashboard.user.passwordChange.title")}
+              </Button>
+            )
+          }
+          // Edit mode — non-owner: show a normal password input
+          return (
+            <Input
+              type="password"
+              autoComplete="new-password"
+              value={value === undefined || value === null ? "" : String(value)}
+              onChange={(event) => onChange(event.target.value)}
+            />
+          )
+        },
       },
       {
         name: "contentAccessMode",
@@ -214,11 +272,19 @@ export default function DashboardUsersRoute() {
         visible: (record) => Boolean(record.forbidden),
       },
       {
+        label: t("dashboard.user.passwordChange.title"),
+        endpoint: "",
+        permission: PERMISSIONS.DASHBOARD_USER_RESET_PASSWORD,
+        visible: (record) => isOwnerRecord(record),
+        onClick: () => setPasswordChangePending(true),
+      },
+      {
         label: t("dashboard.actions.resetPassword"),
         endpoint: "/api/admin/user/reset_password",
         permission: PERMISSIONS.DASHBOARD_USER_RESET_PASSWORD,
         payload: (record) => ({ userId: record.id as number }),
         confirm: t("dashboard.confirmResetPassword"),
+        visible: (record) => !isOwnerRecord(record),
       },
     ],
     bulkActions: [
@@ -255,7 +321,29 @@ export default function DashboardUsersRoute() {
         successMessage: t("dashboard.forbidden.batchRemoved"),
       },
     ],
+    transformSubmitValues: (values) => {
+      if (!values.password) {
+        const { password: _, ...rest } = values
+        return rest
+      }
+      return values
+    },
+    onSubmitSuccess: (response: unknown) => {
+      const data = response as Record<string, unknown> | null | undefined
+      if (data?.pendingAdminPassword) {
+        setPasswordChangePending(true)
+      }
+    },
   }
 
-  return <DashboardDataPage config={config} />
+  return (
+    <>
+      <DashboardDataPage config={config} />
+      {passwordChangePending ? (
+        <DashboardPasswordChangeDialog
+          onClose={() => setPasswordChangePending(false)}
+        />
+      ) : null}
+    </>
+  )
 }

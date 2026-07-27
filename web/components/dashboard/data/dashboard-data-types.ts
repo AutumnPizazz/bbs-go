@@ -42,11 +42,17 @@ export type DashboardDataFormField = DashboardDataOptionSource & {
     | "url"
     | "image"
     | "icon"
+    | "custom"
   options?: DashboardDataOption[]
   min?: number
   max?: number
   step?: number
   valueFromRecord?: (record: AdminRecord) => AdminFormValue
+  render?: (props: {
+    value: AdminFormValue
+    onChange: (value: AdminFormValue) => void
+    record?: AdminRecord
+  }) => React.ReactNode
 }
 
 export type DashboardDataColumn = {
@@ -58,13 +64,14 @@ export type DashboardDataColumn = {
 
 export type DashboardDataRowAction = {
   label: string
-  endpoint: string
+  endpoint?: string
   permission?: PermissionCode
   method?: "POST" | "DELETE"
   payload?: (record: AdminRecord) => Record<string, AdminFormValue>
   visible?: (record: AdminRecord) => boolean
   confirm?: string
   successMessage?: string
+  onClick?: (record: AdminRecord) => void
 }
 
 export type DashboardDataBulkPreview = {
@@ -142,4 +149,5 @@ export type DashboardDataPageConfig = {
   transformSubmitValues?: (
     values: Record<string, AdminFormValue>
   ) => Record<string, AdminFormValue>
+  onSubmitSuccess?: (response: unknown) => void
 }

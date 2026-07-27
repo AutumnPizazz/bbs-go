@@ -100,13 +100,13 @@ func (s *userService) CreateManagedUser(operator *models.User, form modelReq.Adm
 	return user, nil
 }
 
-func (s *userService) UpdateManagedUser(operator *models.User, form modelReq.AdminUserUpdateReq, r *http.Request) (*models.User, error) {
+func (s *userService) UpdateManagedUser(operator *models.User, form modelReq.AdminUserUpdateReq, r *http.Request) (*models.User, bool, error) {
 	target := s.Get(form.Id)
 	if target == nil {
-		return nil, errors.New(locales.Get("user.not_found"))
+		return nil, false, errors.New(locales.Get("user.not_found"))
 	}
 	if target.IsOwner() && (operator == nil || !operator.IsOwner()) {
-		return nil, errs.NoPermission()
+		return nil, false, errs.NoPermission()
 	}
 	mode := constants.ContentAccessMode(strings.TrimSpace(form.ContentAccessMode))
 	if mode == "" {
@@ -118,19 +118,42 @@ func (s *userService) UpdateManagedUser(operator *models.User, form modelReq.Adm
 	categoryIds := modelReq.SplitCommaInt64s(form.CategoryIds)
 	roleIds := modelReq.SplitCommaInt64s(form.RoleIds)
 	if err := validateManagedUser(operator, mode, categoryIds, roleIds); err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	username := strings.TrimSpace(form.Username)
 	if username == "" {
-		return nil, errors.New(locales.Get("user.username_required"))
+		return nil, false, errors.New(locales.Get("user.username_required"))
 	}
 	if err := validateUsername(username); err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	if other := s.GetByUsername(username); other != nil && other.Id != target.Id {
-		return nil, errors.New(locales.Getf("user.username_occupied", username))
+		return nil, false, errors.New(locales.Getf("user.username_occupied", username))
 	}
+
+	// Handle password change
+	newPassword := strings.TrimSpace(form.Password)
+	var pendingAdminPassword bool
+	if newPassword != "" {
+		if target.IsOwner() {
+			// For admin accounts, use the staged password flow.
+			// The operator is already authenticated and has admin permissions,
+			// so we skip the current-password check (unlike the nav-user dialog).
+			if err := s.stagePasswordChange(target.Id, newPassword); err != nil {
+				return nil, false, err
+			}
+			pendingAdminPassword = true
+			OperateLogService.AddOperateLog(operator.Id, constants.OpTypeUpdate, constants.EntityUser, target.Id,
+				"通过用户管理界面发起管理员待确认密码修改", r)
+		} else {
+			// For non-admin users, set the password directly.
+			if err := s.SetPassword(target.Id, newPassword); err != nil {
+				return nil, false, err
+			}
+		}
+	}
+
 	oldMode := target.ContentAccessMode
 	if target.IsOwner() {
 		oldMode = constants.ContentAccessModeAll
@@ -157,7 +180,7 @@ func (s *userService) UpdateManagedUser(operator *models.User, form modelReq.Adm
 		return writeUserCategoryAccess(tx, target.Id, mode, categoryIds)
 	})
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	cache.UserCache.Invalidate(target.Id)
@@ -173,7 +196,7 @@ func (s *userService) UpdateManagedUser(operator *models.User, form modelReq.Adm
 		OperateLogService.AddOperateLog(operator.Id, constants.OpTypeUpdate, constants.EntityUser, target.Id,
 			fmt.Sprintf("更新用户内容访问范围：old_mode=%s old_categories=%v new_mode=%s new_categories=%v", oldMode, oldCategoryIds, mode, newCategoryIds), r)
 	}
-	return updated, nil
+	return updated, pendingAdminPassword, nil
 }
 
 func (s *userService) UpdatePasswordByAdmin(operator *models.User, targetUserId int64, currentPassword, password, rePassword string, r *http.Request) error {
@@ -285,6 +308,55 @@ func (s *userService) ResetPasswordByAdmin(operator *models.User, targetUserId i
 	cache.UserCache.Invalidate(target.Id)
 	OperateLogService.AddOperateLog(operator.Id, constants.OpTypeUpdate, constants.EntityUser, target.Id, "管理员重置用户密码", r)
 	return newPassword, nil
+}
+
+// stagePasswordChange creates or updates a pending password change for an admin
+// account without requiring the current password (caller is already authorized).
+func (s *userService) stagePasswordChange(userId int64, newPassword string) error {
+	passwordHash := passwd.EncodePassword(newPassword)
+	expiresAt := dates.Timestamp(time.Now().Add(10 * time.Minute))
+	now := dates.NowTimestamp()
+	if err := sqls.DB().Transaction(func(tx *gorm.DB) error {
+		pending := repositories.AdminPasswordChangeRepository.GetByUserIdForUpdate(tx, userId)
+		if pending == nil {
+			return repositories.AdminPasswordChangeRepository.Create(tx, &models.AdminPasswordChange{
+				UserId:       userId,
+				PasswordHash: passwordHash,
+				ExpiresAt:    expiresAt,
+				CreateTime:   now,
+				UpdateTime:   now,
+			})
+		}
+		pending.PasswordHash = passwordHash
+		pending.ExpiresAt = expiresAt
+		pending.UpdateTime = now
+		return repositories.AdminPasswordChangeRepository.Update(tx, pending)
+	}); err != nil {
+		return err
+	}
+	return nil
+}
+
+// SetPassword directly updates the password for a non-admin user.
+func (s *userService) SetPassword(userId int64, newPassword string) error {
+	var activeTokens []models.UserToken
+	if err := sqls.DB().Transaction(func(tx *gorm.DB) error {
+		if err := repositories.UserRepository.UpdateColumn(tx, userId, "password", passwd.EncodePassword(newPassword)); err != nil {
+			return err
+		}
+		if err := tx.Where("user_id = ? AND status = ?", userId, constants.StatusOk).Find(&activeTokens).Error; err != nil {
+			return err
+		}
+		return tx.Model(&models.UserToken{}).Where("user_id = ? AND status = ?", userId, constants.StatusOk).
+			Update("status", constants.StatusDeleted).Error
+	}); err != nil {
+		return err
+	}
+	for _, token := range activeTokens {
+		cache.UserTokenCache.Invalidate(token.Token)
+	}
+	cache.UserCache.Invalidate(userId)
+	return nil
 }
 
 func (s *userService) validatePasswordTarget(operator *models.User, targetUserId int64) (*models.User, error) {

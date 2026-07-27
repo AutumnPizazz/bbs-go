@@ -350,6 +350,7 @@ export function DashboardDataPage({
         errors={state.formErrors}
         asyncOptions={state.asyncOptions}
         submitting={state.submitting}
+        record={state.editing}
         cancelLabel={t("common.cancel")}
         confirmLabel={t("common.confirm")}
         onOpenChange={(open) => {

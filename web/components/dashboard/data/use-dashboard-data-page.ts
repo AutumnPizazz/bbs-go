@@ -440,10 +440,11 @@ export function useDashboardDataPage({
     setSubmitting(true)
     setError(null)
     try {
-      await adminPostForm(
+      const response = await adminPostForm(
         endpoint,
         config.transformSubmitValues?.(formValues) ?? formValues
       )
+      config.onSubmitSuccess?.(response)
       msgSuccess(messages.saved)
       setEditing(null)
       await load()
@@ -506,6 +507,11 @@ export function useDashboardDataPage({
     action: DashboardDataRowAction,
     record: AdminRecord
   ) {
+    if (action.onClick) {
+      action.onClick(record)
+      return
+    }
+    const endpoint = action.endpoint!
     setError(null)
     try {
       const payload = action.payload?.(record) ?? {
@@ -513,8 +519,8 @@ export function useDashboardDataPage({
       }
       const result =
         action.method === "DELETE"
-          ? await adminDelete(action.endpoint, payload)
-          : await adminPostForm(action.endpoint, payload)
+          ? await adminDelete(endpoint, payload)
+          : await adminPostForm(endpoint, payload)
       if (
         result &&
         typeof result === "object" &&

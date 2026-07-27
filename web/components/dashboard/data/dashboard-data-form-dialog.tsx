@@ -2,7 +2,7 @@
 
 import type * as React from "react"
 
-import type { AdminFormValue } from "@/lib/api/admin"
+import type { AdminFormValue, AdminRecord } from "@/lib/api/admin"
 import { Button } from "@/components/ui/button"
 import { DashboardDialog } from "@/components/dashboard/dashboard-dialog"
 
@@ -56,6 +56,7 @@ export function DashboardDataFormDialog({
   errors,
   asyncOptions,
   submitting,
+  record,
   cancelLabel,
   confirmLabel,
   onOpenChange,
@@ -70,6 +71,7 @@ export function DashboardDataFormDialog({
   errors: Record<string, string>
   asyncOptions: Record<string, DashboardDataOption[]>
   submitting: boolean
+  record?: AdminRecord | null
   cancelLabel: string
   confirmLabel: string
   onOpenChange: (open: boolean) => void
@@ -110,6 +112,7 @@ export function DashboardDataFormDialog({
             key={field.name}
             field={field}
             value={values[field.name]}
+            record={record ?? undefined}
             options={[
               ...(field.options ?? []),
               ...(asyncOptions[field.name] ?? []),
