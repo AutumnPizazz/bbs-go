@@ -210,6 +210,12 @@ func SearchUser(keyword string, page, limit int) (docs []UserDocument, paging *s
 	query := bleve.NewBooleanQuery()
 	query.AddMust(bleve.NewMatchAllQuery())
 	query.AddMust(typeQuery(EntityTypeUser))
+	// Only return active users (same as topic search filters StatusOk)
+	status := float64(constants.StatusOk)
+	statusInclusive := true
+	statusQuery := bleve.NewNumericRangeInclusiveQuery(&status, &status, &statusInclusive, &statusInclusive)
+	statusQuery.SetField("status")
+	query.AddMust(statusQuery)
 	if strs.IsNotBlank(keyword) {
 		query.AddMust(keywordQuery(keyword, []string{"username", "nickname", "description"}))
 	}
