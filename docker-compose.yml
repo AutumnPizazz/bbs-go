@@ -7,6 +7,11 @@ services:
   mysql:
     image: mysql:8.4
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
     environment:
       <<: *builtin-mysql-env
       MYSQL_ROOT_PASSWORD: ${BBSGO_DOCKER_MYSQL_ROOT_PASSWORD:-bbsgo_root_password}
@@ -31,6 +36,11 @@ services:
         TARGETARCH: amd64
     image: bbs-go:local
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
     depends_on:
       mysql:
         condition: service_healthy
