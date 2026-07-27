@@ -962,6 +962,12 @@ const enUS = {
         submit: "Stage password change",
         submitting: "Staging...",
         mismatch: "The new passwords do not match.",
+        formDescription: "The new password will not take effect immediately. After submitting, sign in with the new password in a new window to confirm.",
+        pendingTitle: "New password staged",
+        pendingNotice: "Your current password is still valid. Sign in with the new password in a new window within 10 minutes to confirm the change.",
+        pendingStep1: "Click \"Open sign-in window\" below",
+        pendingStep2: "Sign in with the new password in the new window",
+        pendingStep3: "Once signed in, the password is officially changed and this session will expire",
         pendingDescription:
           "The new password is ready for confirmation. Open a new sign-in window and log in with it within 10 minutes. The current password remains valid until that login succeeds.",
         openSignin: "Open sign-in window",

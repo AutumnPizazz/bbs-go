@@ -951,6 +951,12 @@ const zhCN = {
         submit: "暂存密码修改",
         submitting: "暂存中...",
         mismatch: "两次输入的新密码不一致。",
+        formDescription: "新密码不会立即生效。提交后请在新窗口中使用新密码登录以完成确认。",
+        pendingTitle: "新密码已暂存",
+        pendingNotice: "当前密码仍然有效。请在 10 分钟内用新密码在新窗口登录完成确认。",
+        pendingStep1: "点击下方「打开登录窗口」",
+        pendingStep2: "在新窗口中使用新密码登录",
+        pendingStep3: "登录成功后密码正式切换，当前会话自动退出",
         pendingDescription:
           "新密码已暂存，请在 10 分钟内打开新的登录窗口并使用新密码登录。新密码登录成功前，当前密码仍然有效。",
         openSignin: "打开登录窗口",
