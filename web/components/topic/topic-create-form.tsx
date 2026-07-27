@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { useRouter } from "@/lib/router/navigation"
+import { formatFileSize } from "@/lib/utils"
 import { AlertCircle, Plus, Trash2 } from "lucide-react"
 
 import { TagInput } from "@/components/common/tag-input"
@@ -203,8 +204,8 @@ function TopicAttachmentField({
                 <span className="block truncate font-medium">
                   {attachment.fileName}
                 </span>
-                <span className="text-xs text-muted-foreground">
-                  {attachment.fileSize || 0} B
+                <span className="text-xs text-muted-foreground" title={`${(attachment.fileSize || 0).toLocaleString()} bytes`}>
+                  {formatFileSize(attachment.fileSize)}
                 </span>
               </div>
               <Button

@@ -1,17 +1,6 @@
 import type { Attachment } from "@/lib/api/types"
 import type { TFunction } from "@/lib/i18n"
-
-function formatFileSize(size?: number) {
-  if (!size || size <= 0) {
-    return ""
-  }
-
-  if (size < 1024 * 1024) {
-    return `${Math.ceil(size / 1024)} KB`
-  }
-
-  return `${(size / 1024 / 1024).toFixed(1)} MB`
-}
+import { formatFileSize } from "@/lib/utils"
 
 export function TopicAttachments({ attachments, t }: { attachments?: Attachment[]; t: TFunction }) {
   if (!attachments?.length) {
@@ -30,7 +19,7 @@ export function TopicAttachments({ attachments, t }: { attachments?: Attachment[
             <div className="min-w-0 flex-1">
               <div className="truncate font-medium text-foreground">{attachment.fileName || attachment.id}</div>
               <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-muted-foreground">
-                {formatFileSize(attachment.fileSize) ? <span>{formatFileSize(attachment.fileSize)}</span> : <span>0 B</span>}
+                {formatFileSize(attachment.fileSize)}
                 {typeof attachment.downloadCount === "number" ? (
                   <span>{t("pages.topic.detail.attachmentDownloadCount", { count: attachment.downloadCount })}</span>
                 ) : null}

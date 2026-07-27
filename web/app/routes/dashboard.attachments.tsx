@@ -14,6 +14,7 @@ import { useCurrentUser } from "@/components/app/app-provider"
 import { userHasPermission } from "@/lib/auth/roles"
 import { adminPostForm } from "@/lib/api/admin"
 import { msgError, msgSuccess } from "@/lib/toast"
+import { formatFileSize } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
 export default function DashboardAttachmentsRoute() {
@@ -46,7 +47,7 @@ export default function DashboardAttachmentsRoute() {
       { key: "id", label: dashboardData.label(t, "id"), className: "min-w-44" },
       { key: "fileName", label: dashboardData.label(t, "fileName"), className: "min-w-48" },
       { key: "fileType", label: dashboardData.label(t, "fileType") },
-      { key: "fileSize", label: dashboardData.label(t, "fileSize") },
+      { key: "fileSize", label: dashboardData.label(t, "fileSize"), render: (r) => fileSizeCell(r.fileSize) },
       { key: "userId", label: dashboardData.label(t, "userId") },
       { key: "topicId", label: dashboardData.label(t, "topicId") },
       { key: "downloadCount", label: dashboardData.label(t, "downloadCount") },
@@ -62,7 +63,7 @@ export default function DashboardAttachmentsRoute() {
       { key: "fileName", label: dashboardData.label(t, "fileName") },
       { key: "fileUrl", label: dashboardData.label(t, "fileUrl") },
       { key: "fileType", label: dashboardData.label(t, "fileType") },
-      { key: "fileSize", label: dashboardData.label(t, "fileSize") },
+      { key: "fileSize", label: dashboardData.label(t, "fileSize"), render: (r) => fileSizeCell(r.fileSize) },
       { key: "userId", label: dashboardData.label(t, "userId") },
       { key: "topicId", label: dashboardData.label(t, "topicId") },
       { key: "downloadCount", label: dashboardData.label(t, "downloadCount") },
@@ -81,6 +82,16 @@ export default function DashboardAttachmentsRoute() {
       <DashboardDataPage config={config} />
       <AttachmentCleanupPanel />
     </>
+  )
+}
+
+function fileSizeCell(bytes: unknown) {
+  const num = typeof bytes === "number" ? bytes : Number(bytes)
+  if (!Number.isFinite(num) || num <= 0) return <span className="text-muted-foreground">—</span>
+  return (
+    <span title={num.toLocaleString() + " bytes"} className="cursor-default">
+      {formatFileSize(num)}
+    </span>
   )
 }
 
