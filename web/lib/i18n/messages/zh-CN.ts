@@ -942,6 +942,19 @@ const zhCN = {
       anonymous: "访客",
       account: "账号",
       notifications: "通知",
+      changePassword: "修改密码",
+      passwordChange: {
+        title: "修改管理员密码",
+        currentPassword: "当前密码",
+        newPassword: "新密码",
+        confirmPassword: "确认新密码",
+        submit: "暂存密码修改",
+        submitting: "暂存中...",
+        mismatch: "两次输入的新密码不一致。",
+        pendingDescription:
+          "新密码已暂存，请在 10 分钟内打开新的登录窗口并使用新密码登录。新密码登录成功前，当前密码仍然有效。",
+        openSignin: "打开登录窗口",
+      },
       logout: "退出登录",
     },
     overview: {

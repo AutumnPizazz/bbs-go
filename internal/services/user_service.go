@@ -173,8 +173,23 @@ func (s *userService) GetByUsername(username string) *models.User {
 	return repositories.UserRepository.GetByUsername(sqls.DB(), username)
 }
 
+type PasswordSignInResult struct {
+	User                 *models.User
+	PendingAdminPassword bool
+}
+
 // SignIn 登录
 func (s *userService) SignIn(username, password string) (*models.User, error) {
+	result, err := s.SignInWithPassword(username, password)
+	if err != nil {
+		return nil, err
+	}
+	return result.User, nil
+}
+
+// SignInWithPassword distinguishes the normal password from an administrator
+// password change that is waiting for confirmation.
+func (s *userService) SignInWithPassword(username, password string) (*PasswordSignInResult, error) {
 	if strs.IsBlank(username) {
 		return nil, errors.New(locales.Get("user.username_required"))
 	}
@@ -189,9 +204,13 @@ func (s *userService) SignIn(username, password string) (*models.User, error) {
 		return nil, errors.New(locales.Get("user.password_login_failed"))
 	}
 	if !passwd.ValidatePassword(user.Password, password) {
+		pending := repositories.AdminPasswordChangeRepository.GetByUserId(sqls.DB(), user.Id)
+		if pending != nil && pending.ExpiresAt > dates.NowTimestamp() && passwd.ValidatePassword(pending.PasswordHash, password) {
+			return &PasswordSignInResult{User: user, PendingAdminPassword: true}, nil
+		}
 		return nil, errors.New(locales.Get("user.password_login_failed"))
 	}
-	return user, nil
+	return &PasswordSignInResult{User: user}, nil
 }
 
 // isUsernameExists 用户名是否存在

@@ -131,9 +131,10 @@ func (r AdminBatchReq) ParsedIds() []int64 {
 }
 
 type AdminPasswordUpdateReq struct {
-	UserId     int64  `json:"userId" form:"userId"`
-	Password   string `json:"password" form:"password"`
-	RePassword string `json:"rePassword" form:"rePassword"`
+	UserId          int64  `json:"userId" form:"userId"`
+	CurrentPassword string `json:"currentPassword" form:"currentPassword"`
+	Password        string `json:"password" form:"password"`
+	RePassword      string `json:"rePassword" form:"rePassword"`
 }
 
 type RolePermissionsReq struct {

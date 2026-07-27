@@ -6,6 +6,7 @@ import {
   BadgeCheckIcon,
   BellIcon,
   ChevronsUpDownIcon,
+  KeyRoundIcon,
   LogOutIcon,
 } from "lucide-react"
 
@@ -29,7 +30,10 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { useAppState } from "@/components/app/app-provider"
+import { useAppState, useCurrentUser } from "@/components/app/app-provider"
+import { DashboardPasswordChangeDialog } from "@/components/dashboard/dashboard-password-change-dialog"
+import { userHasPermission } from "@/lib/auth/roles"
+import { PERMISSIONS } from "@/lib/auth/permissions.generated"
 import { signoutAction } from "@/lib/actions/auth"
 import { useI18n } from "@/lib/i18n/provider"
 import { useRouter } from "@/lib/router/navigation"
@@ -45,11 +49,17 @@ export function NavUser({
   const { isMobile } = useSidebar()
   const { t } = useI18n()
   const router = useRouter()
+  const currentUser = useCurrentUser()
   const { setCurrentUser } = useAppState()
   const [pending, startTransition] = React.useTransition()
   const [confirmState, setConfirmState] =
     React.useState<ConfirmDialogState>(null)
+  const [passwordDialogOpen, setPasswordDialogOpen] = React.useState(false)
   const initials = user.name.slice(0, 2).toUpperCase()
+  const canChangePassword = userHasPermission(
+    currentUser,
+    PERMISSIONS.DASHBOARD_USER_UPDATE_PASSWORD
+  )
 
   function signout() {
     startTransition(async () => {
@@ -122,6 +132,14 @@ export function NavUser({
                     {t("dashboard.user.notifications")}
                   </Link>
                 </DropdownMenuItem>
+                {canChangePassword ? (
+                  <DropdownMenuItem
+                    onSelect={() => setPasswordDialogOpen(true)}
+                  >
+                    <KeyRoundIcon />
+                    {t("dashboard.user.changePassword")}
+                  </DropdownMenuItem>
+                ) : null}
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -144,6 +162,11 @@ export function NavUser({
           if (!open) setConfirmState(null)
         }}
       />
+      {passwordDialogOpen && currentUser ? (
+        <DashboardPasswordChangeDialog
+          onClose={() => setPasswordDialogOpen(false)}
+        />
+      ) : null}
     </>
   )
 }

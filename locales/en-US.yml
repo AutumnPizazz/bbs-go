@@ -48,6 +48,7 @@ user:
   password_already_set: "Password already set. Please use the change password page."
   password_not_set: "You haven't set a password yet. Please set one first."
   old_password_invalid: "Current password is incorrect"
+  password_change_expired: "The pending password change has expired. Please start again."
 
 errors:
   registration_closed: "Accounts can only be created by an administrator"

@@ -953,6 +953,19 @@ const enUS = {
       anonymous: "Guest",
       account: "Account",
       notifications: "Notifications",
+      changePassword: "Change password",
+      passwordChange: {
+        title: "Change admin password",
+        currentPassword: "Current password",
+        newPassword: "New password",
+        confirmPassword: "Confirm new password",
+        submit: "Stage password change",
+        submitting: "Staging...",
+        mismatch: "The new passwords do not match.",
+        pendingDescription:
+          "The new password is ready for confirmation. Open a new sign-in window and log in with it within 10 minutes. The current password remains valid until that login succeeds.",
+        openSignin: "Open sign-in window",
+      },
       logout: "Log out",
     },
     overview: {

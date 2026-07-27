@@ -48,6 +48,7 @@ user:
   password_already_set: "你已设置了密码，如需修改请前往修改页面。"
   password_not_set: "你没设置密码，请先设置密码"
   old_password_invalid: "旧密码验证失败"
+  password_change_expired: "待确认的新密码已过期，请重新发起修改"
 
 errors:
   registration_closed: "仅允许管理员创建账号"

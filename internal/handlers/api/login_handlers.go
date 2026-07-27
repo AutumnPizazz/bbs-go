@@ -53,16 +53,23 @@ func LoginSignin(ctx *gin.Context) {
 		}
 	}
 
-	user, err := services.UserService.SignIn(req.Username, req.Password)
+	signInResult, err := services.UserService.SignInWithPassword(req.Username, req.Password)
 	if err != nil {
 		ginx.WriteJSON(ctx, err)
 		return
 	}
+	user := signInResult.User
 
 	// 站长可以突破密码登录的限制，因为后台只能密码登录
 	if !user.IsOwner() {
 		if !services.SysConfigService.GetLoginConfig().PasswordLogin.Enabled {
 			ginx.WriteJSON(ctx, ginx.ErrorMessage(locales.Get("auth.password_login_disabled")))
+			return
+		}
+	}
+	if signInResult.PendingAdminPassword {
+		if err := services.UserService.CommitPendingAdminPassword(user.Id, req.Password); err != nil {
+			ginx.WriteJSON(ctx, err)
 			return
 		}
 	}

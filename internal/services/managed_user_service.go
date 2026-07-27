@@ -15,12 +15,14 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/mlogclub/simple/common/dates"
 	"github.com/mlogclub/simple/common/passwd"
 	"github.com/mlogclub/simple/common/strs"
 	"github.com/mlogclub/simple/sqls"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func (s *userService) CreateInitialOwner(user *models.User) error {
@@ -174,25 +176,87 @@ func (s *userService) UpdateManagedUser(operator *models.User, form modelReq.Adm
 	return updated, nil
 }
 
-func (s *userService) UpdatePasswordByAdmin(operator *models.User, targetUserId int64, password, rePassword string, r *http.Request) error {
+func (s *userService) UpdatePasswordByAdmin(operator *models.User, targetUserId int64, currentPassword, password, rePassword string, r *http.Request) error {
 	target, err := s.validatePasswordTarget(operator, targetUserId)
 	if err != nil {
 		return err
 	}
+	if target.Id != operator.Id {
+		return errs.NoPermission()
+	}
 	if err := validate.IsValidPassword(password, rePassword); err != nil {
 		return err
 	}
+	passwordHash := passwd.EncodePassword(password)
+	expiresAt := dates.Timestamp(time.Now().Add(10 * time.Minute))
 	if err := sqls.DB().Transaction(func(tx *gorm.DB) error {
-		if err := repositories.UserRepository.UpdateColumn(tx, target.Id, "password", passwd.EncodePassword(password)); err != nil {
+		lockedTarget := &models.User{}
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(lockedTarget, target.Id).Error; err != nil {
 			return err
 		}
-		return tx.Model(&models.UserToken{}).Where("user_id = ? AND status = ?", target.Id, constants.StatusOk).
-			Update("status", constants.StatusDeleted).Error
+		if !passwd.ValidatePassword(lockedTarget.Password, currentPassword) {
+			return errors.New(locales.Get("user.old_password_invalid"))
+		}
+
+		pending := repositories.AdminPasswordChangeRepository.GetByUserIdForUpdate(tx, target.Id)
+		if pending == nil {
+			return repositories.AdminPasswordChangeRepository.Create(tx, &models.AdminPasswordChange{
+				UserId:       target.Id,
+				PasswordHash: passwordHash,
+				ExpiresAt:    expiresAt,
+				CreateTime:   dates.NowTimestamp(),
+				UpdateTime:   dates.NowTimestamp(),
+			})
+		}
+		pending.PasswordHash = passwordHash
+		pending.ExpiresAt = expiresAt
+		pending.UpdateTime = dates.NowTimestamp()
+		return repositories.AdminPasswordChangeRepository.Update(tx, pending)
 	}); err != nil {
 		return err
 	}
-	s.invalidateUserTokens(target.Id)
-	OperateLogService.AddOperateLog(operator.Id, constants.OpTypeUpdate, constants.EntityUser, target.Id, "管理员修改用户密码", r)
+	OperateLogService.AddOperateLog(operator.Id, constants.OpTypeUpdate, constants.EntityUser, target.Id, "管理员发起待确认密码修改", r)
+	return nil
+}
+
+func (s *userService) CommitPendingAdminPassword(userId int64, password string) error {
+	if userId <= 0 {
+		return errors.New(locales.Get("user.password_login_failed"))
+	}
+
+	var activeTokens []models.UserToken
+	err := sqls.DB().Transaction(func(tx *gorm.DB) error {
+		pending := repositories.AdminPasswordChangeRepository.GetByUserIdForUpdate(tx, userId)
+		if pending == nil {
+			var user models.User
+			if err := tx.First(&user, userId).Error; err == nil && passwd.ValidatePassword(user.Password, password) {
+				return nil
+			}
+			return errors.New(locales.Get("user.password_change_expired"))
+		}
+		if pending.ExpiresAt <= dates.NowTimestamp() {
+			return errors.New(locales.Get("user.password_change_expired"))
+		}
+
+		if err := tx.Where("user_id = ? AND status = ?", userId, constants.StatusOk).Find(&activeTokens).Error; err != nil {
+			return err
+		}
+		if err := repositories.UserRepository.UpdateColumn(tx, userId, "password", pending.PasswordHash); err != nil {
+			return err
+		}
+		if err := repositories.AdminPasswordChangeRepository.Delete(tx, userId); err != nil {
+			return err
+		}
+		return tx.Model(&models.UserToken{}).Where("user_id = ? AND status = ?", userId, constants.StatusOk).
+			Update("status", constants.StatusDeleted).Error
+	})
+	if err != nil {
+		return err
+	}
+	for _, token := range activeTokens {
+		cache.UserTokenCache.Invalidate(token.Token)
+	}
+	cache.UserCache.Invalidate(userId)
 	return nil
 }
 

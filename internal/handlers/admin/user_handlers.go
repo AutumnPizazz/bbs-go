@@ -209,11 +209,17 @@ func UserUpdatePassword(ctx *gin.Context) {
 		ginx.WriteJSON(ctx, err)
 		return
 	}
-	if err := services.UserService.UpdatePasswordByAdmin(operator, req.UserId, req.Password, req.RePassword, ctx.Request); err != nil {
+	targetUserId := req.UserId
+	if targetUserId <= 0 {
+		targetUserId = operator.Id
+	}
+	if err := services.UserService.UpdatePasswordByAdmin(operator, targetUserId, req.CurrentPassword, req.Password, req.RePassword, ctx.Request); err != nil {
 		ginx.WriteJSON(ctx, err)
 		return
 	}
-	ginx.WriteJSON(ctx, nil)
+	ginx.WriteJSON(ctx, map[string]interface{}{
+		"pending": true,
+	})
 
 }
 

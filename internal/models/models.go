@@ -10,7 +10,7 @@ var Models = []interface{}{
 	&Migration{},
 	&UserRole{}, &Role{}, &Permission{}, &RolePermission{}, &DictType{}, &Dict{},
 
-	&User{}, &UserToken{}, &ThirdUser{}, &UserCategoryAccess{}, &Tag{}, &Comment{}, &Favorite{}, &Topic{}, &Category{},
+	&User{}, &UserToken{}, &AdminPasswordChange{}, &ThirdUser{}, &UserCategoryAccess{}, &Tag{}, &Comment{}, &Favorite{}, &Topic{}, &Category{},
 	&TopicTag{}, &UserLike{}, &Message{}, &SysConfig{}, &Link{},
 	&Vote{}, &VoteOption{}, &VoteRecord{},
 	&OperateLog{}, &UserFollow{}, &UserFeed{}, &UserReport{},
@@ -137,6 +137,17 @@ type UserToken struct {
 	ExpiredAt  int64  `gorm:"not null" json:"expiredAt" form:"expiredAt"`
 	Status     int    `gorm:"type:int;not null;index:idx_user_token_status" json:"status" form:"status"`
 	CreateTime int64  `gorm:"not null" json:"createTime" form:"createTime"`
+}
+
+// AdminPasswordChange stores a short-lived password change that has not been
+// confirmed by a successful login with the new password.
+type AdminPasswordChange struct {
+	Model
+	UserId       int64  `gorm:"not null;uniqueIndex:uk_admin_password_change_user_id" json:"-"`
+	PasswordHash string `gorm:"column:password_hash;size:512;not null" json:"-"`
+	ExpiresAt    int64  `gorm:"not null;index:idx_admin_password_change_expires_at" json:"-"`
+	CreateTime   int64  `gorm:"not null" json:"-"`
+	UpdateTime   int64  `gorm:"not null" json:"-"`
 }
 
 type ThirdUser struct {
