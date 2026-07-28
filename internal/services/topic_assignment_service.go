@@ -24,7 +24,7 @@ type topicAssignmentService struct{}
 
 // Claim lets a logged-in user volunteer to answer a Q&A topic.
 // Any user can claim; the topic author or admin can also dismiss.
-func (s *topicAssignmentService) Claim(topicId int64, user *models.User) (*models.TopicAssignment, error) {
+func (s *topicAssignmentService) Claim(topicId int64, user *models.User) (*ClaimResponse, error) {
 	if user == nil {
 		return nil, errors.New("login required")
 	}
@@ -47,9 +47,14 @@ func (s *topicAssignmentService) Claim(topicId int64, user *models.User) (*model
 				"status": ClaimStatusActive, "update_time": dates.NowTimestamp(),
 			})
 			existing.Status = ClaimStatusActive
-			return &existing, nil
 		}
-		return &existing, nil
+		return &ClaimResponse{
+			Id: existing.Id, TopicId: existing.TopicId, UserId: existing.UserId,
+			AssignedBy: existing.AssignedBy, Status: existing.Status,
+			AssignedAt: existing.AssignedAt, ResolvedAt: existing.ResolvedAt,
+			CreateTime: existing.CreateTime,
+			Nickname: user.Nickname, Username: user.Username.String,
+		}, nil
 	}
 	if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, fmt.Errorf("check claim: %w", err)
@@ -68,7 +73,13 @@ func (s *topicAssignmentService) Claim(topicId int64, user *models.User) (*model
 	if err := db.Create(claim).Error; err != nil {
 		return nil, err
 	}
-	return claim, nil
+	return &ClaimResponse{
+		Id: claim.Id, TopicId: claim.TopicId, UserId: claim.UserId,
+		AssignedBy: claim.AssignedBy, Status: claim.Status,
+		AssignedAt: claim.AssignedAt, ResolvedAt: claim.ResolvedAt,
+		CreateTime: claim.CreateTime,
+		Nickname: user.Nickname, Username: user.Username.String,
+	}, nil
 }
 
 // Unclaim removes a claim. The claiming user can unclaim themselves,
@@ -118,11 +129,47 @@ func (s *topicAssignmentService) Resolve(topicId int64) {
 		})
 }
 
-// ListClaims returns all claims for a topic.
-func (s *topicAssignmentService) ListClaims(topicId int64) []models.TopicAssignment {
+// ListClaims returns all claims for a topic, enriched with user info.
+func (s *topicAssignmentService) ListClaims(topicId int64) []ClaimResponse {
 	var list []models.TopicAssignment
 	sqls.DB().Where("topic_id = ?", topicId).Order("id asc").Find(&list)
-	return list
+
+	result := make([]ClaimResponse, 0, len(list))
+	for _, c := range list {
+		user := UserService.Get(c.UserId)
+		nickname := ""
+		username := ""
+		if user != nil {
+			nickname = user.Nickname
+			username = user.Username.String
+		}
+		result = append(result, ClaimResponse{
+			Id:         c.Id,
+			TopicId:    c.TopicId,
+			UserId:     c.UserId,
+			AssignedBy: c.AssignedBy,
+			Status:     c.Status,
+			AssignedAt: c.AssignedAt,
+			ResolvedAt: c.ResolvedAt,
+			CreateTime: c.CreateTime,
+			Nickname:   nickname,
+			Username:   username,
+		})
+	}
+	return result
+}
+
+type ClaimResponse struct {
+	Id         int64  `json:"id"`
+	TopicId    int64  `json:"topicId"`
+	UserId     int64  `json:"userId"`
+	AssignedBy int64  `json:"assignedBy"`
+	Status     string `json:"status"`
+	AssignedAt int64  `json:"assignedAt"`
+	ResolvedAt int64  `json:"resolvedAt"`
+	CreateTime int64  `json:"createTime"`
+	Nickname   string `json:"nickname"`
+	Username   string `json:"username"`
 }
 
 // ListClaimedTopics returns claims by a user.

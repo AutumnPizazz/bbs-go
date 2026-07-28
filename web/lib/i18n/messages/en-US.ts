@@ -1407,6 +1407,7 @@ const enUS = {
       claimIt: "Claim this question",
       unclaim: "Release claim",
       claimed: "You have claimed this question.",
+      youClaimed: "You have claimed this question",
       you: "you",
       noClaims: "No one has claimed this yet.",
       remove: "Remove",

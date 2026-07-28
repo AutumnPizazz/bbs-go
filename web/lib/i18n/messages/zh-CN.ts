@@ -1393,6 +1393,7 @@ const zhCN = {
       claimIt: "认领此问题",
       unclaim: "取消认领",
       claimed: "你已认领此问题。",
+      youClaimed: "您已认领此提问",
       you: "你",
       noClaims: "暂无认领者。",
       remove: "移除",

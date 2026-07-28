@@ -18,6 +18,8 @@ export type TopicAssignment = {
   assignedAt: number
   resolvedAt: number
   createTime: number
+  nickname?: string
+  username?: string
 }
 
 type TopicParams = Record<string, string | number | boolean | undefined>
