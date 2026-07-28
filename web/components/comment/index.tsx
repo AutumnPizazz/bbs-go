@@ -164,7 +164,7 @@ function CommentInput({
   const editorRef = React.useRef<TextEditorRef>(null)
   const [content, setContent] = React.useState("")
   const [imageList, setImageList] = React.useState<ImageInfo[]>([])
-  const [attachmentIds, setAttachmentIds] = React.useState<string[]>([])
+  const [attachments, setAttachments] = React.useState<{ id: string; fileName: string; fileSize: number }[]>([])
   const [uploading, setUploading] = React.useState(false)
   const [sending, setSending] = React.useState(false)
   const lastClickTimeRef = React.useRef(0)
@@ -177,12 +177,12 @@ function CommentInput({
       if (entityType === "topic") {
         body.append("topicId", String(entityId))
       }
-      const att = await apiFetch<{ id: string }>("/api/attachment/upload", {
+      const att = await apiFetch<{ id: string; fileName?: string; fileSize?: number }>("/api/attachment/upload", {
         method: "POST",
         body,
       })
       if (att?.id) {
-        setAttachmentIds((prev) => [...prev, att.id])
+        setAttachments((prev) => [...prev, { id: att.id, fileName: att.fileName || file.name, fileSize: att.fileSize || file.size }])
       }
     } catch (error) {
       catchError(error)
@@ -215,14 +215,14 @@ function CommentInput({
           entityId,
           content,
           imageList: imageList.length ? JSON.stringify(imageList) : "",
-          attachmentIds: attachmentIds.length ? attachmentIds.join(",") : "",
+          attachmentIds: attachments.length ? attachments.map((a) => a.id).join(",") : "",
         }),
       })
       onCreated(data)
       editorRef.current?.reset()
       setContent("")
       setImageList([])
-      setAttachmentIds([])
+      setAttachments([])
       toast.success(t("component.comment.input.publishSuccess"))
     } catch (error) {
       catchError(error)
@@ -238,13 +238,14 @@ function CommentInput({
           ref={editorRef}
           content={content}
           imageList={imageList}
-          attachmentIds={attachmentIds}
+          attachments={attachments}
           height={90}
           focusHeight={120}
           disabled={sending}
           onContentChange={setContent}
           onImageListChange={setImageList}
           onAttachmentUpload={(file) => void handleFileUpload(file)}
+          onAttachmentRemove={(id) => setAttachments((prev) => prev.filter((a) => a.id !== id))}
           attachmentUploading={uploading}
           onSubmit={() => void create()}
         />

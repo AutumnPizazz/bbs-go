@@ -33,13 +33,14 @@ export const TextEditor = React.forwardRef<
   {
     content: string
     imageList: ImageInfo[]
-    attachmentIds?: string[]
+    attachments?: { id: string; fileName: string; fileSize: number }[]
     height?: number
     focusHeight?: number
     disabled?: boolean
     onContentChange: (content: string) => void
     onImageListChange: (imageList: ImageInfo[]) => void
     onAttachmentUpload?: (file: File) => void
+    onAttachmentRemove?: (id: string) => void
     attachmentUploading?: boolean
     onSubmit: () => void
   }
@@ -47,13 +48,14 @@ export const TextEditor = React.forwardRef<
   {
     content,
     imageList,
-    attachmentIds,
+    attachments,
     height = 80,
     focusHeight = 0,
     disabled,
     onContentChange,
     onImageListChange,
     onAttachmentUpload,
+    onAttachmentRemove,
     attachmentUploading,
     onSubmit,
   },
@@ -344,10 +346,27 @@ export const TextEditor = React.forwardRef<
               />
             </>
           ) : null}
-          {attachmentIds && attachmentIds.length > 0 ? (
-            <span className="text-xs text-muted-foreground">
-              {attachmentIds.length} {t("component.attachment.count")}
-            </span>
+          {attachments && attachments.length > 0 ? (
+            <div className="flex items-center gap-1.5">
+              {attachments.map((att) => (
+                <span
+                  key={att.id}
+                  className="inline-flex items-center gap-1 rounded border bg-background px-1.5 py-0.5 text-xs"
+                >
+                  <PaperclipIcon className="h-3 w-3 text-muted-foreground" />
+                  <span className="max-w-[100px] truncate">{att.fileName}</span>
+                  {onAttachmentRemove ? (
+                    <button
+                      type="button"
+                      className="ml-0.5 rounded-full p-0.5 hover:bg-muted"
+                      onClick={() => onAttachmentRemove(att.id)}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  ) : null}
+                </span>
+              ))}
+            </div>
           ) : null}
         </div>
         <div className="flex-1" />
