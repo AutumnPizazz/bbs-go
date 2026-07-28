@@ -56,3 +56,4 @@ deploy/.env
 dist/
 /docker-data
 /secret
+/cmd/sshexec
