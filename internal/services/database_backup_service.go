@@ -1,7 +1,9 @@
 package services
 
 import (
+	"archive/tar"
 	"bytes"
+	"compress/gzip"
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
@@ -29,6 +31,7 @@ import (
 
 	"bbs-go/internal/models"
 	"bbs-go/internal/pkg/config"
+	"bbs-go/internal/pkg/respath"
 )
 
 const (
@@ -175,8 +178,10 @@ func (s *databaseBackupService) StartRestore(backupId, requestedBy int64) (*mode
 	if !strings.EqualFold(backup.DatabaseType, config.DbTypeMySQL) {
 		return nil, errors.New("backup database type is not compatible with MySQL")
 	}
-	if !strings.EqualFold(filepath.Ext(backup.FileName), ".sql") {
-		return nil, errors.New("MySQL restore requires a .sql backup file")
+	// Accept .sql, .sqlite3, .tar.gz, and any gzip-compressed backup
+	ext := strings.ToLower(filepath.Ext(backup.FileName))
+	if ext != ".sql" && ext != ".sqlite3" && ext != ".gz" && !strings.HasSuffix(strings.ToLower(backup.FileName), ".tar.gz") {
+		return nil, errors.New("MySQL restore requires a .sql, .sqlite3, or .tar.gz backup file")
 	}
 	path, err := s.pathForBackup(backup)
 	if err != nil {
@@ -388,7 +393,15 @@ func (s *databaseBackupService) createSafetyBackup(requestedBy int64) (*models.D
 }
 
 func (s *databaseBackupService) restoreMySQL(path string) error {
-	file, err := os.Open(path)
+	sqlPath, isTemp, err := s.extractSqlForRestore(path)
+	if err != nil {
+		return err
+	}
+	if isTemp {
+		defer os.Remove(sqlPath)
+	}
+
+	file, err := os.Open(sqlPath)
 	if err != nil {
 		return err
 	}
@@ -411,6 +424,123 @@ func (s *databaseBackupService) restoreMySQL(path string) error {
 			message = err.Error()
 		}
 		return errors.New(message)
+	}
+
+	// Restore uploads from tar.gz if present (detected by magic bytes)
+	if isGz, _ := isGzipFile(path); isGz {
+		if err := s.restoreUploadsFromTarGz(path); err != nil {
+			slog.Warn("failed to restore uploads from backup archive", slog.Any("error", err))
+		}
+	}
+
+	return nil
+}
+
+// extractSqlForRestore extracts dump.sql from a tar.gz, or returns the path
+// unchanged for plain SQL files. The caller should clean up the temp file
+// when isTemp is true.
+func (s *databaseBackupService) extractSqlForRestore(path string) (sqlPath string, isTemp bool, err error) {
+	isTarGz, err := isGzipFile(path)
+	if err != nil || !isTarGz {
+		return path, false, err
+	}
+
+	file, err := os.Open(path)
+	if err != nil {
+		return "", false, err
+	}
+	defer file.Close()
+
+	gzReader, err := gzip.NewReader(file)
+	if err != nil {
+		return "", false, fmt.Errorf("invalid gzip: %w", err)
+	}
+	defer gzReader.Close()
+
+	tarReader := tar.NewReader(gzReader)
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return "", false, fmt.Errorf("invalid tar: %w", err)
+		}
+		if header.Name == backupArchiveSqlName {
+			tmp, err := os.CreateTemp("", ".bbs-go-restore-sql-*.sql")
+			if err != nil {
+				return "", false, err
+			}
+			if _, err := io.Copy(tmp, tarReader); err != nil {
+				tmp.Close()
+				os.Remove(tmp.Name())
+				return "", false, err
+			}
+			if err := tmp.Close(); err != nil {
+				os.Remove(tmp.Name())
+				return "", false, err
+			}
+			return tmp.Name(), true, nil
+		}
+	}
+	return "", false, fmt.Errorf("%s not found in archive", backupArchiveSqlName)
+}
+
+// restoreUploadsFromTarGz extracts the uploads/ directory from a tar.gz
+// into the application's res/uploads directory.
+func (s *databaseBackupService) restoreUploadsFromTarGz(path string) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	gzReader, err := gzip.NewReader(file)
+	if err != nil {
+		return err
+	}
+	defer gzReader.Close()
+
+	uploadsPrefix := respath.UploadsDirName + "/"
+	uploadsDir := respath.UploadsDir()
+	if err := os.MkdirAll(uploadsDir, 0o755); err != nil {
+		return err
+	}
+
+	tarReader := tar.NewReader(gzReader)
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		if !strings.HasPrefix(header.Name, uploadsPrefix) || header.Name == uploadsPrefix {
+			continue
+		}
+		relPath := strings.TrimPrefix(header.Name, uploadsPrefix)
+		// Prevent path traversal
+		if strings.Contains(relPath, "..") {
+			continue
+		}
+		targetPath := filepath.Join(uploadsDir, filepath.FromSlash(relPath))
+		if header.Typeflag == tar.TypeDir {
+			os.MkdirAll(targetPath, 0o755)
+			continue
+		}
+		if err := os.MkdirAll(filepath.Dir(targetPath), 0o755); err != nil {
+			return err
+		}
+		out, err := os.Create(targetPath)
+		if err != nil {
+			return err
+		}
+		if _, err := io.Copy(out, tarReader); err != nil {
+			out.Close()
+			return err
+		}
+		out.Close()
 	}
 	return nil
 }
@@ -643,7 +773,9 @@ func (s *databaseBackupService) ScanDirectory() ([]DiscoveredFile, error) {
 		}
 		name := entry.Name()
 		ext := strings.ToLower(filepath.Ext(name))
-		if ext != ".sql" && ext != ".sqlite3" {
+		isSql := ext == ".sql" || ext == ".sqlite3"
+		isTarGz := strings.HasSuffix(strings.ToLower(name), ".tar.gz")
+		if !isSql && !isTarGz {
 			continue
 		}
 
@@ -669,7 +801,15 @@ func (s *databaseBackupService) ScanDirectory() ([]DiscoveredFile, error) {
 			df.Error = fmt.Sprintf("checksum: %v", err)
 		} else {
 			df.Checksum = checksum
-			if dbType == config.DbTypeMySQL || ext == ".sql" {
+			if isTarGz {
+				df.DatabaseType = dbType
+				if err := s.verifyTarGz(filePath, dbType); err != nil {
+					df.Valid = false
+					df.Error = err.Error()
+				} else {
+					df.Valid = true
+				}
+			} else if dbType == config.DbTypeMySQL || ext == ".sql" {
 				df.DatabaseType = config.DbTypeMySQL
 				if err := verifyMySQLDump(filePath); err != nil {
 					df.Valid = false
@@ -746,7 +886,14 @@ func (s *databaseBackupService) AdoptFile(fileName string, requestedBy int64) (*
 
 	dbType := s.databaseType()
 	ext := strings.ToLower(filepath.Ext(fileName))
-	if ext == ".sql" && dbType == config.DbTypeSQLite {
+	isTarGz := strings.HasSuffix(strings.ToLower(fileName), ".tar.gz")
+
+	if isTarGz {
+		// Validate the tar.gz archive
+		if err := s.verifyTarGz(path, dbType); err != nil {
+			return nil, fmt.Errorf("invalid backup archive: %w", err)
+		}
+	} else if ext == ".sql" && dbType == config.DbTypeSQLite {
 		// SQL file is being adopted on a SQLite system; validate as MySQL dump
 		dbType = config.DbTypeMySQL
 	} else if ext == ".sqlite3" && dbType != config.DbTypeSQLite {
@@ -754,11 +901,11 @@ func (s *databaseBackupService) AdoptFile(fileName string, requestedBy int64) (*
 	}
 
 	// Validate
-	if dbType == config.DbTypeMySQL {
+	if dbType == config.DbTypeMySQL && !isTarGz {
 		if err := verifyMySQLDump(path); err != nil {
 			return nil, fmt.Errorf("invalid MySQL dump: %w", err)
 		}
-	} else if dbType == config.DbTypeSQLite {
+	} else if dbType == config.DbTypeSQLite && !isTarGz {
 		if err := verifySQLite(path); err != nil {
 			return nil, fmt.Errorf("invalid SQLite backup: %w", err)
 		}
@@ -847,6 +994,8 @@ func (s *databaseBackupService) StartScheduler(c *cron.Cron) {
 	})
 }
 
+const backupArchiveSqlName = "dump.sql"
+
 func (s *databaseBackupService) createFile(fileName, directory string) (string, int64, string, error) {
 	path, err := s.pathForFileNameInDirectory(fileName, directory)
 	if err != nil {
@@ -856,24 +1005,47 @@ func (s *databaseBackupService) createFile(fileName, directory string) (string, 
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return "", 0, "", err
 	}
-	tmp, err := os.CreateTemp(dir, ".bbs-go-backup-*.tmp")
+
+	// Step 1: dump SQL to a temp file
+	sqlTmp, err := os.CreateTemp(dir, ".bbs-go-backup-sql-*.tmp")
 	if err != nil {
 		return "", 0, "", err
 	}
-	tmpPath := tmp.Name()
-	if err := tmp.Close(); err != nil {
-		_ = os.Remove(tmpPath)
+	sqlTmpPath := sqlTmp.Name()
+	if err := sqlTmp.Close(); err != nil {
+		_ = os.Remove(sqlTmpPath)
 		return "", 0, "", err
 	}
-	_ = os.Chmod(tmpPath, 0o600)
-	defer func() { _ = os.Remove(tmpPath) }()
+	_ = os.Chmod(sqlTmpPath, 0o600)
+	defer func() { _ = os.Remove(sqlTmpPath) }()
 
-	if err := s.dump(tmpPath); err != nil {
+	if err := s.dump(sqlTmpPath); err != nil {
 		return "", 0, "", err
 	}
-	if err := os.Rename(tmpPath, path); err != nil {
+
+	// Step 2: create tar.gz containing SQL + uploads
+	tarTmp, err := os.CreateTemp(dir, ".bbs-go-backup-tar-*.tmp")
+	if err != nil {
 		return "", 0, "", err
 	}
+	tarTmpPath := tarTmp.Name()
+	_ = os.Chmod(tarTmpPath, 0o600)
+
+	if err := s.createTarGz(tarTmp, sqlTmpPath); err != nil {
+		tarTmp.Close()
+		_ = os.Remove(tarTmpPath)
+		return "", 0, "", err
+	}
+	if err := tarTmp.Close(); err != nil {
+		_ = os.Remove(tarTmpPath)
+		return "", 0, "", err
+	}
+
+	// Step 3: rename to final path
+	if err := os.Rename(tarTmpPath, path); err != nil {
+		return "", 0, "", err
+	}
+
 	info, err := os.Stat(path)
 	if err != nil {
 		return "", 0, "", err
@@ -883,6 +1055,77 @@ func (s *databaseBackupService) createFile(fileName, directory string) (string, 
 		return "", 0, "", err
 	}
 	return path, info.Size(), checksum, nil
+}
+
+// createTarGz writes a gzipped tar archive containing:
+// - dump.sql (the database dump at sqlPath)
+// - res/uploads/ (all uploaded files including inline images)
+func (s *databaseBackupService) createTarGz(w io.Writer, sqlPath string) error {
+	gzWriter := gzip.NewWriter(w)
+	defer gzWriter.Close()
+
+	tarWriter := tar.NewWriter(gzWriter)
+	defer tarWriter.Close()
+
+	// Add the SQL dump
+	if err := addFileToTar(tarWriter, sqlPath, backupArchiveSqlName); err != nil {
+		return fmt.Errorf("archive sql dump: %w", err)
+	}
+
+	// Add uploads directory
+	uploadsDir := respath.UploadsDir()
+	if info, err := os.Stat(uploadsDir); err == nil && info.IsDir() {
+		prefix := respath.UploadsDirName + "/"
+		err := filepath.Walk(uploadsDir, func(filePath string, fileInfo os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if fileInfo.IsDir() {
+				return nil
+			}
+			relPath, err := filepath.Rel(uploadsDir, filePath)
+			if err != nil {
+				return err
+			}
+			archiveName := prefix + filepath.ToSlash(relPath)
+			return addFileToTar(tarWriter, filePath, archiveName)
+		})
+		if err != nil {
+			return fmt.Errorf("archive uploads: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func addFileToTar(tw *tar.Writer, filePath, archiveName string) error {
+	info, err := os.Stat(filePath)
+	if err != nil {
+		return err
+	}
+	header, err := tar.FileInfoHeader(info, "")
+	if err != nil {
+		return err
+	}
+	header.Name = archiveName
+	// Use consistent mode
+	header.Mode = 0o644
+	if info.IsDir() {
+		header.Mode = 0o755
+	}
+	if err := tw.WriteHeader(header); err != nil {
+		return err
+	}
+	if info.IsDir() {
+		return nil
+	}
+	file, err := os.Open(filePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	_, err = io.Copy(tw, file)
+	return err
 }
 
 func (s *databaseBackupService) dump(path string) error {
@@ -1003,10 +1246,21 @@ func (s *databaseBackupService) verifyFile(path, dbType, checksum string) error 
 	if err != nil || !info.Mode().IsRegular() || info.Size() == 0 {
 		return errors.New("backup file is empty or invalid")
 	}
-	if dbType == config.DbTypeSQLite {
+
+	// Detect tar.gz by gzip magic bytes (0x1f 0x8b), not by extension
+	isTarGz, err := isGzipFile(path)
+	if err != nil {
+		return err
+	}
+	if isTarGz {
+		return s.verifyTarGz(path, dbType)
+	}
+
+	ext := strings.ToLower(filepath.Ext(path))
+	if dbType == config.DbTypeSQLite || ext == ".sqlite" || ext == ".sqlite3" || ext == ".db" {
 		return verifySQLite(path)
 	}
-	if dbType == config.DbTypeMySQL {
+	if dbType == config.DbTypeMySQL || ext == ".sql" {
 		return verifyMySQLDump(path)
 	}
 	file, err := os.Open(path)
@@ -1021,6 +1275,88 @@ func (s *databaseBackupService) verifyFile(path, dbType, checksum string) error 
 	}
 	if count == 0 {
 		return errors.New("backup file is empty")
+	}
+	return nil
+}
+
+// isGzipFile checks whether a file starts with the gzip magic bytes.
+func isGzipFile(path string) (bool, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return false, err
+	}
+	defer file.Close()
+	var magic [2]byte
+	n, err := file.Read(magic[:])
+	if err != nil && err != io.EOF {
+		return false, err
+	}
+	return n == 2 && magic[0] == 0x1f && magic[1] == 0x8b, nil
+}
+
+// verifyTarGz validates a gzipped tar archive contains a valid SQL dump
+// and checks the attachment file count.
+func (s *databaseBackupService) verifyTarGz(path, dbType string) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	gzReader, err := gzip.NewReader(file)
+	if err != nil {
+		return fmt.Errorf("invalid gzip: %w", err)
+	}
+	defer gzReader.Close()
+
+	tarReader := tar.NewReader(gzReader)
+	hasSql := false
+	uploadCount := 0
+	uploadsPrefix := respath.UploadsDirName + "/"
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return fmt.Errorf("invalid tar: %w", err)
+		}
+		if header.Name == backupArchiveSqlName {
+			hasSql = true
+			content, err := io.ReadAll(io.LimitReader(tarReader, 64*1024))
+			if err != nil {
+				return fmt.Errorf("read sql from archive: %w", err)
+			}
+			if len(content) == 0 {
+				return errors.New("SQL dump inside archive is empty")
+			}
+			if dbType == config.DbTypeMySQL {
+				if !utf8.Valid(content) || strings.ContainsRune(string(content), '\x00') {
+					return errors.New("MySQL backup inside archive is not a valid text dump")
+				}
+				upper := strings.ToUpper(string(content))
+				found := false
+				for _, marker := range []string{"MYSQL DUMP", "MARIADB DUMP", "CREATE TABLE", "INSERT INTO", "SET "} {
+					if strings.Contains(upper, marker) {
+						found = true
+						break
+					}
+				}
+				if !found {
+					return errors.New("SQL dump inside archive does not contain a recognized header")
+				}
+			}
+		}
+		if strings.HasPrefix(header.Name, uploadsPrefix) && header.Name != uploadsPrefix && header.Typeflag != tar.TypeDir {
+			uploadCount++
+		}
+	}
+	if !hasSql {
+		return fmt.Errorf("archive does not contain %s", backupArchiveSqlName)
+	}
+	// Report attachment count for integrity visibility
+	if uploadCount > 0 {
+		slog.Info("backup archive integrity verified", slog.String("path", path), slog.Int("uploadFiles", uploadCount))
 	}
 	return nil
 }
@@ -1139,11 +1475,7 @@ func (s *databaseBackupService) get(id int64) *models.DatabaseBackup {
 func (s *databaseBackupService) newFileName(trigger string) string {
 	var suffix [4]byte
 	_, _ = rand.Read(suffix[:])
-	extension := ".sql"
-	if s.databaseType() == config.DbTypeSQLite {
-		extension = ".sqlite3"
-	}
-	return fmt.Sprintf("bbs-go-%s-%s-%s%s", time.Now().UTC().Format("20060102-150405"), trigger, hex.EncodeToString(suffix[:]), extension)
+	return fmt.Sprintf("bbs-go-%s-%s-%s.tar.gz", time.Now().UTC().Format("20060102-150405"), trigger, hex.EncodeToString(suffix[:]))
 }
 
 func (s *databaseBackupService) databaseType() string {

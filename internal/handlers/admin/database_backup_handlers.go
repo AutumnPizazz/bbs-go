@@ -162,7 +162,8 @@ func DatabaseBackupDownload(ctx *gin.Context) {
 	}
 	ctx.Header("Content-Type", "application/octet-stream")
 	ctx.Header("Cache-Control", "no-store")
-	ctx.Header("Content-Disposition", `attachment; filename="`+backup.FileName+`"`)
+	contentDisposition := `attachment; filename="` + backup.FileName + `"`
+	ctx.Header("Content-Disposition", contentDisposition)
 	if _, err := os.Stat(path); err != nil {
 		services.OperateLogService.AddOperateLogFailure(operator.Id, constants.OpTypeUpdate, "databaseBackup", id, "下载数据库备份", err, ctx.Request)
 		ginx.WriteHttpStatusJSON(ctx, http.StatusNotFound, ginx.ErrorMessage("backup file not found"))

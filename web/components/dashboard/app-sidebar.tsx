@@ -178,6 +178,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             url: "/dashboard/health",
             permission: PERMISSIONS.DASHBOARD_HEALTH_VIEW,
           },
+          {
+            title: t("dashboard.nav.trash"),
+            url: "/dashboard/trash",
+            permission: PERMISSIONS.DASHBOARD_TOPIC_DELETE,
+          },
         ],
       },
     ],

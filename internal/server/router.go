@@ -393,4 +393,11 @@ func registerAdminRoutes(group *gin.RouterGroup) {
 	voteRecordGroup.POST("/delete", adminHandlers.VoteRecordRemove)
 	voteRecordGroup.GET("/:id", adminHandlers.VoteRecordDetail)
 
+	trashGroup := group.Group("/trash")
+	trashGroup.POST("/topics", adminHandlers.TrashTopics)
+	trashGroup.POST("/comments", adminHandlers.TrashComments)
+	trashGroup.POST("/attachments", adminHandlers.TrashAttachments)
+	trashGroup.POST("/comments/restore", adminHandlers.TrashRestoreComment)
+	trashGroup.POST("/attachments/restore", adminHandlers.TrashRestoreAttachment)
+
 }

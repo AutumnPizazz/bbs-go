@@ -85,6 +85,18 @@ func (s *commentService) Delete(id int64) error {
 	return repositories.CommentRepository.UpdateColumn(sqls.DB(), id, "status", constants.StatusDeleted)
 }
 
+// Undelete restores a soft-deleted comment.
+func (s *commentService) Undelete(id int64) error {
+	comment := s.Get(id)
+	if comment == nil {
+		return errors.New("comment not found")
+	}
+	if comment.Status != constants.StatusDeleted {
+		return errors.New("comment is not deleted")
+	}
+	return repositories.CommentRepository.UpdateColumn(sqls.DB(), id, "status", constants.StatusOk)
+}
+
 func (s *commentService) DeleteByUser(user *models.User, id int64) error {
 	if user == nil {
 		return errs.NotLogin()

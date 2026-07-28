@@ -127,6 +127,7 @@ const enUS = {
       attachments: "Attachments",
       messages: "Messages",
       health: "Health & Tasks",
+      trash: "Trash",
     },
     shortcuts: {
       title: "Management",
@@ -960,6 +961,17 @@ const enUS = {
             adoptDescription: "This file will be added to the backup list so you can download, restore, or delete it from the dashboard. Continue?",
           },
         },
+      },
+      trash: {
+        title: "Trash",
+        description: "View and restore soft-deleted topics, comments, and attachments.",
+        tabTopics: "Deleted Topics",
+        tabComments: "Deleted Comments",
+        tabAttachments: "Deleted Attachments",
+        empty: "No deleted items found.",
+        restored: "{label} has been restored.",
+        restoreConfirmTitle: "Restore item",
+        restoreConfirmDesc: "Restore \"{label}\" to normal visibility?",
       },
     },
     user: {

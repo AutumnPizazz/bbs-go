@@ -127,6 +127,7 @@ const zhCN = {
       attachments: "附件",
       messages: "站内消息",
       health: "健康与任务",
+      trash: "回收站",
     },
     shortcuts: {
       title: "管理",
@@ -949,6 +950,17 @@ const zhCN = {
             adoptDescription: "该文件将加入备份列表，之后可通过后台下载、回档或删除。确认继续吗？",
           },
         },
+      },
+      trash: {
+        title: "回收站",
+        description: "查看和恢复已软删除的帖子、评论和附件。",
+        tabTopics: "已删帖子",
+        tabComments: "已删评论",
+        tabAttachments: "已删附件",
+        empty: "没有已删除的内容。",
+        restored: "「{label}」已恢复。",
+        restoreConfirmTitle: "恢复内容",
+        restoreConfirmDesc: "确认恢复「{label}」到正常显示状态？",
       },
     },
     user: {

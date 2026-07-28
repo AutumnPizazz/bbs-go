@@ -122,6 +122,21 @@ func (s *attachmentService) SoftDelete(id string) error {
 	})
 }
 
+// Undelete restores a soft-deleted attachment.
+func (s *attachmentService) Undelete(id string) error {
+	att := s.GetAny(id)
+	if att == nil {
+		return errors.New("attachment not found")
+	}
+	if att.Status != constants.StatusDeleted {
+		return errors.New("attachment is not deleted")
+	}
+	return repositories.AttachmentRepository.Updates(sqls.DB(), id, map[string]interface{}{
+		"status":      constants.StatusOk,
+		"update_time": dates.NowTimestamp(),
+	})
+}
+
 // Delete removes an unbound object from storage, then marks its record deleted.
 func (s *attachmentService) Delete(id string) error {
 	att := s.GetAny(id)
