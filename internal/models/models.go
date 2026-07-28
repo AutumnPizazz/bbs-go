@@ -18,6 +18,7 @@ var Models = []interface{}{
 	&MessageSendTask{}, &MessageDelivery{},
 	&AnnouncementPublishRecord{}, &DashboardViewPreference{},
 	&DatabaseBackup{}, &DatabaseRestore{},
+	&TopicAssignment{},
 }
 
 type Model struct {
@@ -401,4 +402,17 @@ type Attachment struct {
 	Status        int    `gorm:"type:int;not null;index:idx_attachment_status" json:"status" form:"status"`                 // 状态：正常/删除
 	CreateTime    int64  `gorm:"not null;default:0;index:idx_attachment_create_time" json:"createTime" form:"createTime"`   // 创建时间（毫秒）
 	UpdateTime    int64  `gorm:"not null;default:0" json:"updateTime" form:"updateTime"`                                    // 更新时间（毫秒）
+}
+
+// TopicAssignment 问题指派记录，支持将问答话题指派给一个或多个用户。
+type TopicAssignment struct {
+	Id         int64  `gorm:"primaryKey;autoIncrement" json:"id" form:"id"`
+	TopicId    int64  `gorm:"not null;index:idx_topic_assignment_topic;uniqueIndex:uk_topic_assignment" json:"topicId" form:"topicId"` // 话题ID
+	UserId     int64  `gorm:"not null;index:idx_topic_assignment_user;uniqueIndex:uk_topic_assignment" json:"userId" form:"userId"`  // 被指派的用户ID
+	AssignedBy int64  `gorm:"not null" json:"assignedBy" form:"assignedBy"`                                                           // 指派人ID
+	Status     string `gorm:"size:32;not null;default:assigned" json:"status" form:"status"`                                          // 状态：assigned / resolved / dismissed
+	AssignedAt int64  `gorm:"not null;default:0" json:"assignedAt" form:"assignedAt"`                                                 // 指派时间
+	ResolvedAt int64  `gorm:"not null;default:0" json:"resolvedAt" form:"resolvedAt"`                                                 // 解决时间
+	CreateTime int64  `gorm:"not null" json:"createTime" form:"createTime"`
+	UpdateTime int64  `gorm:"not null" json:"updateTime" form:"updateTime"`
 }

@@ -29,6 +29,8 @@ const zhCN = {
       logout: "退出登录",
       login: "登录",
       confirmLogout: "确定退出登录吗？",
+      messages: "消息",
+      assigned: "我认领的",
       toggleMenu: "展开菜单",
     },
     footer: {
@@ -1386,6 +1388,15 @@ const zhCN = {
         loadMore: "查看更多回复",
       },
     },
+    claim: {
+      title: "认领",
+      claimIt: "认领此问题",
+      unclaim: "取消认领",
+      claimed: "你已认领此问题。",
+      you: "你",
+      noClaims: "暂无认领者。",
+      remove: "移除",
+    },
   },
   pages: {
     home: {
@@ -1747,6 +1758,16 @@ const zhCN = {
       reset: {
         title: "重置密码",
       },
+    },
+    assigned: {
+      title: "我认领的",
+      empty: "你还没有认领任何提问。",
+      pending: "待处理",
+      solved: "已解决",
+      dismissed: "已忽略",
+      statusActive: "等待你的回复",
+      statusResolved: "已解决",
+      statusDismissed: "已被驳回",
     },
     profile: {
       title: "个人资料",

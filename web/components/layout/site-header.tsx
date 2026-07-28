@@ -385,6 +385,15 @@ function UserMenu({
               {t("common.header.editProfile")}
             </Link>
           </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link
+              href="/user/assigned"
+              className="flex cursor-pointer items-center"
+            >
+              <CircleHelp className="mr-2 h-4 w-4" />
+              {t("common.header.assigned")}
+            </Link>
+          </DropdownMenuItem>
           {canAccessDashboard ? (
             <DropdownMenuItem asChild>
               <Link
@@ -603,6 +612,15 @@ function MobileMenu({
                 >
                   <Settings className="mr-3 h-4 w-4" />
                   {t("common.header.editProfile")}
+                </Link>
+              </SheetClose>
+              <SheetClose asChild onClick={closeMobileMenu}>
+                <Link
+                  href="/user/assigned"
+                  className="flex items-center rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+                >
+                  <CircleHelp className="mr-3 h-4 w-4" />
+                  {t("common.header.assigned")}
                 </Link>
               </SheetClose>
               <Button

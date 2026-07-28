@@ -109,6 +109,12 @@ func registerAPIRoutes(group *gin.RouterGroup) {
 	topicGroup.GET("/hide_content", apiHandlers.TopicHideContent)
 	topicGroup.GET("/:id", apiHandlers.TopicDetail)
 
+	// Topic claim routes
+	topicGroup.GET("/:id/claims", apiHandlers.TopicClaims)
+	topicGroup.POST("/:id/claim", apiHandlers.TopicClaim)
+	topicGroup.POST("/:id/unclaim", apiHandlers.TopicUnclaim)
+	topicGroup.POST("/:id/dismiss-claim", apiHandlers.TopicDismissClaim)
+
 	loginGroup := group.Group("/login")
 	loginGroup.POST("/signin", apiHandlers.LoginSignin)
 	loginGroup.GET("/signout", apiHandlers.LoginSignout)
@@ -200,6 +206,10 @@ func registerAPIRoutes(group *gin.RouterGroup) {
 	voteGroup := group.Group("/vote", middleware.ContentAccessMiddleware)
 	voteGroup.POST("/cast", apiHandlers.VoteCast)
 	voteGroup.GET("/:id", apiHandlers.VoteDetail)
+
+	assignmentGroup := group.Group("/assignment")
+	assignmentGroup.GET("/my", apiHandlers.MyClaimedTopics)
+	assignmentGroup.GET("/my/count", apiHandlers.MyClaimedCount)
 
 }
 

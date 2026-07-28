@@ -9,6 +9,17 @@ import type {
   UserSummary,
 } from "./types"
 
+export type TopicAssignment = {
+  id: number
+  topicId: number
+  userId: number
+  assignedBy: number
+  status: "active" | "resolved" | "dismissed"
+  assignedAt: number
+  resolvedAt: number
+  createTime: number
+}
+
 type TopicParams = Record<string, string | number | boolean | undefined>
 type SearchTopicParams = {
   keyword: string
@@ -86,4 +97,41 @@ export function searchTopics(params: SearchTopicParams) {
   return apiFetch<PageData<Topic>>("/api/search/topic", {
     params,
   })
+}
+
+// Claim APIs
+export function getTopicClaims(topicId: string | number) {
+  return apiFetch<TopicAssignment[]>(`/api/topic/${topicId}/claims`)
+}
+
+export function claimTopic(topicId: string | number) {
+  return apiFetch<TopicAssignment>(`/api/topic/${topicId}/claim`, {
+    method: "POST",
+  })
+}
+
+export function unclaimTopic(topicId: string | number, userId?: number) {
+  const params = new URLSearchParams()
+  if (userId) params.set("userId", String(userId))
+  return apiFetch<null>(`/api/topic/${topicId}/unclaim`, {
+    method: "POST",
+    body: params,
+  })
+}
+
+export function dismissClaim(topicId: string | number, userId: number) {
+  return apiFetch<null>(`/api/topic/${topicId}/dismiss-claim`, {
+    method: "POST",
+    body: new URLSearchParams({ userId: String(userId) }),
+  })
+}
+
+export function getMyClaimed(status?: string, limit?: number) {
+  return apiFetch<TopicAssignment[]>("/api/assignment/my", {
+    params: { status, limit },
+  })
+}
+
+export function getMyClaimedCount() {
+  return apiFetch<{ count: number }>("/api/assignment/my/count")
 }

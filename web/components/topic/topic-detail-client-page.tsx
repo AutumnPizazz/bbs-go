@@ -6,6 +6,7 @@ import { MainShell } from "@/components/layout/main-shell"
 import { PageError, PageLoading } from "@/components/common/page-state"
 import { TopicActionProvider } from "@/components/topic/topic-action-context"
 import { TopicAttachments } from "@/components/topic/topic-attachments"
+import { TopicClaimPanel } from "@/components/topic/topic-claim-panel"
 import { TopicComments } from "@/components/topic/topic-comments"
 import { TopicContent } from "@/components/topic/topic-content"
 import { TopicDetailActions } from "@/components/topic/topic-detail-actions"
@@ -137,6 +138,7 @@ export function TopicDetailClientPage({
       aside={
         <>
           <UserInfo user={topic.user} t={t} />
+          <TopicClaimPanel topic={topic} />
           <TopicToc topic={topic} />
         </>
       }

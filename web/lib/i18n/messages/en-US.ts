@@ -29,6 +29,8 @@ const enUS = {
       logout: "Sign out",
       login: "Sign in",
       confirmLogout: "Are you sure you want to sign out?",
+      messages: "Messages",
+      assigned: "My Claims",
       toggleMenu: "Toggle menu",
     },
     footer: {
@@ -1400,6 +1402,15 @@ const enUS = {
         loadMore: "Load more replies",
       },
     },
+    claim: {
+      title: "Claim",
+      claimIt: "Claim this question",
+      unclaim: "Release claim",
+      claimed: "You have claimed this question.",
+      you: "you",
+      noClaims: "No one has claimed this yet.",
+      remove: "Remove",
+    },
   },
   pages: {
     home: {
@@ -1775,6 +1786,16 @@ const enUS = {
       reset: {
         title: "Reset password",
       },
+    },
+    assigned: {
+      title: "My Claims",
+      empty: "You haven't claimed any questions yet.",
+      pending: "Pending",
+      solved: "Solved",
+      dismissed: "Dismissed",
+      statusActive: "Waiting for your response",
+      statusResolved: "Already resolved",
+      statusDismissed: "Dismissed by author",
     },
     profile: {
       title: "Profile",
