@@ -1426,6 +1426,12 @@ const zhCN = {
       allCategories: "全部",
       moreCategories: "更多分类",
       moreSubCategories: "更多子分类",
+      stats: {
+        topics: "帖子",
+        qa: "问答",
+        solved: "已解决",
+        unsolved: "未解决",
+      },
     },
     topic: {
       categorySelector: {

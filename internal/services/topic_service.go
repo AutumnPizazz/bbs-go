@@ -662,3 +662,33 @@ func (s *topicService) ForceSetQaStatus(topicId int64, qaStatus constants.QaStat
 	}
 	return s.Updates(topic.Id, columns)
 }
+
+// CategoryStats holds topic counts for a category.
+type CategoryStats struct {
+	TopicCount    int64
+	QaCount       int64
+	SolvedCount   int64
+	UnsolvedCount int64
+}
+
+// GetCategoryStats returns topic/QA/solved/unsolved counts for a category,
+// scoped to the given allowed category IDs (for content access filtering).
+func (s *topicService) GetCategoryStats(categoryId int64, allowedCategoryIds []int64) CategoryStats {
+	db := sqls.DB()
+	var stats CategoryStats
+
+	baseQuery := func() *gorm.DB {
+		q := db.Model(&models.Topic{}).Where("status = ?", constants.StatusOk)
+		if len(allowedCategoryIds) > 0 {
+			q = q.Where("category_id IN ?", allowedCategoryIds)
+		}
+		return q.Where("category_id = ?", categoryId)
+	}
+
+	baseQuery().Count(&stats.TopicCount)
+	baseQuery().Where("type = ?", constants.TopicTypeQA).Count(&stats.QaCount)
+	baseQuery().Where("type = ? AND qa_status = ?", constants.TopicTypeQA, constants.QaStatusSolved).Count(&stats.SolvedCount)
+	stats.UnsolvedCount = stats.QaCount - stats.SolvedCount
+
+	return stats
+}

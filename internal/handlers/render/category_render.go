@@ -69,6 +69,20 @@ func BuildCategoryResponseTree(parentId int64, list []models.Category) []resp.Ca
 	return ret
 }
 
+// PopulateCategoryStats fills topic/qa/solved/unsolved counts for a category tree.
+func PopulateCategoryStats(tree []resp.CategoryResponse, allowedIds []int64) {
+	for i := range tree {
+		stats := services.TopicService.GetCategoryStats(tree[i].Id, allowedIds)
+		tree[i].TopicCount = stats.TopicCount
+		tree[i].QaCount = stats.QaCount
+		tree[i].SolvedCount = stats.SolvedCount
+		tree[i].UnsolvedCount = stats.UnsolvedCount
+		if len(tree[i].Children) > 0 {
+			PopulateCategoryStats(tree[i].Children, allowedIds)
+		}
+	}
+}
+
 func BuildCategoryTree(parentId int64, list []models.Category) []resp.CategoryTreeItem {
 	var ret []resp.CategoryTreeItem
 	for _, category := range list {

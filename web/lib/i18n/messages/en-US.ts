@@ -1441,6 +1441,12 @@ const enUS = {
       allCategories: "All",
       moreCategories: "More categories",
       moreSubCategories: "More subcategories",
+      stats: {
+        topics: "Topics",
+        qa: "Q&A",
+        solved: "Solved",
+        unsolved: "Unsolved",
+      },
     },
     topic: {
       categorySelector: {

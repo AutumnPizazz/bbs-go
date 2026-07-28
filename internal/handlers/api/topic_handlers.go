@@ -67,22 +67,24 @@ func topicGetBuiltInCategories() []resp.CategoryResponse {
 // 设置置顶
 func CategoryNavs(ctx *gin.Context) {
 	user := common.GetCurrentUser(ctx)
-	categories := render.BuildCategoryResponseTree(0, services.ContentAccessService.FilterCategoryTree(user, services.CategoryService.GetCategories()))
-	ginx.WriteJSON(ctx, categories)
-
+	allowedIds := services.ContentAccessService.GetAllowedCategoryIds(user)
+	tree := render.BuildCategoryResponseTree(0, services.ContentAccessService.FilterCategoryTree(user, services.CategoryService.GetCategories()))
+	render.PopulateCategoryStats(tree, allowedIds)
+	ginx.WriteJSON(ctx, tree)
 }
 
 func Categories(ctx *gin.Context) {
 	user := common.GetCurrentUser(ctx)
-	categoryList := services.ContentAccessService.FilterCategoryTree(user, services.CategoryService.GetCategories())
-	categories := render.BuildCategoryResponseTree(0, categoryList)
-	ginx.WriteJSON(ctx, categories)
-
+	allowedIds := services.ContentAccessService.GetAllowedCategoryIds(user)
+	tree := render.BuildCategoryResponseTree(0, services.ContentAccessService.FilterCategoryTree(user, services.CategoryService.GetCategories()))
+	render.PopulateCategoryStats(tree, allowedIds)
+	ginx.WriteJSON(ctx, tree)
 }
 
 func Category(ctx *gin.Context) {
 	user := common.GetCurrentUser(ctx)
 	categoryId, _ := params.GetInt64(ctx, "categoryId")
+	allowedIds := services.ContentAccessService.GetAllowedCategoryIds(user)
 	if categoryId <= 0 {
 		for _, category := range topicGetBuiltInCategories() {
 			if category.Id == categoryId {
@@ -96,8 +98,15 @@ func Category(ctx *gin.Context) {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage(locales.Get("common.not_found")))
 		return
 	}
-	ginx.WriteJSON(ctx, render.BuildCategoryWithChildren(category))
-
+	result := render.BuildCategoryWithChildren(category)
+	if result != nil {
+		stats := services.TopicService.GetCategoryStats(categoryId, allowedIds)
+		result.TopicCount = stats.TopicCount
+		result.QaCount = stats.QaCount
+		result.SolvedCount = stats.SolvedCount
+		result.UnsolvedCount = stats.UnsolvedCount
+	}
+	ginx.WriteJSON(ctx, result)
 }
 
 func TopicCreate(ctx *gin.Context) {

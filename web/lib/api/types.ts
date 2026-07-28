@@ -48,6 +48,10 @@ export interface Category {
   description?: string
   logo?: string
   parentId?: number
+  topicCount?: number
+  qaCount?: number
+  solvedCount?: number
+  unsolvedCount?: number
   attachmentConfig?: AttachmentConfig
   children?: Category[]
 }

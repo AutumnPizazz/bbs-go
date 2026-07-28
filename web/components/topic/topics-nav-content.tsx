@@ -45,24 +45,14 @@ export function TopicsNavContent({
   const mobileScrollRef = React.useRef<HTMLDivElement>(null)
 
   React.useEffect(() => {
-    if (initialCategories.length > 0) return
-
     let mounted = true
-    const timer = window.setTimeout(() => {
-      void apiFetch<Category[]>("/api/topic/category_navs")
-        .then((data) => {
-          if (mounted) {
-            setCategories(data)
-          }
-        })
-        .catch(() => undefined)
-    }, 0)
-
-    return () => {
-      mounted = false
-      window.clearTimeout(timer)
-    }
-  }, [initialCategories.length])
+    void apiFetch<Category[]>("/api/topic/category_navs")
+      .then((data) => {
+        if (mounted) setCategories(data)
+      })
+      .catch(() => undefined)
+    return () => { mounted = false }
+  }, [])
 
   const visibleCategories = categories.filter((node) => node.id > 0)
   const allCategoryLabel = t("pages.topics.allCategories")
@@ -129,6 +119,11 @@ export function TopicsNavContent({
                     }
                   />
                   <div className="node-name">{node.name}</div>
+                  {node.unsolvedCount ? (
+                    <span className="ml-auto shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
+                      {node.unsolvedCount}
+                    </span>
+                  ) : null}
                 </Link>
               </li>
             </React.Fragment>
@@ -208,6 +203,11 @@ export function TopicsNavContent({
                           <span className="node-logo node-logo-placeholder" />
                         )}
                         <span>{node.name}</span>
+                        {node.unsolvedCount ? (
+                          <span className="ml-auto rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
+                            {node.unsolvedCount}
+                          </span>
+                        ) : null}
                       </Link>
                     </DrawerClose>
                   )

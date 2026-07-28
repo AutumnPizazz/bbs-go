@@ -193,6 +193,20 @@ export function NodeTopicClientPage({
                       {currentNode.description}
                     </div>
                   ) : null}
+                  {(currentNode.topicCount || currentNode.qaCount) ? (
+                    <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
+                      <span>{t("pages.topics.stats.topics")}: {currentNode.topicCount}</span>
+                      {currentNode.qaCount ? (
+                        <>
+                          <span>{t("pages.topics.stats.qa")}: {currentNode.qaCount}</span>
+                          <span className="text-emerald-600">{t("pages.topics.stats.solved")}: {currentNode.solvedCount}</span>
+                          {currentNode.unsolvedCount ? (
+                            <span className="text-amber-600">{t("pages.topics.stats.unsolved")}: {currentNode.unsolvedCount}</span>
+                          ) : null}
+                        </>
+                      ) : null}
+                    </div>
+                  ) : null}
                 </div>
               </div>
             </div>

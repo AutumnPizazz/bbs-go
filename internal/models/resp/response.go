@@ -54,12 +54,16 @@ type TagResponse struct {
 
 type CategoryResponse struct {
 	Id               int64                `json:"id"`
-	ParentId         int64                `json:"parentId"` // 父节点ID，0=一级
+	ParentId         int64                `json:"parentId"`
 	Name             string               `json:"name"`
 	Logo             string               `json:"logo"`
 	Description      string               `json:"description"`
 	AttachmentConfig dto.AttachmentConfig `json:"attachmentConfig"`
-	Children         []CategoryResponse   `json:"children,omitempty"` // 子节点（发帖可选时用）
+	TopicCount       int64                `json:"topicCount"`
+	QaCount          int64                `json:"qaCount"`
+	SolvedCount      int64                `json:"solvedCount"`
+	UnsolvedCount    int64                `json:"unsolvedCount"`
+	Children         []CategoryResponse   `json:"children,omitempty"`
 }
 
 // CategoryTreeItem 后台节点树形列表项（含 sortNo/status/createTime，children 始终存在以兼容 Arco Table）
