@@ -949,7 +949,7 @@ const enUS = {
           restoreDescription: "The current database will first be backed up, then this MySQL dump will be imported. Existing data may be overwritten. Continue?",
           orphans: {
             title: "Discovered files",
-            empty: "No unregistered SQL files found in the backup directory.",
+            empty: "No unregistered backup files found in the backup directory.",
             scan: "Scan directory",
             scanning: "Scanning…",
             adopt: "Register",
@@ -959,6 +959,7 @@ const enUS = {
             registered: "Already registered",
             adoptTitle: "Register backup file",
             adoptDescription: "This file will be added to the backup list so you can download, restore, or delete it from the dashboard. Continue?",
+            type: "Type",
           },
         },
       },

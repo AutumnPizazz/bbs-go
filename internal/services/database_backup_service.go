@@ -808,6 +808,10 @@ func (s *databaseBackupService) ScanDirectory() ([]DiscoveredFile, error) {
 					df.Error = err.Error()
 				} else {
 					df.Valid = true
+					// Try to detect actual database type from SQL content
+					if detected := s.detectSqlTypeInTarGz(filePath); detected != "" {
+						df.DatabaseType = detected
+					}
 				}
 			} else if dbType == config.DbTypeMySQL || ext == ".sql" {
 				df.DatabaseType = config.DbTypeMySQL
@@ -852,6 +856,51 @@ func (s *databaseBackupService) ScanDirectory() ([]DiscoveredFile, error) {
 	return discovered, nil
 }
 
+// detectSqlTypeInTarGz reads the SQL dump inside a tar.gz to determine
+// the source database type (mysql, postgresql, sqlite).
+func (s *databaseBackupService) detectSqlTypeInTarGz(path string) string {
+	file, err := os.Open(path)
+	if err != nil {
+		return ""
+	}
+	defer file.Close()
+
+	gzReader, err := gzip.NewReader(file)
+	if err != nil {
+		return ""
+	}
+	defer gzReader.Close()
+
+	tarReader := tar.NewReader(gzReader)
+	for {
+		header, err := tarReader.Next()
+		if err != nil {
+			return ""
+		}
+		if header.Name == backupArchiveSqlName {
+			content, err := io.ReadAll(io.LimitReader(tarReader, 64*1024))
+			if err != nil {
+				return ""
+			}
+			upper := strings.ToUpper(string(content))
+			if strings.Contains(upper, "MYSQL DUMP") || strings.Contains(upper, "MARIADB DUMP") {
+				return config.DbTypeMySQL
+			}
+			if strings.Contains(upper, "PG_DUMP") || strings.Contains(upper, "POSTGRESQL") {
+				return config.DbTypePostgreSQL
+			}
+			if strings.Contains(upper, "SQLITE") {
+				return config.DbTypeSQLite
+			}
+			// Fallback: if it has MySQL-like statements, assume MySQL
+			if strings.Contains(upper, "CREATE TABLE") || strings.Contains(upper, "INSERT INTO") {
+				return config.DbTypeMySQL
+			}
+			return ""
+		}
+	}
+}
+
 // AdoptFile registers a valid SQL file from the backup directory as a
 // tracked backup record. The file must exist on disk, pass validation,
 // and not already be registered.
@@ -889,9 +938,13 @@ func (s *databaseBackupService) AdoptFile(fileName string, requestedBy int64) (*
 	isTarGz := strings.HasSuffix(strings.ToLower(fileName), ".tar.gz")
 
 	if isTarGz {
-		// Validate the tar.gz archive
+		// Validate the tar.gz archive and detect the SQL type
 		if err := s.verifyTarGz(path, dbType); err != nil {
 			return nil, fmt.Errorf("invalid backup archive: %w", err)
+		}
+		// Try to detect database type from SQL content inside tar.gz
+		if detected := s.detectSqlTypeInTarGz(path); detected != "" {
+			dbType = detected
 		}
 	} else if ext == ".sql" && dbType == config.DbTypeSQLite {
 		// SQL file is being adopted on a SQLite system; validate as MySQL dump

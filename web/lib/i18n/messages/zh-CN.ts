@@ -938,7 +938,7 @@ const zhCN = {
           restoreDescription: "系统会先创建当前数据库的安全备份，再导入该 MySQL 备份；现有数据可能被覆盖，确认继续吗？",
           orphans: {
             title: "发现文件",
-            empty: "备份目录中未发现未注册的 SQL 文件。",
+            empty: "备份目录中未发现未注册的备份文件。",
             scan: "扫描目录",
             scanning: "扫描中…",
             adopt: "注册",
@@ -948,6 +948,7 @@ const zhCN = {
             registered: "已注册",
             adoptTitle: "注册备份文件",
             adoptDescription: "该文件将加入备份列表，之后可通过后台下载、回档或删除。确认继续吗？",
+            type: "类型",
           },
         },
       },

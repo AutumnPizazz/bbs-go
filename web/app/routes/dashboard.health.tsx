@@ -600,10 +600,11 @@ export default function DashboardHealthRoute() {
               </div>
               {orphanFiles.length > 0 ? (
                 <div className="mt-3 overflow-x-auto rounded-md border">
-                  <table className="w-full min-w-[600px] text-sm">
+                  <table className="w-full min-w-[640px] text-sm">
                     <thead className="border-b bg-muted/30 text-left text-xs text-muted-foreground">
                       <tr>
                         <th className="px-3 py-2">{t("dashboard.pages.health.backup.file")}</th>
+                        <th className="px-3 py-2">{t("dashboard.pages.health.backup.orphans.type")}</th>
                         <th className="px-3 py-2">{t("dashboard.pages.health.backup.size")}</th>
                         <th className="px-3 py-2">{t("dashboard.pages.health.backup.status")}</th>
                         <th className="px-3 py-2 text-right">{t("dashboard.pages.health.backup.actions")}</th>
@@ -612,7 +613,12 @@ export default function DashboardHealthRoute() {
                     <tbody>
                       {orphanFiles.map((file) => (
                         <tr key={file.fileName} className="border-b last:border-0">
-                          <td className="max-w-[280px] truncate px-3 py-2 font-mono text-xs">{file.fileName}</td>
+                          <td className="max-w-[200px] truncate px-3 py-2 font-mono text-xs">{file.fileName}</td>
+                          <td className="px-3 py-2">
+                            <span className="inline-flex items-center rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
+                              {file.databaseType || "?"}
+                            </span>
+                          </td>
                           <td className="px-3 py-2">{byteCountFormatter.format(file.size || 0)}</td>
                           <td className="px-3 py-2">
                             {file.registered ? (
