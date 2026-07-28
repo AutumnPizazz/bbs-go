@@ -15,6 +15,7 @@ import (
 	"bbs-go/internal/models/resp"
 	"bbs-go/internal/pkg/common"
 	"bbs-go/internal/pkg/errs"
+	"bbs-go/internal/pkg/idcodec"
 	"bbs-go/internal/pkg/locales"
 	"bbs-go/internal/pkg/params"
 	"bbs-go/internal/services"
@@ -52,9 +53,11 @@ func AttachmentUpload(ctx *gin.Context) {
 	categoryId := params.FormValueInt64Default(ctx, "categoryId", 0)
 	// Allow deriving category from topicId (for comment attachments)
 	if categoryId <= 0 {
-		if topicId := params.FormValueInt64Default(ctx, "topicId", 0); topicId > 0 {
-			if topic := services.TopicService.Get(topicId); topic != nil {
-				categoryId = topic.CategoryId
+		if topicIdStr := params.FormValue(ctx, "topicId"); topicIdStr != "" {
+			if topicId := idcodec.Decode(topicIdStr); topicId > 0 {
+				if topic := services.TopicService.Get(topicId); topic != nil {
+					categoryId = topic.CategoryId
+				}
 			}
 		}
 	}
