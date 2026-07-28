@@ -171,3 +171,33 @@ func DatabaseBackupDownload(ctx *gin.Context) {
 	services.OperateLogService.AddOperateLog(operator.Id, constants.OpTypeUpdate, "databaseBackup", id, "下载数据库备份", ctx.Request)
 	ctx.File(path)
 }
+
+func DatabaseBackupScan(ctx *gin.Context) {
+	discovered, err := services.DatabaseBackupService.ScanDirectory()
+	if err != nil {
+		ginx.WriteJSON(ctx, err)
+		return
+	}
+	ginx.WriteJSON(ctx, map[string]interface{}{"files": discovered})
+}
+
+func DatabaseBackupAdopt(ctx *gin.Context) {
+	operator, err := common.CheckLogin(ctx)
+	if err != nil {
+		ginx.WriteJSON(ctx, err)
+		return
+	}
+	fileName := strings.TrimSpace(params.FormValue(ctx, "fileName"))
+	if fileName == "" {
+		ginx.WriteJSON(ctx, ginx.ErrorMessage("file name is required"))
+		return
+	}
+	record, err := services.DatabaseBackupService.AdoptFile(fileName, operator.Id)
+	if err != nil {
+		services.OperateLogService.AddOperateLogFailure(operator.Id, constants.OpTypeCreate, "databaseBackup", 0, "导入备份文件: "+fileName, err, ctx.Request)
+		ginx.WriteJSON(ctx, err)
+		return
+	}
+	services.OperateLogService.AddOperateLog(operator.Id, constants.OpTypeCreate, "databaseBackup", record.Id, "导入备份文件: "+fileName, ctx.Request)
+	ginx.WriteJSON(ctx, record)
+}

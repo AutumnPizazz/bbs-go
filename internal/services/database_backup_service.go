@@ -605,6 +605,195 @@ func (s *databaseBackupService) List(limit int) []models.DatabaseBackup {
 	return backups
 }
 
+// DiscoveredFile represents a file found on disk in the backup directory
+// that may or may not be registered in the database.
+type DiscoveredFile struct {
+	FileName     string `json:"fileName"`
+	Size         int64  `json:"size"`
+	Checksum     string `json:"checksum"`
+	DatabaseType string `json:"databaseType"`
+	Valid        bool   `json:"valid"`
+	Error        string `json:"error,omitempty"`
+	Registered   bool   `json:"registered"`
+	BackupId     int64  `json:"backupId,omitempty"`
+}
+
+// ScanDirectory scans the configured backup directory for SQL files,
+// validates them, and returns files alongside their registration status.
+func (s *databaseBackupService) ScanDirectory() ([]DiscoveredFile, error) {
+	dir, err := s.directory(s.Config().Directory)
+	if err != nil {
+		return nil, err
+	}
+
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return []DiscoveredFile{}, nil
+		}
+		return nil, err
+	}
+
+	dbType := s.databaseType()
+	var discovered []DiscoveredFile
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		name := entry.Name()
+		ext := strings.ToLower(filepath.Ext(name))
+		if ext != ".sql" && ext != ".sqlite3" {
+			continue
+		}
+
+		filePath, err := s.pathForFileNameInDirectory(name, s.Config().Directory)
+		if err != nil {
+			continue
+		}
+
+		info, err := entry.Info()
+		if err != nil {
+			continue
+		}
+
+		df := DiscoveredFile{
+			FileName: name,
+			Size:     info.Size(),
+		}
+
+		// Validate the file
+		checksum, err := fileChecksum(filePath)
+		if err != nil {
+			df.Valid = false
+			df.Error = fmt.Sprintf("checksum: %v", err)
+		} else {
+			df.Checksum = checksum
+			if dbType == config.DbTypeMySQL || ext == ".sql" {
+				df.DatabaseType = config.DbTypeMySQL
+				if err := verifyMySQLDump(filePath); err != nil {
+					df.Valid = false
+					df.Error = err.Error()
+				} else {
+					df.Valid = true
+				}
+			} else if dbType == config.DbTypeSQLite || ext == ".sqlite3" {
+				df.DatabaseType = config.DbTypeSQLite
+				if err := verifySQLite(filePath); err != nil {
+					df.Valid = false
+					df.Error = err.Error()
+				} else {
+					df.Valid = true
+				}
+			} else {
+				// For postgresql or other types, check the file is non-empty and readable
+				df.DatabaseType = dbType
+				if info.Size() > 0 {
+					df.Valid = true
+				} else {
+					df.Valid = false
+					df.Error = "file is empty"
+				}
+			}
+		}
+
+		// Check if already registered
+		if db := sqls.DB(); db != nil {
+			var existing models.DatabaseBackup
+			if err := db.Where("file_name = ?", name).First(&existing).Error; err == nil {
+				df.Registered = true
+				df.BackupId = existing.Id
+			}
+		}
+
+		discovered = append(discovered, df)
+	}
+
+	return discovered, nil
+}
+
+// AdoptFile registers a valid SQL file from the backup directory as a
+// tracked backup record. The file must exist on disk, pass validation,
+// and not already be registered.
+func (s *databaseBackupService) AdoptFile(fileName string, requestedBy int64) (*models.DatabaseBackup, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	db := sqls.DB()
+	if db == nil {
+		return nil, errors.New("database is not initialized")
+	}
+
+	if fileName == "" || filepath.Base(fileName) != fileName {
+		return nil, errors.New("invalid backup file name")
+	}
+
+	// Check not already registered
+	var existing models.DatabaseBackup
+	if err := db.Where("file_name = ?", fileName).First(&existing).Error; err == nil {
+		return &existing, nil
+	}
+
+	path, err := s.pathForFileNameInDirectory(fileName, s.Config().Directory)
+	if err != nil {
+		return nil, err
+	}
+
+	info, err := os.Stat(path)
+	if err != nil {
+		return nil, fmt.Errorf("file not accessible: %w", err)
+	}
+
+	dbType := s.databaseType()
+	ext := strings.ToLower(filepath.Ext(fileName))
+	if ext == ".sql" && dbType == config.DbTypeSQLite {
+		// SQL file is being adopted on a SQLite system; validate as MySQL dump
+		dbType = config.DbTypeMySQL
+	} else if ext == ".sqlite3" && dbType != config.DbTypeSQLite {
+		return nil, errors.New("sqlite3 backup is not compatible with the current database type")
+	}
+
+	// Validate
+	if dbType == config.DbTypeMySQL {
+		if err := verifyMySQLDump(path); err != nil {
+			return nil, fmt.Errorf("invalid MySQL dump: %w", err)
+		}
+	} else if dbType == config.DbTypeSQLite {
+		if err := verifySQLite(path); err != nil {
+			return nil, fmt.Errorf("invalid SQLite backup: %w", err)
+		}
+	}
+
+	checksum, err := fileChecksum(path)
+	if err != nil {
+		return nil, fmt.Errorf("checksum: %w", err)
+	}
+
+	now := dates.NowTimestamp()
+	record := &models.DatabaseBackup{
+		TriggerType:  BackupTriggerManual,
+		DatabaseType: dbType,
+		FileName:     fileName,
+		Directory:    s.Config().Directory,
+		Status:       models.DatabaseBackupSuccess,
+		RequestedBy:  requestedBy,
+		Size:         info.Size(),
+		Checksum:     checksum,
+		Progress:     100,
+		Phase:        backupPhaseCompleted,
+		StartedAt:    now,
+		FinishedAt:   now,
+		CreateTime:   now,
+		UpdateTime:   now,
+	}
+
+	if err := db.Create(record).Error; err != nil {
+		return nil, err
+	}
+
+	return record, nil
+}
+
 func (s *databaseBackupService) Delete(id int64) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()

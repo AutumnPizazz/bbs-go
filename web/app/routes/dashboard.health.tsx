@@ -7,7 +7,9 @@ import {
   CircleHelpIcon,
   DatabaseBackupIcon,
   DownloadIcon,
+  FolderSearchIcon,
   PlayIcon,
+  PlusIcon,
   RefreshCwIcon,
   RotateCcwIcon,
   SaveIcon,
@@ -89,6 +91,17 @@ type BackupState = {
   results?: BackupRecord[]
 }
 
+type DiscoveredFile = {
+  fileName: string
+  size: number
+  checksum: string
+  databaseType: string
+  valid: boolean
+  error?: string
+  registered: boolean
+  backupId?: number
+}
+
 const byteCountFormatter = new Intl.NumberFormat("en-US")
 
 function StatusIcon({ status }: { status?: string }) {
@@ -108,6 +121,8 @@ export default function DashboardHealthRoute() {
   const [backupConfig, setBackupConfig] = React.useState<BackupConfig | null>(null)
   const [confirmState, setConfirmState] = React.useState<ConfirmDialogState>(null)
   const [loading, setLoading] = React.useState(false)
+  const [orphanFiles, setOrphanFiles] = React.useState<DiscoveredFile[]>([])
+  const [scanning, setScanning] = React.useState(false)
 
   const canBackupView = userHasPermission(currentUser, PERMISSIONS.DASHBOARD_BACKUP_VIEW)
   const canBackupCreate = userHasPermission(currentUser, PERMISSIONS.DASHBOARD_BACKUP_CREATE)
@@ -172,6 +187,13 @@ export default function DashboardHealthRoute() {
     }
   }, [load])
 
+  // Auto-scan for orphan files on first load
+  React.useEffect(() => {
+    if (!canBackupView) return
+    void scanOrphanFiles()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canBackupView])
+
   async function startTask(endpoint: string) {
     try {
       await adminPostForm(endpoint, {})
@@ -223,6 +245,28 @@ export default function DashboardHealthRoute() {
       await adminPostForm("/api/admin/backup/restore", { id, confirm: "RESTORE_BACKUP" })
       msgSuccess(t("dashboard.pages.health.backup.restoreStarted"))
       await load()
+    } catch (error) {
+      msgError(error instanceof Error ? error.message : t("dashboard.pages.health.actionFailed"))
+    }
+  }
+
+  async function scanOrphanFiles() {
+    setScanning(true)
+    try {
+      const response = await adminGet<{ files?: DiscoveredFile[] }>("/api/admin/backup/scan")
+      setOrphanFiles(response?.files || [])
+    } catch (error) {
+      msgError(error instanceof Error ? error.message : t("dashboard.pages.health.actionFailed"))
+    } finally {
+      setScanning(false)
+    }
+  }
+
+  async function adoptFile(fileName: string) {
+    try {
+      await adminPostForm("/api/admin/backup/adopt", { fileName })
+      msgSuccess(t("dashboard.pages.health.backup.orphans.adopted"))
+      await Promise.all([load(), scanOrphanFiles()])
     } catch (error) {
       msgError(error instanceof Error ? error.message : t("dashboard.pages.health.actionFailed"))
     }
@@ -537,6 +581,87 @@ export default function DashboardHealthRoute() {
             </table>
             {backup?.results?.length === 0 ? <p className="p-4 text-sm text-muted-foreground">{t("dashboard.pages.health.backup.empty")}</p> : null}
           </div>
+
+          {canBackupView ? (
+            <div className="mt-4">
+              <div className="flex items-center gap-2">
+                <FolderSearchIcon className="size-4 text-muted-foreground" />
+                <h3 className="text-sm font-medium">{t("dashboard.pages.health.backup.orphans.title")}</h3>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="ml-auto"
+                  onClick={() => void scanOrphanFiles()}
+                  disabled={scanning}
+                >
+                  <RefreshCwIcon className={scanning ? "size-4 animate-spin" : "size-4"} />
+                  {scanning ? t("dashboard.pages.health.backup.orphans.scanning") : t("dashboard.pages.health.backup.orphans.scan")}
+                </Button>
+              </div>
+              {orphanFiles.length > 0 ? (
+                <div className="mt-3 overflow-x-auto rounded-md border">
+                  <table className="w-full min-w-[600px] text-sm">
+                    <thead className="border-b bg-muted/30 text-left text-xs text-muted-foreground">
+                      <tr>
+                        <th className="px-3 py-2">{t("dashboard.pages.health.backup.file")}</th>
+                        <th className="px-3 py-2">{t("dashboard.pages.health.backup.size")}</th>
+                        <th className="px-3 py-2">{t("dashboard.pages.health.backup.status")}</th>
+                        <th className="px-3 py-2 text-right">{t("dashboard.pages.health.backup.actions")}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {orphanFiles.map((file) => (
+                        <tr key={file.fileName} className="border-b last:border-0">
+                          <td className="max-w-[280px] truncate px-3 py-2 font-mono text-xs">{file.fileName}</td>
+                          <td className="px-3 py-2">{byteCountFormatter.format(file.size || 0)}</td>
+                          <td className="px-3 py-2">
+                            {file.registered ? (
+                              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                                <CheckCircle2Icon className="size-3" />
+                                {t("dashboard.pages.health.backup.orphans.registered")}
+                              </span>
+                            ) : file.valid ? (
+                              <span className="inline-flex items-center gap-1 text-xs text-emerald-600">
+                                <CheckCircle2Icon className="size-3" />
+                                {t("dashboard.pages.health.backup.orphans.valid")}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-xs text-destructive">
+                                <XCircleIcon className="size-3" />
+                                {t("dashboard.pages.health.backup.orphans.invalid")}
+                              </span>
+                            )}
+                            {file.error && !file.registered ? (
+                              <p className="mt-1 max-w-[200px] text-xs text-destructive">{file.error}</p>
+                            ) : null}
+                          </td>
+                          <td className="px-3 py-2 text-right">
+                            {!file.registered && file.valid && canBackupCreate ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  setConfirmState({
+                                    title: t("dashboard.pages.health.backup.orphans.adoptTitle"),
+                                    description: t("dashboard.pages.health.backup.orphans.adoptDescription"),
+                                    confirmText: t("dashboard.pages.health.backup.orphans.adopt"),
+                                    onConfirm: () => void adoptFile(file.fileName),
+                                  })
+                                }
+                              >
+                                <PlusIcon className="size-4" />
+                                {t("dashboard.pages.health.backup.orphans.adopt")}
+                              </Button>
+                            ) : null}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </section>
       ) : null}
 
