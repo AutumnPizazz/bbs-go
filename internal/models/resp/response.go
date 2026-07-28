@@ -171,6 +171,7 @@ type CommentResponse struct {
 	ContentType  constants.ContentType `json:"contentType"`
 	Content      string                `json:"content"`
 	ImageList    []ImageInfo           `json:"imageList"`
+	Attachments  []AttachmentResponse  `json:"attachments,omitempty"`
 	LikeCount    int64                 `json:"likeCount"`
 	CommentCount int64                 `json:"commentCount"`
 	Liked        bool                  `json:"liked"`

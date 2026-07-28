@@ -65,6 +65,7 @@ func doBuildComment(comment *models.Comment, currentUser *models.User, isBuildRe
 		IpLocation:   comment.IpLocation,
 		Status:       comment.Status,
 		CreateTime:   comment.CreateTime,
+		Attachments:  BuildAttachmentResponses(services.AttachmentService.ListByCommentId(comment.Id)),
 	}
 
 	if comment.Status == constants.StatusOk {

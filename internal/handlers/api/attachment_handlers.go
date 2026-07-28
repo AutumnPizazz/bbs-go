@@ -50,7 +50,15 @@ func AttachmentUpload(ctx *gin.Context) {
 		return
 	}
 	categoryId := params.FormValueInt64Default(ctx, "categoryId", 0)
-	if !services.ContentAccessService.CanWriteCategory(user, categoryId) {
+	// Allow deriving category from topicId (for comment attachments)
+	if categoryId <= 0 {
+		if topicId := params.FormValueInt64Default(ctx, "topicId", 0); topicId > 0 {
+			if topic := services.TopicService.Get(topicId); topic != nil {
+				categoryId = topic.CategoryId
+			}
+		}
+	}
+	if categoryId <= 0 || !services.ContentAccessService.CanWriteCategory(user, categoryId) {
 		ginx.WriteJSON(ctx, errs.ContentAccessDenied())
 		return
 	}

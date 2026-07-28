@@ -1415,6 +1415,9 @@ const enUS = {
       noClaims: "No one has claimed this yet.",
       remove: "Remove",
     },
+    attachment: {
+      count: "file(s)",
+    },
   },
   pages: {
     home: {

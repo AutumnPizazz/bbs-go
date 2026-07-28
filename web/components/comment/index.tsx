@@ -8,6 +8,7 @@ import {
   Flag,
   LogIn,
   MessageCircle,
+  Paperclip as PaperclipIcon,
   ThumbsUp,
   Trash2,
 } from "lucide-react"
@@ -29,14 +30,14 @@ import {
   type TextEditorRef,
 } from "@/components/comment/text-editor"
 import { apiFetch, toFormData } from "@/lib/api/client"
-import type { Comment, EntityId, ImageInfo, PageData } from "@/lib/api/types"
+import type { Attachment, Comment, EntityId, ImageInfo, PageData } from "@/lib/api/types"
 import { PERMISSIONS } from "@/lib/auth/permissions.generated"
 import { userHasPermission } from "@/lib/auth/roles"
 import { prettyDate } from "@/lib/format"
 import { useI18n } from "@/lib/i18n/provider"
 import { useCurrentUser } from "@/components/app/app-provider"
 import { buildSigninHref, toast, useToastActions } from "@/lib/toast"
-import { cn } from "@/lib/utils"
+import { cn, formatFileSize } from "@/lib/utils"
 
 type EntityType = "topic" | "comment" | string
 
@@ -110,6 +111,32 @@ function CommentImages({
   )
 }
 
+function CommentAttachments({
+  attachments,
+}: {
+  attachments?: Attachment[]
+}) {
+  if (!attachments?.length) return null
+
+  return (
+    <div className="mt-1.5 flex flex-wrap gap-2">
+      {attachments.map((att) => (
+        <a
+          key={att.id}
+          href={att.fileUrl || "#"}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-1.5 rounded border bg-muted/50 px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+        >
+          <PaperclipIcon className="h-3 w-3" />
+          {att.fileName || att.id}
+          <span className="opacity-50">({formatFileSize(att.fileSize)})</span>
+        </a>
+      ))}
+    </div>
+  )
+}
+
 function useCommentActions() {
   const { t } = useI18n()
   const { catchError, msgSignIn } = useToastActions()
@@ -137,8 +164,32 @@ function CommentInput({
   const editorRef = React.useRef<TextEditorRef>(null)
   const [content, setContent] = React.useState("")
   const [imageList, setImageList] = React.useState<ImageInfo[]>([])
+  const [attachmentIds, setAttachmentIds] = React.useState<string[]>([])
+  const [uploading, setUploading] = React.useState(false)
   const [sending, setSending] = React.useState(false)
   const lastClickTimeRef = React.useRef(0)
+
+  async function handleFileUpload(file: File) {
+    setUploading(true)
+    try {
+      const body = new FormData()
+      body.append("file", file, file.name)
+      if (entityType === "topic") {
+        body.append("topicId", String(entityId))
+      }
+      const att = await apiFetch<{ id: string }>("/api/attachment/upload", {
+        method: "POST",
+        body,
+      })
+      if (att?.id) {
+        setAttachmentIds((prev) => [...prev, att.id])
+      }
+    } catch (error) {
+      catchError(error)
+    } finally {
+      setUploading(false)
+    }
+  }
 
   async function create() {
     const now = Date.now()
@@ -164,12 +215,14 @@ function CommentInput({
           entityId,
           content,
           imageList: imageList.length ? JSON.stringify(imageList) : "",
+          attachmentIds: attachmentIds.length ? attachmentIds.join(",") : "",
         }),
       })
       onCreated(data)
       editorRef.current?.reset()
       setContent("")
       setImageList([])
+      setAttachmentIds([])
       toast.success(t("component.comment.input.publishSuccess"))
     } catch (error) {
       catchError(error)
@@ -185,11 +238,14 @@ function CommentInput({
           ref={editorRef}
           content={content}
           imageList={imageList}
+          attachmentIds={attachmentIds}
           height={90}
           focusHeight={120}
           disabled={sending}
           onContentChange={setContent}
           onImageListChange={setImageList}
+          onAttachmentUpload={(file) => void handleFileUpload(file)}
+          attachmentUploading={uploading}
           onSubmit={() => void create()}
         />
       </div>
@@ -423,6 +479,7 @@ function CommentSubList({
               <div>
                 {commentContent(comment, "small")}
                 <CommentImages images={comment.imageList} size="small" />
+                <CommentAttachments attachments={comment.attachments} />
                 {comment.quote ? (
                   <div className="relative my-1.5 box-border rounded border border-border bg-muted px-3 py-1 text-muted-foreground">
                     <span
@@ -741,6 +798,7 @@ function CommentItem({
           <div>
             {commentContent(comment)}
             <CommentImages images={comment.imageList} />
+            <CommentAttachments attachments={comment.attachments} />
           </div>
           <div className="mt-2.5 flex flex-wrap items-center gap-2.5">
             <button

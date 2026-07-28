@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Image as ImageIcon, Plus, X } from "lucide-react"
+import { Image as ImageIcon, Paperclip as PaperclipIcon, Plus, X } from "lucide-react"
 
 import { PreviewableImage } from "@/components/common/image-preview"
 import { Button } from "@/components/ui/button"
@@ -33,22 +33,28 @@ export const TextEditor = React.forwardRef<
   {
     content: string
     imageList: ImageInfo[]
+    attachmentIds?: string[]
     height?: number
     focusHeight?: number
     disabled?: boolean
     onContentChange: (content: string) => void
     onImageListChange: (imageList: ImageInfo[]) => void
+    onAttachmentUpload?: (file: File) => void
+    attachmentUploading?: boolean
     onSubmit: () => void
   }
 >(function TextEditor(
   {
     content,
     imageList,
+    attachmentIds,
     height = 80,
     focusHeight = 0,
     disabled,
     onContentChange,
     onImageListChange,
+    onAttachmentUpload,
+    attachmentUploading,
     onSubmit,
   },
   ref
@@ -58,6 +64,7 @@ export const TextEditor = React.forwardRef<
   const wrapperRef = React.useRef<HTMLDivElement>(null)
   const textareaRef = React.useRef<HTMLTextAreaElement>(null)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
+  const attachmentFileRef = React.useRef<HTMLInputElement>(null)
   const isOpeningImagePickerRef = React.useRef(false)
   const unlockImagePickerTimerRef = React.useRef<number | null>(null)
   const [isFocus, setIsFocus] = React.useState(false)
@@ -310,6 +317,40 @@ export const TextEditor = React.forwardRef<
         >
           <ImageIcon className="h-5 w-5" />
         </button>
+        <div className="flex items-center gap-1">
+          {onAttachmentUpload ? (
+            <>
+              <button
+                type="button"
+                className={cn(
+                  "flex cursor-pointer select-none items-center gap-1 text-xs text-muted-foreground hover:text-primary",
+                  attachmentUploading && "text-primary"
+                )}
+                onClick={() => attachmentFileRef.current?.click()}
+                disabled={attachmentUploading}
+              >
+                <PaperclipIcon className="h-4 w-4" />
+                {attachmentUploading ? t("component.imageUpload.uploading") : null}
+              </button>
+              <input
+                ref={attachmentFileRef}
+                type="file"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) onAttachmentUpload(file)
+                  if (attachmentFileRef.current) attachmentFileRef.current.value = ""
+                }}
+              />
+            </>
+          ) : null}
+          {attachmentIds && attachmentIds.length > 0 ? (
+            <span className="text-xs text-muted-foreground">
+              {attachmentIds.length} {t("component.attachment.count")}
+            </span>
+          ) : null}
+        </div>
+        <div className="flex-1" />
         <Button
           type="button"
           className="h-6"

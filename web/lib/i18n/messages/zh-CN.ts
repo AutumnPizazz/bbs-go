@@ -1401,6 +1401,9 @@ const zhCN = {
       noClaims: "暂无认领者。",
       remove: "移除",
     },
+    attachment: {
+      count: "个文件",
+    },
   },
   pages: {
     home: {

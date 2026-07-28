@@ -68,6 +68,7 @@ export interface Tag {
 export interface Attachment {
   id: EntityId
   fileName?: string
+  fileUrl?: string
   fileSize?: number
   downloadCount?: number
 }
@@ -146,6 +147,7 @@ export interface Comment {
   contentType?: "text" | "html" | string
   content?: string
   imageList?: ImageInfo[]
+  attachments?: Attachment[]
   likeCount?: number
   commentCount?: number
   liked?: boolean
