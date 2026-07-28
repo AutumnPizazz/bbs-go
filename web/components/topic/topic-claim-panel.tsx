@@ -31,7 +31,7 @@ export function TopicClaimPanel({ topic }: { topic: Topic }) {
 
   const isAuthor = topic.user?.id === currentUser.id
   const isAdmin = (currentUser.roles || "").includes("owner") || (currentUser.roles || "").includes("admin")
-  const myActiveClaim = claims.find((c) => Number(c.userId) === Number(currentUser.id) && c.status === "active")
+  const myActiveClaim = claims.find((c) => c.userIdEncode === currentUser.id && c.status === "active")
   const hasActiveClaim = !!myActiveClaim
 
   const load = React.useCallback(async () => {
@@ -86,9 +86,19 @@ export function TopicClaimPanel({ topic }: { topic: Topic }) {
       {/* Claim / Unclaim button for all users who are not the author */}
       {!isAuthor && (
         hasActiveClaim ? (
-          <div className="mb-2 flex items-center gap-2 rounded-md bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
-            <CheckCircle2Icon className="size-4 text-emerald-500" />
-            {t("component.claim.youClaimed")}
+          <div className="mb-2 flex items-center justify-between rounded-md bg-muted/50 px-3 py-2">
+            <span className="flex items-center gap-2 text-sm text-muted-foreground">
+              <CheckCircle2Icon className="size-4 text-emerald-500" />
+              {t("component.claim.youClaimed")}
+            </span>
+            <button
+              type="button"
+              className="text-xs text-muted-foreground underline hover:text-foreground"
+              onClick={() => void handleUnclaim()}
+              disabled={acting}
+            >
+              {t("component.claim.cancel")}
+            </button>
           </div>
         ) : (
           <Button
@@ -113,13 +123,13 @@ export function TopicClaimPanel({ topic }: { topic: Topic }) {
               className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900 dark:text-amber-300"
             >
               {userLabel(c)}
-              {Number(c.userId) === Number(currentUser.id) ? ` (${t("component.claim.you")})` : ""}
-              {(isAuthor || isAdmin || Number(c.userId) === Number(currentUser.id)) ? (
+              {c.userIdEncode === currentUser.id ? ` (${t("component.claim.you")})` : ""}
+              {(isAuthor || isAdmin || c.userIdEncode === currentUser.id) ? (
                 <button
                   type="button"
                   className="ml-0.5 rounded-full p-0.5 hover:bg-black/10 dark:hover:bg-white/10"
                   onClick={() => {
-                    if (Number(c.userId) === Number(currentUser.id) && !isAuthor && !isAdmin) {
+                    if (c.userIdEncode === currentUser.id && !isAuthor && !isAdmin) {
                       void handleUnclaim()
                     } else {
                       void handleDismiss(Number(c.userId))

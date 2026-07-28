@@ -82,6 +82,13 @@ func (s *commentService) UpdateColumn(id int64, name string, value interface{}) 
 }
 
 func (s *commentService) Delete(id int64) error {
+	// Soft-delete comment attachments
+	comment := s.Get(id)
+	if comment != nil {
+		sqls.WithTransaction(func(ctx *sqls.TxContext) error {
+			return AttachmentService.SoftDeleteByCommentId(ctx, id)
+		})
+	}
 	return repositories.CommentRepository.UpdateColumn(sqls.DB(), id, "status", constants.StatusDeleted)
 }
 
@@ -263,6 +270,14 @@ func (s *commentService) Publish(userId int64, form req.CreateCommentReq) (*mode
 	err := sqls.DB().Transaction(func(tx *gorm.DB) error {
 		if err := repositories.CommentRepository.Create(tx, comment); err != nil {
 			return err
+		}
+
+		// Bind attachments if any
+		if len(form.AttachmentIds) > 0 {
+			ctx := &sqls.TxContext{Tx: tx}
+			if err := AttachmentService.BindToComment(ctx, comment.Id, userId, form.AttachmentIds); err != nil {
+				return err
+			}
 		}
 
 		switch form.EntityType {

@@ -13,6 +13,7 @@ export type TopicAssignment = {
   id: number
   topicId: number
   userId: number
+  userIdEncode?: string
   assignedBy: number
   status: "active" | "resolved" | "dismissed"
   assignedAt: number

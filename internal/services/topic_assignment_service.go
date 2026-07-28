@@ -10,6 +10,7 @@ import (
 
 	"bbs-go/internal/models"
 	"bbs-go/internal/models/constants"
+	"bbs-go/internal/pkg/idcodec"
 )
 
 const (
@@ -50,6 +51,7 @@ func (s *topicAssignmentService) Claim(topicId int64, user *models.User) (*Claim
 		}
 		return &ClaimResponse{
 			Id: existing.Id, TopicId: existing.TopicId, UserId: existing.UserId,
+			UserIdEncode: idcodec.Encode(existing.UserId),
 			AssignedBy: existing.AssignedBy, Status: existing.Status,
 			AssignedAt: existing.AssignedAt, ResolvedAt: existing.ResolvedAt,
 			CreateTime: existing.CreateTime,
@@ -75,6 +77,7 @@ func (s *topicAssignmentService) Claim(topicId int64, user *models.User) (*Claim
 	}
 	return &ClaimResponse{
 		Id: claim.Id, TopicId: claim.TopicId, UserId: claim.UserId,
+		UserIdEncode: idcodec.Encode(claim.UserId),
 		AssignedBy: claim.AssignedBy, Status: claim.Status,
 		AssignedAt: claim.AssignedAt, ResolvedAt: claim.ResolvedAt,
 		CreateTime: claim.CreateTime,
@@ -144,32 +147,34 @@ func (s *topicAssignmentService) ListClaims(topicId int64) []ClaimResponse {
 			username = user.Username.String
 		}
 		result = append(result, ClaimResponse{
-			Id:         c.Id,
-			TopicId:    c.TopicId,
-			UserId:     c.UserId,
-			AssignedBy: c.AssignedBy,
-			Status:     c.Status,
-			AssignedAt: c.AssignedAt,
-			ResolvedAt: c.ResolvedAt,
-			CreateTime: c.CreateTime,
-			Nickname:   nickname,
-			Username:   username,
+			Id:           c.Id,
+			TopicId:      c.TopicId,
+			UserId:       c.UserId,
+			UserIdEncode: idcodec.Encode(c.UserId),
+			AssignedBy:   c.AssignedBy,
+			Status:       c.Status,
+			AssignedAt:   c.AssignedAt,
+			ResolvedAt:   c.ResolvedAt,
+			CreateTime:   c.CreateTime,
+			Nickname:     nickname,
+			Username:     username,
 		})
 	}
 	return result
 }
 
 type ClaimResponse struct {
-	Id         int64  `json:"id"`
-	TopicId    int64  `json:"topicId"`
-	UserId     int64  `json:"userId"`
-	AssignedBy int64  `json:"assignedBy"`
-	Status     string `json:"status"`
-	AssignedAt int64  `json:"assignedAt"`
-	ResolvedAt int64  `json:"resolvedAt"`
-	CreateTime int64  `json:"createTime"`
-	Nickname   string `json:"nickname"`
-	Username   string `json:"username"`
+	Id           int64  `json:"id"`
+	TopicId      int64  `json:"topicId"`
+	UserId       int64  `json:"userId"`
+	UserIdEncode string `json:"userIdEncode"`
+	AssignedBy   int64  `json:"assignedBy"`
+	Status       string `json:"status"`
+	AssignedAt   int64  `json:"assignedAt"`
+	ResolvedAt   int64  `json:"resolvedAt"`
+	CreateTime   int64  `json:"createTime"`
+	Nickname     string `json:"nickname"`
+	Username     string `json:"username"`
 }
 
 // ListClaimedTopics returns claims by a user.

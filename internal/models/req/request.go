@@ -189,13 +189,14 @@ func (r UserForbiddenReq) DecodedUserId() int64 {
 }
 
 type CreateCommentReq struct {
-	EntityType string `json:"entityType" form:"entityType"`
-	EntityId   string `json:"entityId" form:"entityId"`
-	Content    string `json:"content" form:"content"`
-	ImageList  string `json:"imageList" form:"imageList"`
-	QuoteId    int64  `json:"quoteId" form:"quoteId"`
-	UserAgent  string `json:"userAgent" form:"userAgent"`
-	Ip         string `json:"ip" form:"ip"`
+	EntityType    string   `json:"entityType" form:"entityType"`
+	EntityId      string   `json:"entityId" form:"entityId"`
+	Content       string   `json:"content" form:"content"`
+	ImageList     string   `json:"imageList" form:"imageList"`
+	AttachmentIds []string `json:"attachmentIds" form:"attachmentIds"`
+	QuoteId       int64    `json:"quoteId" form:"quoteId"`
+	UserAgent     string   `json:"userAgent" form:"userAgent"`
+	Ip            string   `json:"ip" form:"ip"`
 }
 
 func (r CreateCommentReq) DecodedEntityId() int64 {

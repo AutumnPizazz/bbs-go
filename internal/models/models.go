@@ -392,6 +392,8 @@ type UserReport struct {
 type Attachment struct {
 	Id            string `gorm:"primaryKey;size:64" json:"id" form:"id"`
 	TopicId       int64  `gorm:"not null;default:0;index:idx_attachment_topic_id" json:"topicId" form:"topicId"`            // 所属帖子 ID
+	EntityType    string `gorm:"size:32;not null;default:'';index:idx_attachment_entity" json:"entityType" form:"entityType"`   // 绑定实体类型：topic / comment
+	EntityId      int64  `gorm:"not null;default:0;index:idx_attachment_entity" json:"entityId" form:"entityId"`                 // 绑定实体 ID
 	UserId        int64  `gorm:"not null;index:idx_attachment_user_id" json:"userId" form:"userId"`                         // 上传者（发帖人）ID
 	FileName      string `gorm:"size:256" json:"fileName" form:"fileName"`                                                  // 原始文件名
 	FileUrl       string `gorm:"size:1024" json:"fileUrl" form:"fileUrl"`                                                   // 访问地址（相对路径或完整 URL，上传返回）

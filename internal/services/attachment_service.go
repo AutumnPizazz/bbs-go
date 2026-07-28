@@ -238,6 +238,49 @@ func (s *attachmentService) SoftDeleteByTopicId(ctx *sqls.TxContext, topicId int
 	})
 }
 
+// BindToComment binds uploaded attachments to a comment.
+func (s *attachmentService) BindToComment(ctx *sqls.TxContext, commentId, userId int64, attachmentIds []string) error {
+	for _, aid := range attachmentIds {
+		if strs.IsBlank(aid) {
+			continue
+		}
+		att := repositories.AttachmentRepository.Get(ctx.Tx, aid)
+		if att == nil || att.UserId != userId {
+			return errors.New(locales.Get("attachment.no_permission"))
+		}
+		if att.EntityId != 0 && att.EntityId != commentId {
+			return errors.New(locales.Get("attachment.already_bound"))
+		}
+		if err := repositories.AttachmentRepository.Updates(ctx.Tx, aid, map[string]interface{}{
+			"entity_type": constants.EntityComment,
+			"entity_id":   commentId,
+			"status":      constants.StatusOk,
+			"update_time": dates.NowTimestamp(),
+		}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ListByCommentId returns attachments bound to a comment.
+func (s *attachmentService) ListByCommentId(commentId int64) []models.Attachment {
+	var list []models.Attachment
+	sqls.DB().Where("entity_type = ? AND entity_id = ? AND status = ?",
+		constants.EntityComment, commentId, constants.StatusOk).
+		Order("create_time asc").Find(&list)
+	return list
+}
+
+// SoftDeleteByCommentId soft-deletes attachments when a comment is deleted.
+func (s *attachmentService) SoftDeleteByCommentId(ctx *sqls.TxContext, commentId int64) error {
+	return ctx.Tx.Model(&models.Attachment{}).
+		Where("entity_type = ? AND entity_id = ?", constants.EntityComment, commentId).
+		Updates(map[string]interface{}{
+			"status": constants.StatusDeleted, "update_time": dates.NowTimestamp(),
+		}).Error
+}
+
 // ReplaceTopicAttachments 编辑帖时全量替换附件
 func (s *attachmentService) ReplaceTopicAttachments(ctx *sqls.TxContext, topicId, userId, categoryId int64, attachmentIds []string) error {
 	newSet := make(map[string]bool, len(attachmentIds))

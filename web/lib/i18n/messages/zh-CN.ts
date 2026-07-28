@@ -2,9 +2,11 @@ const zhCN = {
   common: {
     noData: "暂无数据",
     user: "用户",
+    topic: "话题",
     confirm: "确定",
     cancel: "取消",
     message: "消息",
+    notLoggedIn: "请登录后查看此页面。",
     moreActions: "更多操作",
     pagination: {
       previous: "上一页",
@@ -1394,6 +1396,7 @@ const zhCN = {
       unclaim: "取消认领",
       claimed: "你已认领此问题。",
       youClaimed: "您已认领此提问",
+      cancel: "取消",
       you: "你",
       noClaims: "暂无认领者。",
       remove: "移除",
@@ -1760,16 +1763,6 @@ const zhCN = {
         title: "重置密码",
       },
     },
-    assigned: {
-      title: "我认领的",
-      empty: "你还没有认领任何提问。",
-      pending: "待处理",
-      solved: "已解决",
-      dismissed: "已忽略",
-      statusActive: "等待你的回复",
-      statusResolved: "已解决",
-      statusDismissed: "已被驳回",
-    },
     profile: {
       title: "个人资料",
       backToProfile: "返回个人主页",
@@ -1805,6 +1798,16 @@ const zhCN = {
         confirmUnbind: "确定要解除绑定？",
       },
     },
+  },
+  assigned: {
+    title: "我认领的",
+    empty: "你还没有认领任何提问。",
+    pending: "待处理",
+    solved: "已解决",
+    dismissed: "已忽略",
+    statusActive: "等待你的回复",
+    statusResolved: "已解决",
+    statusDismissed: "已被驳回",
   },
 } as const
 

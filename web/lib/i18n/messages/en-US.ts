@@ -2,9 +2,11 @@ const enUS = {
   common: {
     noData: "No items yet",
     user: "User",
+    topic: "Topic",
     confirm: "Confirm",
     cancel: "Cancel",
     message: "Messages",
+    notLoggedIn: "Please sign in to view this page.",
     moreActions: "More actions",
     pagination: {
       previous: "Previous",
@@ -1408,6 +1410,7 @@ const enUS = {
       unclaim: "Release claim",
       claimed: "You have claimed this question.",
       youClaimed: "You have claimed this question",
+      cancel: "Cancel",
       you: "you",
       noClaims: "No one has claimed this yet.",
       remove: "Remove",
@@ -1788,16 +1791,6 @@ const enUS = {
         title: "Reset password",
       },
     },
-    assigned: {
-      title: "My Claims",
-      empty: "You haven't claimed any questions yet.",
-      pending: "Pending",
-      solved: "Solved",
-      dismissed: "Dismissed",
-      statusActive: "Waiting for your response",
-      statusResolved: "Already resolved",
-      statusDismissed: "Dismissed by author",
-    },
     profile: {
       title: "Profile",
       backToProfile: "Back to Profile",
@@ -1833,6 +1826,16 @@ const enUS = {
         confirmUnbind: "Are you sure you want to unbind?",
       },
     },
+  },
+  assigned: {
+    title: "My Claims",
+    empty: "You haven't claimed any questions yet.",
+    pending: "Pending",
+    solved: "Solved",
+    dismissed: "Dismissed",
+    statusActive: "Waiting for your response",
+    statusResolved: "Already resolved",
+    statusDismissed: "Dismissed by author",
   },
 } as const
 
