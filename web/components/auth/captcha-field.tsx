@@ -15,13 +15,8 @@ interface CaptchaResponse {
   captchaBase64: string
 }
 
-interface RotateCaptchaResponse {
-  id: string
-  imageBase64: string
-  thumbBase64: string
-  thumbSize: number
-}
-
+// CaptchaField is the legacy text-based captcha (dchest/captcha).
+// Kept as a fallback option; currently the app uses CaptchaChallenge (slide captcha).
 export function CaptchaField() {
   const { t } = useI18n()
   const [captcha, setCaptcha] = useState<CaptchaResponse | null>(null)
@@ -111,6 +106,16 @@ export function CaptchaField() {
   )
 }
 
+interface SlideCaptchaResponse {
+  id: string
+  imageBase64: string
+  thumbBase64: string
+  thumbX: number
+  thumbY: number
+  thumbWidth: number
+  thumbHeight: number
+}
+
 export interface CaptchaChallengeHandle {
   open: () => Promise<void>
   reset: () => void
@@ -127,7 +132,7 @@ export const CaptchaChallenge = forwardRef<CaptchaChallengeHandle, { onVerified:
   ref,
 ) {
   const { t } = useI18n()
-  const [captcha, setCaptcha] = useState<RotateCaptchaResponse | null>(null)
+  const [captcha, setCaptcha] = useState<SlideCaptchaResponse | null>(null)
   const [loading, setLoading] = useState(false)
   const [open, setOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -140,7 +145,7 @@ export const CaptchaChallenge = forwardRef<CaptchaChallengeHandle, { onVerified:
     setError(null)
 
     try {
-      const data = await apiFetch<RotateCaptchaResponse>("/api/captcha/request_angle")
+      const data = await apiFetch<SlideCaptchaResponse>("/api/captcha/request_angle")
       setCaptcha(data)
     } catch {
       setCaptcha(null)
@@ -183,22 +188,24 @@ export const CaptchaChallenge = forwardRef<CaptchaChallengeHandle, { onVerified:
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-auto max-w-none overflow-hidden rounded-lg bg-white p-0 shadow-lg">
             {captcha ? (
-              <GoCaptcha.Rotate
+              <GoCaptcha.Slide
                 config={{ title: t("captcha.title") }}
                 data={{
                   image: captcha.imageBase64,
                   thumb: captcha.thumbBase64,
-                  thumbSize: captcha.thumbSize,
-                  angle: 0,
+                  thumbX: captcha.thumbX,
+                  thumbY: captcha.thumbY,
+                  thumbWidth: captcha.thumbWidth,
+                  thumbHeight: captcha.thumbHeight,
                 }}
                 events={{
                   refresh: () => {
                     void refreshCaptcha()
                   },
                   close: () => setOpen(false),
-                  confirm: (angle) => {
+                  confirm: (point) => {
                     if (captchaIdRef.current) captchaIdRef.current.value = captcha.id
-                    if (captchaCodeRef.current) captchaCodeRef.current.value = String(angle)
+                    if (captchaCodeRef.current) captchaCodeRef.current.value = `${point.x},${point.y}`
                     setOpen(false)
                     onVerified()
                   },

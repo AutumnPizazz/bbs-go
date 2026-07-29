@@ -1,7 +1,13 @@
 FROM node:24-alpine AS web-builder
 WORKDIR /src/web
 
-RUN corepack enable && corepack prepare pnpm@10.30.2 --activate
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+ARG NO_PROXY
+ENV HTTP_PROXY=${HTTP_PROXY} HTTPS_PROXY=${HTTPS_PROXY} NO_PROXY=${NO_PROXY}
+
+RUN npm config set registry https://registry.npmmirror.com \
+	&& npm install -g pnpm@10.30.2
 COPY web/package.json web/pnpm-lock.yaml web/pnpm-workspace.yaml web/.npmrc ./
 RUN pnpm install --frozen-lockfile
 
@@ -17,6 +23,12 @@ RUN pnpm prune --prod
 
 FROM golang:1.26-alpine AS server-builder
 WORKDIR /src
+
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+ARG NO_PROXY
+ENV HTTP_PROXY=${HTTP_PROXY} HTTPS_PROXY=${HTTPS_PROXY} NO_PROXY=${NO_PROXY}
+ENV GOPROXY=https://goproxy.cn,direct
 
 RUN apk add --no-cache git
 COPY go.mod go.sum ./
@@ -35,6 +47,10 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 
 FROM node:24-bookworm-slim AS app
 WORKDIR /app
+
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+ENV HTTP_PROXY=${HTTP_PROXY} HTTPS_PROXY=${HTTPS_PROXY}
 
 ENV NODE_ENV=production \
 	PORT=3000 \

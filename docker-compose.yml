@@ -34,6 +34,9 @@ services:
       args:
         TARGETOS: linux
         TARGETARCH: amd64
+        HTTP_PROXY: ${HTTP_PROXY:-}
+        HTTPS_PROXY: ${HTTPS_PROXY:-}
+        NO_PROXY: ${NO_PROXY:-}
     image: bbs-go:local
     restart: unless-stopped
     logging:

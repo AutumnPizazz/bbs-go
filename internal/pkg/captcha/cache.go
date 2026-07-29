@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/goburrow/cache"
-	"github.com/wenlng/go-captcha/v2/rotate"
+	"github.com/wenlng/go-captcha/v2/slide"
 )
 
 var captchaCache cache.Cache
@@ -16,14 +16,14 @@ func init() {
 	)
 }
 
-func Get(captchaId string) *rotate.Block {
+func Get(captchaId string) *slide.Block {
 	if v, ok := captchaCache.GetIfPresent(captchaId); ok {
-		return v.(*rotate.Block)
+		return v.(*slide.Block)
 	}
 	return nil
 }
 
-func Set(captchaId string, captcha *rotate.Block) {
+func Set(captchaId string, captcha *slide.Block) {
 	captchaCache.Put(captchaId, captcha)
 }
 

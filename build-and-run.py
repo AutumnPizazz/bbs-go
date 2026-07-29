@@ -89,6 +89,10 @@ def main() -> int:
     # MySQL-backed deployment as the release configuration. Use --native for
     # the legacy Go/SQLite development process.
     if "--native" not in sys.argv[1:]:
+        # Set proxy for Docker containers to reach the host machine.
+        proxy_url = "http://host.docker.internal:7897"
+        os.environ.setdefault("HTTP_PROXY", proxy_url)
+        os.environ.setdefault("HTTPS_PROXY", proxy_url)
         try:
             docker = require_command("docker", "Install Docker Desktop and start its engine.")
             run([docker, "compose", "up", "-d", "--build"], ROOT)
