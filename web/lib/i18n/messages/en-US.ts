@@ -18,6 +18,8 @@ const enUS = {
       loading: "Loading",
       error: "Couldn't load more items. Try again.",
     },
+    expand: "Expand",
+    collapse: "Collapse",
     createBtn: {
       create: "Create",
       topic: "Post",

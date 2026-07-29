@@ -18,6 +18,8 @@ const zhCN = {
       loading: "加载中",
       error: "加载更多失败",
     },
+    expand: "展开",
+    collapse: "折叠",
     createBtn: {
       create: "发表",
       topic: "发帖",

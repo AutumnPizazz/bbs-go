@@ -52,6 +52,7 @@ export interface Category {
   qaCount?: number
   solvedCount?: number
   unsolvedCount?: number
+  hasChildren?: boolean
   attachmentConfig?: AttachmentConfig
   children?: Category[]
 }

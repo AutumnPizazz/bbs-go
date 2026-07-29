@@ -99,44 +99,57 @@ export function NodeTopicClientPage({
   const categoryId = resolveCategoryId(id)
   const [searchParams, setSearchParams] = useSearchParams()
   const { t } = useI18n()
-  const load = React.useCallback(
+
+  // Fetch the full category tree once (includes stats, hasChildren, recursive children).
+  const loadTree = React.useCallback(
     () =>
-      apiFetch<Category>("/api/topic/category", { params: { categoryId } }).catch(
-        (): Category => ({ id: categoryId, name: "", children: [] })
+      apiFetch<Category[]>("/api/topic/category_navs").catch(
+        (): Category[] => []
       ),
-    [categoryId]
+    []
   )
-  const { data: node } = useRouteData(`category:${id}`, load)
-  const currentNode =
-    categoryId > 0 && String(node?.id) === String(categoryId) ? node : undefined
-  const rootCategoryId = currentNode?.parentId || currentNode?.id || categoryId
-  const loadRootNode = React.useCallback(() => {
-    if (categoryId <= 0) return Promise.resolve<Category | null>(null)
-    if (!currentNode?.parentId) return Promise.resolve(currentNode || null)
-    return apiFetch<Category>("/api/topic/category", {
-      params: { categoryId: currentNode.parentId },
-    }).catch(() => null)
-  }, [currentNode, categoryId])
-  const { data: rootNode } = useRouteData<Category | null>(
-    categoryId > 0 ? `topic-root-node:${rootCategoryId}` : "",
-    loadRootNode,
-    null
+  const { data: categoryTree } = useRouteData<Category[]>(
+    "category-tree",
+    loadTree
   )
-  const currentRootNode =
-    categoryId > 0 && String(rootNode?.id) === String(rootCategoryId)
-      ? rootNode
-      : currentNode?.id === rootCategoryId
-        ? currentNode
-        : undefined
-  const subNodes =
-    categoryId > 0 && currentRootNode?.children?.length
-      ? currentRootNode.children
-      : []
-  // Third-level children of the currently selected (second-level) node
-  const thirdLevelNodes =
-    categoryId > 0 && currentNode?.children?.length && currentNode.id !== rootCategoryId
-      ? currentNode.children
-      : []
+  const tree = categoryTree ?? []
+
+  // Find current node in the tree.
+  const currentNode = React.useMemo(() => {
+    if (categoryId <= 0) return undefined
+    function find(nodes: Category[]): Category | undefined {
+      for (const n of nodes) {
+        if (n.id === categoryId) return n
+        if (n.children?.length) {
+          const r = find(n.children)
+          if (r) return r
+        }
+      }
+      return undefined
+    }
+    return find(tree)
+  }, [tree, categoryId])
+
+  // Find ancestors (root → … → parent).
+  const ancestors = React.useMemo(() => {
+    if (categoryId <= 0) return [] as number[]
+    function walk(nodes: Category[], path: number[]): number[] | null {
+      for (const n of nodes) {
+        if (n.id === categoryId) return path
+        if (n.children?.length) {
+          const r = walk(n.children, [...path, n.id])
+          if (r) return r
+        }
+      }
+      return null
+    }
+    return walk(tree, []) ?? []
+  }, [tree, categoryId])
+
+  // The "root" is the first ancestor (or the current node itself if top-level).
+  const rootCategoryId =
+    ancestors.length > 0 ? ancestors[0] : currentNode?.id || categoryId
+
   const hasCurrentNode = categoryId > 0 && Boolean(currentNode)
   const sortValue = searchParams.get("sort") || ""
   const normalSort = sortOptions.includes(sortValue) ? sortValue : "latestPublish"
@@ -221,10 +234,9 @@ export function NodeTopicClientPage({
               <TopicFeedTabs currentCategoryId={categoryId} />
             ) : null}
             <TopicSubCategoryNav
-              rootCategoryId={rootCategoryId}
-              categories={subNodes}
+              key={categoryId}
+              categoryTree={tree}
               currentCategoryId={categoryId}
-              thirdLevelCategories={thirdLevelNodes}
             />
             {currentFilters.length > 0 ? (
               <div className="flex justify-between border-b border-border px-4 py-3">

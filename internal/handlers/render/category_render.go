@@ -22,6 +22,7 @@ func BuildCategory(category *models.Category) *resp.CategoryResponse {
 		Logo:             category.Logo,
 		Description:      category.Description,
 		AttachmentConfig: services.CategoryService.GetAttachmentConfig(category.Id),
+		HasChildren:      services.CategoryService.HasChildren(category.Id),
 	}
 }
 
@@ -59,6 +60,17 @@ func BuildCategoryResponses(categories []models.Category) []resp.CategoryRespons
 }
 
 func BuildCategoryResponseTree(parentId int64, list []models.Category) []resp.CategoryResponse {
+	// Pre-compute which IDs have children to avoid N+1 queries.
+	parents := make(map[int64]bool)
+	for _, c := range list {
+		if c.ParentId > 0 {
+			parents[c.ParentId] = true
+		}
+	}
+	return buildCategoryResponseTree(parentId, list, parents)
+}
+
+func buildCategoryResponseTree(parentId int64, list []models.Category, parents map[int64]bool) []resp.CategoryResponse {
 	var ret []resp.CategoryResponse
 	for _, category := range list {
 		if category.ParentId != parentId {
@@ -68,7 +80,9 @@ func BuildCategoryResponseTree(parentId int64, list []models.Category) []resp.Ca
 		if item == nil {
 			continue
 		}
-		children := BuildCategoryResponseTree(category.Id, list)
+		// Override HasChildren from pre-built map (avoids per-node DB query).
+		item.HasChildren = parents[category.Id]
+		children := buildCategoryResponseTree(category.Id, list, parents)
 		if len(children) > 0 {
 			item.Children = children
 		}

@@ -179,6 +179,15 @@ func (s *categoryService) GetChildren(parentId int64) []models.Category {
 		Asc("sort_no").Desc("id"))
 }
 
+// HasChildren returns whether the category has any active child categories.
+func (s *categoryService) HasChildren(categoryId int64) bool {
+	var count int64
+	sqls.DB().Model(&models.Category{}).
+		Where("status = ? AND parent_id = ?", constants.StatusOk, categoryId).
+		Count(&count)
+	return count > 0
+}
+
 // GetCategoryIdsForList returns a category and all active descendants.
 func (s *categoryService) GetCategoryIdsForList(categoryId int64) []int64 {
 	if categoryId <= 0 {

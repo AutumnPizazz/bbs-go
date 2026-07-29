@@ -63,6 +63,7 @@ type CategoryResponse struct {
 	QaCount          int64                `json:"qaCount"`
 	SolvedCount      int64                `json:"solvedCount"`
 	UnsolvedCount    int64                `json:"unsolvedCount"`
+	HasChildren      bool                 `json:"hasChildren"`
 	Children         []CategoryResponse   `json:"children,omitempty"`
 }
 
