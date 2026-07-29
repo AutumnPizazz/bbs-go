@@ -243,25 +243,25 @@
     position: relative;
   }
 
-  .dock-nav li::before {
-    visibility: hidden;
-    position: absolute;
-    content: "";
-    inset: 0;
+  .dock-nav li.active > a,
+  .dock-nav a:hover {
     background-color: var(--topics-nav-color1);
-    transition: all 0.1s ease-out 0.05s;
-  }
-
-  .dock-nav li:hover::before {
-    visibility: visible;
+    border-radius: 6px;
   }
 
   .dock-nav li.active {
+    background-color: transparent;
+  }
+
+  .dock-nav li.active > a {
     background-color: var(--topics-nav-color3);
   }
 
-  .dock-nav li.active a,
-  .dock-nav li:hover a {
+  .dock-nav li.active > a {
+    color: var(--topics-nav-active-foreground);
+  }
+
+  .dock-nav a:hover {
     color: var(--topics-nav-active-foreground);
   }
 

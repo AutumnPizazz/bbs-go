@@ -118,9 +118,7 @@ function CategoryTreeNode({
     node.hasChildren ||
     (node.children && node.children.length > 0)
   )
-  const isRootActive = currentRootCategoryId === node.id
-  const isLeafActive = currentCategoryId === node.id
-  const active = isRootActive || (isLeafActive && node.id === currentRootCategoryId)
+  const active = currentCategoryId !== undefined && currentCategoryId === node.id
 
   const badgeEl = node.unsolvedCount ? (
     <span className="ml-auto shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
@@ -203,9 +201,7 @@ function MobileDrawerTreeNode({
     node.hasChildren ||
     (node.children && node.children.length > 0)
   )
-  const isRootActive = currentRootCategoryId === node.id
-  const isLeafActive = currentCategoryId === node.id
-  const active = isRootActive || (isLeafActive && node.id === currentRootCategoryId)
+  const active = currentCategoryId !== undefined && currentCategoryId === node.id
 
   const badgeEl = node.unsolvedCount ? (
     <span className="ml-auto shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
