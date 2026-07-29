@@ -15,6 +15,7 @@ import {
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
+  DrawerDescription,
   DrawerTrigger,
 } from "@/components/ui/drawer"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -104,7 +105,6 @@ function CategoryTreeNode({
   onToggle,
   currentCategoryId,
   currentRootCategoryId,
-  isMobile,
 }: {
   node: Category
   depth: number
@@ -112,9 +112,7 @@ function CategoryTreeNode({
   onToggle: (id: number) => void
   currentCategoryId?: number
   currentRootCategoryId?: number
-  isMobile?: boolean
 }) {
-  const { t } = useI18n()
   const expanded = expandedIds.has(node.id)
   const canExpand = !!(
     node.hasChildren ||
@@ -141,51 +139,6 @@ function CategoryTreeNode({
     )
 
   const indent = depth * 16
-
-  // --- mobile: inside Drawer ---
-  if (isMobile) {
-    return (
-      <>
-        <div className={cn("flex w-full items-center", active && "active")}>
-          <DrawerClose asChild>
-            <Link
-              href={nodeHref(node)}
-              className={cn(
-                "topics-mobile-category-item flex-1",
-                active && "active"
-              )}
-              style={{ paddingLeft: `${indent + 8}px` }}
-            >
-              <TreeChevron
-                canExpand={canExpand}
-                expanded={expanded}
-                onToggle={() => onToggle(node.id)}
-              />
-              {logoEl}
-              <span>{node.name}</span>
-              {badgeEl}
-            </Link>
-          </DrawerClose>
-        </div>
-        {expanded && node.children?.length ? (
-          <div className="ml-3">
-            {node.children.map((child) => (
-              <CategoryTreeNode
-                key={child.id}
-                node={child}
-                depth={depth + 1}
-                expandedIds={expandedIds}
-                onToggle={onToggle}
-                currentCategoryId={currentCategoryId}
-                currentRootCategoryId={currentRootCategoryId}
-                isMobile
-              />
-            ))}
-          </div>
-        ) : null}
-      </>
-    )
-  }
 
   // --- desktop ---
   return (
@@ -223,6 +176,94 @@ function CategoryTreeNode({
         </ul>
       ) : null}
     </li>
+  )
+}
+
+// ----------------------------------------------------------------
+// Mobile drawer recursive tree node
+// ----------------------------------------------------------------
+
+function MobileDrawerTreeNode({
+  node,
+  depth,
+  expandedIds,
+  onToggle,
+  currentCategoryId,
+  currentRootCategoryId,
+}: {
+  node: Category
+  depth: number
+  expandedIds: Set<number>
+  onToggle: (id: number) => void
+  currentCategoryId?: number
+  currentRootCategoryId?: number
+}) {
+  const expanded = expandedIds.has(node.id)
+  const canExpand = !!(
+    node.hasChildren ||
+    (node.children && node.children.length > 0)
+  )
+  const isRootActive = currentRootCategoryId === node.id
+  const isLeafActive = currentCategoryId === node.id
+  const active = isRootActive || (isLeafActive && node.id === currentRootCategoryId)
+
+  const badgeEl = node.unsolvedCount ? (
+    <span className="ml-auto shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
+      {node.unsolvedCount}
+    </span>
+  ) : null
+
+  const logoEl =
+    node.logo ? (
+      <i
+        className="node-logo shrink-0"
+        style={{ backgroundImage: `url(${node.logo})` }}
+      />
+    ) : (
+      <i className="node-logo shrink-0" />
+    )
+
+  const indent = depth * 16
+
+  return (
+    <>
+      <div className={cn("w-full", active && "[&>a]:bg-primary [&>a]:text-primary-foreground")}>
+        <DrawerClose asChild>
+          <Link
+            href={nodeHref(node)}
+            className={cn(
+              "topics-mobile-category-item",
+              active && "active"
+            )}
+            style={{ paddingLeft: `${indent + 8}px` }}
+          >
+            <TreeChevron
+              canExpand={canExpand}
+              expanded={expanded}
+              onToggle={() => onToggle(node.id)}
+            />
+            {logoEl}
+            <span className="min-w-0 truncate">{node.name}</span>
+            {badgeEl}
+          </Link>
+        </DrawerClose>
+      </div>
+      {expanded && node.children?.length ? (
+        <div>
+          {node.children.map((child) => (
+            <MobileDrawerTreeNode
+              key={child.id}
+              node={child}
+              depth={depth + 1}
+              expandedIds={expandedIds}
+              onToggle={onToggle}
+              currentCategoryId={currentCategoryId}
+              currentRootCategoryId={currentRootCategoryId}
+            />
+          ))}
+        </div>
+      ) : null}
+    </>
   )
 }
 
@@ -311,6 +352,17 @@ export function TopicsNavContent({
       ? "all"
       : String(currentRootCategoryId || currentCategoryId || "")
 
+  // --- mobile hint bubble ---
+  const [showMobileHint, setShowMobileHint] = React.useState(true)
+  React.useEffect(() => {
+    if (!showMobileHint) return
+    const timer = window.setTimeout(() => setShowMobileHint(false), 6000)
+    return () => window.clearTimeout(timer)
+  }, [showMobileHint])
+  React.useEffect(() => {
+    if (mobileDrawerOpen && showMobileHint) setShowMobileHint(false)
+  }, [mobileDrawerOpen, showMobileHint])
+
   // Scroll mobile row so active node is visible.
   React.useEffect(() => {
     if (!activeNodeId) return
@@ -355,7 +407,50 @@ export function TopicsNavContent({
     )
   }
 
-  function renderMobileTree() {
+  // ---------- mobile: horizontal quick-nav (root items only, no children) ----------
+  function renderMobileQuickNav() {
+    return (
+      <ul className="dock-nav-list">
+        <li
+          data-node-id="all"
+          className={cn(
+            currentCategoryId !== undefined && currentCategoryId <= 0 && "active"
+          )}
+        >
+          <Link href="/topics" className="flex items-center gap-2">
+            <LayoutGridIcon className="node-logo node-logo-icon" aria-hidden="true" />
+            <div className="node-name">{allCategoryLabel}</div>
+          </Link>
+        </li>
+        {visibleCategories.map((node) => {
+          const active =
+            currentRootCategoryId === node.id || currentCategoryId === node.id
+          return (
+            <li
+              key={node.id}
+              data-node-id={node.id}
+              className={cn(active && "active")}
+            >
+              <Link href={nodeHref(node)} className="flex items-center gap-2">
+                {node.logo ? (
+                  <i
+                    className="node-logo shrink-0"
+                    style={{ backgroundImage: `url(${node.logo})` }}
+                  />
+                ) : (
+                  <i className="node-logo shrink-0" />
+                )}
+                <div className="node-name">{node.name}</div>
+              </Link>
+            </li>
+          )
+        })}
+      </ul>
+    )
+  }
+
+  // ---------- mobile: drawer with full expandable tree ----------
+  function renderMobileDrawerTree() {
     return (
       <div className="topics-mobile-category-list">
         <DrawerClose asChild>
@@ -371,7 +466,7 @@ export function TopicsNavContent({
           </Link>
         </DrawerClose>
         {visibleCategories.map((node) => (
-          <CategoryTreeNode
+          <MobileDrawerTreeNode
             key={`mobile-${node.id}`}
             node={node}
             depth={0}
@@ -379,7 +474,6 @@ export function TopicsNavContent({
             onToggle={handleToggle}
             currentCategoryId={currentCategoryId}
             currentRootCategoryId={currentRootCategoryId}
-            isMobile
           />
         ))}
       </div>
@@ -401,27 +495,38 @@ export function TopicsNavContent({
             className="dock-nav-scroll"
             aria-label={allCategoryLabel}
           >
-            {renderDesktopTree()}
+            {renderMobileQuickNav()}
           </div>
-          <Drawer open={mobileDrawerOpen} onOpenChange={setMobileDrawerOpen}>
-            <DrawerTrigger asChild>
-              <button
-                type="button"
-                className="topics-mobile-category-more"
-                aria-label={moreCategoriesLabel}
-                title={moreCategoriesLabel}
-              >
-                <MoreHorizontalIcon aria-hidden="true" />
-                <span>{t("pages.topic.categorySelector.more")}</span>
-              </button>
-            </DrawerTrigger>
+          <div className="relative inline-flex">
+            {showMobileHint ? (
+              <span className="absolute top-full right-0 z-10 mt-2 w-44 rounded-lg border border-border bg-popover px-3 py-2 text-xs leading-relaxed text-popover-foreground shadow-md animate-in fade-in slide-in-from-right-2">
+                {t("pages.topic.categorySelector.mobileHint")}
+                <span className="absolute -top-1 right-4 h-2 w-2 rotate-45 border-l border-t border-border bg-popover" />
+              </span>
+            ) : null}
+            <Drawer open={mobileDrawerOpen} onOpenChange={setMobileDrawerOpen}>
+              <DrawerTrigger asChild>
+                <button
+                  type="button"
+                  className="topics-mobile-category-more"
+                  aria-label={moreCategoriesLabel}
+                  title={moreCategoriesLabel}
+                >
+                  <MoreHorizontalIcon aria-hidden="true" />
+                  <span>{t("pages.topic.categorySelector.more")}</span>
+                </button>
+              </DrawerTrigger>
             <DrawerContent className="topics-mobile-category-drawer">
               <DrawerHeader>
                 <DrawerTitle>{moreCategoriesLabel}</DrawerTitle>
+                <DrawerDescription className="sr-only">
+                  {t("pages.topic.categorySelector.mobileHint")}
+                </DrawerDescription>
               </DrawerHeader>
-              {renderMobileTree()}
+              {renderMobileDrawerTree()}
             </DrawerContent>
-          </Drawer>
+            </Drawer>
+          </div>
         </div>
       </nav>
     </div>

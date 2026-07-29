@@ -1446,6 +1446,7 @@ const zhCN = {
         empty: "没有匹配的分类",
         expand: "展开子分类",
         collapse: "收起子分类",
+        mobileHint: "点这里查看全部分类",
       },
       detail: {
         publishedAt: "发布于",

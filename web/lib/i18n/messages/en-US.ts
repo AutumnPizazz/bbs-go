@@ -1461,6 +1461,7 @@ const enUS = {
         empty: "No matching categories",
         expand: "Expand subcategories",
         collapse: "Collapse subcategories",
+        mobileHint: "Tap here to see all categories",
       },
       detail: {
         publishedAt: "Published at",
