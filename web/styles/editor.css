@@ -351,6 +351,76 @@
     user-select: none;
   }
 
+  /* ---- 表格样式 ---- */
+  .editor-content .tiptap table {
+    width: 100%;
+    margin: 16px 0;
+    border-collapse: collapse;
+    border: 1px solid var(--editor-border);
+    table-layout: auto;
+  }
+
+  .editor-content .tiptap th,
+  .editor-content .tiptap td {
+    position: relative;
+    border: 1px solid var(--editor-border);
+    padding: 8px 12px;
+    min-width: 60px;
+    vertical-align: top;
+  }
+
+  .editor-content .tiptap th {
+    background: var(--editor-hover);
+    font-weight: 600;
+    text-align: left;
+  }
+
+  .editor-content .tiptap .selectedCell {
+    background: color-mix(in srgb, var(--editor-focus) 15%, transparent);
+  }
+
+  /* 表格列宽拖拽手柄 */
+  .editor-content .tiptap .column-resize-handle {
+    position: absolute;
+    top: 0;
+    right: -2px;
+    bottom: 0;
+    z-index: 20;
+    width: 4px;
+    background: var(--editor-focus);
+    opacity: 0;
+    cursor: col-resize;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+  }
+
+  .editor-content .tiptap table:hover .column-resize-handle {
+    opacity: 0.3;
+  }
+
+  .editor-content .tiptap .column-resize-handle:hover {
+    opacity: 1;
+  }
+
+  /* 表格容器（响应式滚动） */
+  .editor-content .tiptap .tableWrapper {
+    overflow-x: auto;
+    margin: 16px 0;
+  }
+
+  /* ---- 高亮标记样式 ---- */
+  .editor-content .tiptap mark {
+    border-radius: 2px;
+    background: #fef08a;
+    padding: 0.15em 0.3em;
+    color: inherit;
+  }
+
+  .dark .editor-content .tiptap mark {
+    background: #854d0e;
+    color: #fef08a;
+  }
+
   .resizable-image-wrapper {
     position: relative;
     display: inline-block;

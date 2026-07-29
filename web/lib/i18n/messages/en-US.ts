@@ -1230,6 +1230,8 @@ const enUS = {
         link: "Link",
         image: "Insert image",
         horizontalRule: "Divider",
+        table: "Insert table",
+        highlight: "Highlight",
         fullscreen: "Fullscreen",
         exitFullscreen: "Exit fullscreen",
         uploading: "Uploading...",

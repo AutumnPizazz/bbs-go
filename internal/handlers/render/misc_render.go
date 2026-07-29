@@ -26,7 +26,24 @@ import (
 
 func xssProtection(htmlContent string) string {
 	ugcProtection := bluemonday.UGCPolicy() // 用户生成内容模式
-	ugcProtection.AllowAttrs("class").OnElements("code")
+
+	// 放开 style 属性（bluemonday 内部会过滤 expression/javascript: 等危险 CSS）
+	// TipTap 富文本编辑器的颜色、对齐、背景色等均依赖 inline style
+	ugcProtection.AllowAttrs("style").Globally()
+
+	// 放开 class 属性，使编辑器生成的类名样式能够保留
+	// （如高亮、表格样式、代码块语言标记等）
+	ugcProtection.AllowAttrs("class").OnElements(
+		"span", "div", "p",
+		"table", "thead", "tbody", "tfoot", "tr", "td", "th", "caption", "colgroup", "col",
+		"pre", "code", "blockquote",
+		"ul", "ol", "li",
+		"a", "img",
+		"mark", "details", "summary", "figure", "figcaption",
+		"h1", "h2", "h3", "h4", "h5", "h6",
+		"b", "i", "u", "s", "em", "strong", "small", "sub", "sup",
+	)
+
 	ugcProtection.AllowAttrs("start").OnElements("ol", "ul", "li")
 	return ugcProtection.Sanitize(htmlContent)
 }

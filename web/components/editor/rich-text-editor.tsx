@@ -17,6 +17,11 @@ import TaskItem from "@tiptap/extension-task-item"
 import Typography from "@tiptap/extension-typography"
 import HorizontalRule from "@tiptap/extension-horizontal-rule"
 import Suggestion, { exitSuggestion, type SuggestionKeyDownProps, type SuggestionProps } from "@tiptap/suggestion"
+import { Table } from "@tiptap/extension-table"
+import { TableRow } from "@tiptap/extension-table-row"
+import { TableCell } from "@tiptap/extension-table-cell"
+import { TableHeader } from "@tiptap/extension-table-header"
+import { Highlight } from "@tiptap/extension-highlight"
 import {
   AlignCenter,
   AlignLeft,
@@ -28,6 +33,7 @@ import {
   Heading1,
   Heading2,
   Heading3,
+  Highlighter,
   ImageIcon,
   Italic,
   LinkIcon,
@@ -42,6 +48,7 @@ import {
   Pilcrow,
   Quote,
   Strikethrough,
+  Table as TableIcon,
   Underline as UnderlineIcon,
 } from "lucide-react"
 
@@ -130,6 +137,8 @@ type RichTextEditorLabels = {
     link: string
     image: string
     horizontalRule: string
+    table: string
+    highlight: string
     fullscreen: string
     exitFullscreen: string
     uploading: string
@@ -187,6 +196,8 @@ function createEditorLabels(t: Translate): RichTextEditorLabels {
       link: t(key("toolbar.link")),
       image: t(key("toolbar.image")),
       horizontalRule: t(key("toolbar.horizontalRule")),
+      table: t(key("toolbar.table")),
+      highlight: t(key("toolbar.highlight")),
       fullscreen: t(key("toolbar.fullscreen")),
       exitFullscreen: t(key("toolbar.exitFullscreen")),
       uploading: t(key("toolbar.uploading")),
@@ -963,6 +974,15 @@ export function RichTextEditor({
       }),
       Typography,
       HorizontalRule,
+      Table.configure({
+        resizable: true,
+      }),
+      TableRow,
+      TableCell,
+      TableHeader,
+      Highlight.configure({
+        multicolor: true,
+      }),
       createSlashSuggestion(labels, locale),
       Placeholder.configure({
         placeholder: labels.placeholder,
@@ -1130,6 +1150,26 @@ export function RichTextEditor({
           </ToolbarButton>
           <ToolbarButton title={toolbar.codeBlock} active={editor?.isActive("codeBlock")} onClick={() => editor?.chain().focus().toggleCodeBlock().run()}>
             <Code2 size={16} />
+          </ToolbarButton>
+          <ToolbarDivider />
+          <ToolbarButton
+            title={toolbar.table}
+            onClick={() =>
+              editor
+                ?.chain()
+                .focus()
+                .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+                .run()
+            }
+          >
+            <TableIcon size={16} />
+          </ToolbarButton>
+          <ToolbarButton
+            title={toolbar.highlight}
+            active={editor?.isActive("highlight")}
+            onClick={() => editor?.chain().focus().toggleHighlight().run()}
+          >
+            <Highlighter size={16} />
           </ToolbarButton>
           <ToolbarDivider />
           <div className="link-button">

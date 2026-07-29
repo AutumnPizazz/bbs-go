@@ -1217,6 +1217,8 @@ const zhCN = {
         link: "链接",
         image: "插入图片",
         horizontalRule: "分割线",
+        table: "插入表格",
+        highlight: "高亮标记",
         fullscreen: "全屏",
         exitFullscreen: "退出全屏",
         uploading: "上传中...",
