@@ -138,3 +138,20 @@ export function getMyClaimed(status?: string, limit?: number) {
 export function getMyClaimedCount() {
   return apiFetch<{ count: number }>("/api/assignment/my/count")
 }
+
+export type MySummary = {
+  topicCount: number
+  commentCount: number
+  acceptedCount: number
+  activeClaims: number
+  recentActivity: {
+    type: "claimed" | "answered" | "accepted" | "topic_created"
+    topicId: number
+    topicTitle: string
+    time: number
+  }[]
+}
+
+export function getMySummary() {
+  return apiFetch<MySummary>("/api/user/my-summary")
+}

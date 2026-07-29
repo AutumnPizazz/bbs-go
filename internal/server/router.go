@@ -133,6 +133,7 @@ func registerAPIRoutes(group *gin.RouterGroup) {
 
 	userGroup := group.Group("/user")
 	userGroup.GET("/current", apiHandlers.UserCurrent)
+	userGroup.GET("/my-summary", apiHandlers.MySummary)
 	userGroup.POST("/update/:id", apiHandlers.UserUpdate)
 	userGroup.POST("/update_avatar", apiHandlers.UserUpdateAvatar)
 	userGroup.POST("/set_username", apiHandlers.UserSetUsername)

@@ -1115,6 +1115,16 @@ const zhCN = {
       topicCount: "话题",
       commentCount: "评论",
     },
+    activitySummary: {
+      topics: "发帖",
+      comments: "回答",
+      acceptedAns: "被采纳",
+      claims: "认领中",
+      claimed: "你认领了「{title}」",
+      answered: "你回答了「{title}」",
+      accepted: "你的回答被采纳：「{title}」",
+      topicCreated: "你发布了「{title}」",
+    },
     myProfile: {
       title: "个人资料",
       editProfile: "编辑资料",
@@ -1820,6 +1830,8 @@ const zhCN = {
     statusActive: "等待你的回复",
     statusResolved: "已解决",
     statusDismissed: "已被驳回",
+    filterAll: "全部",
+    progress: "已解决 {resolved}/{total}",
   },
 } as const
 

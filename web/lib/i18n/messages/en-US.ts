@@ -1127,6 +1127,16 @@ const enUS = {
       topicCount: "Topics",
       commentCount: "Comments",
     },
+    activitySummary: {
+      topics: "Posts",
+      comments: "Replies",
+      acceptedAns: "Accepted",
+      claims: "Claiming",
+      claimed: "You claimed \"{title}\"",
+      answered: "You replied to \"{title}\"",
+      accepted: "Your answer was accepted: \"{title}\"",
+      topicCreated: "You posted \"{title}\"",
+    },
     myProfile: {
       title: "Profile",
       editProfile: "Edit Profile",
@@ -1848,6 +1858,8 @@ const enUS = {
     statusActive: "Waiting for your response",
     statusResolved: "Already resolved",
     statusDismissed: "Dismissed by author",
+    filterAll: "All",
+    progress: "Resolved {resolved}/{total}",
   },
 } as const
 
