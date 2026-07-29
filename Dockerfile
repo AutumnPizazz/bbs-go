@@ -48,10 +48,6 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 FROM node:24-bookworm-slim AS app
 WORKDIR /app
 
-ARG HTTP_PROXY
-ARG HTTPS_PROXY
-ENV HTTP_PROXY=${HTTP_PROXY} HTTPS_PROXY=${HTTPS_PROXY}
-
 ENV NODE_ENV=production \
 	PORT=3000 \
 	BBSGO_ENV=prod \
