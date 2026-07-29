@@ -121,7 +121,7 @@ function CategoryTreeNode({
   const active = currentCategoryId !== undefined && currentCategoryId === node.id
 
   const badgeEl = node.unsolvedCount ? (
-    <span className="ml-auto shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
+    <span className="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
       {node.unsolvedCount}
     </span>
   ) : null
@@ -155,8 +155,8 @@ function CategoryTreeNode({
           onToggle={() => onToggle(node.id)}
         />
         {logoEl}
-        <div className="node-name truncate">{node.name}</div>
         {badgeEl}
+        <div className="node-name truncate">{node.name}</div>
       </Link>
       {expanded && node.children?.length ? (
         <ul className="dock-nav-list">
@@ -204,7 +204,7 @@ function MobileDrawerTreeNode({
   const active = currentCategoryId !== undefined && currentCategoryId === node.id
 
   const badgeEl = node.unsolvedCount ? (
-    <span className="ml-auto shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
+    <span className="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
       {node.unsolvedCount}
     </span>
   ) : null
@@ -239,8 +239,8 @@ function MobileDrawerTreeNode({
               onToggle={() => onToggle(node.id)}
             />
             {logoEl}
-            <span className="min-w-0 truncate">{node.name}</span>
             {badgeEl}
+            <span className="min-w-0 truncate">{node.name}</span>
           </Link>
         </DrawerClose>
       </div>
