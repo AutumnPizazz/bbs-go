@@ -46,20 +46,22 @@ export function TopicMeta({
             ) : null}
             {topic.type === 2 ? (
               <span
-                className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] leading-none font-medium ring-1 ${
+                className={`inline-flex items-center rounded-full px-1.5 sm:px-2 py-0.5 text-[11px] leading-none font-medium ring-1 ${
                   topic.qaStatus === "solved"
                     ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
                     : "bg-amber-50 text-amber-700 ring-amber-200"
                 }`}
               >
                 {topic.qaStatus === "solved" ? (
-                  <CheckCircle2 className="mr-1 h-3 w-3" />
+                  <CheckCircle2 className="h-3 w-3 sm:mr-1" />
                 ) : (
-                  <CircleHelp className="mr-1 h-3 w-3" />
+                  <CircleHelp className="h-3 w-3 sm:mr-1" />
                 )}
-                {topic.qaStatus === "solved"
-                  ? t("pages.topic.detail.qaSolved")
-                  : t("pages.topic.detail.qaUnsolved")}
+                <span className="hidden sm:inline">
+                  {topic.qaStatus === "solved"
+                    ? t("pages.topic.detail.qaSolved")
+                    : t("pages.topic.detail.qaUnsolved")}
+                </span>
               </span>
             ) : null}
             {topic.ipLocation ? (
