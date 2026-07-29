@@ -11,7 +11,6 @@ import { PageLoading } from "@/components/common/page-state"
 import { TopicFeedTabs } from "@/components/topic/topic-feed-tabs"
 import { TopicListItem } from "@/components/topic/topic-list-item"
 import { TopicsNavContent } from "@/components/topic/topics-nav-content"
-import { TopicSubCategoryNav } from "@/components/topic/topic-sub-category-nav"
 import { apiFetch } from "@/lib/api/client"
 import type { PageData, Tag, Topic, Category } from "@/lib/api/types"
 import { useI18n } from "@/lib/i18n/provider"
@@ -233,11 +232,6 @@ export function NodeTopicClientPage({
             {categoryId <= 0 ? (
               <TopicFeedTabs currentCategoryId={categoryId} />
             ) : null}
-            <TopicSubCategoryNav
-              key={categoryId}
-              categoryTree={tree}
-              currentCategoryId={categoryId}
-            />
             {currentFilters.length > 0 ? (
               <div className="flex justify-between border-b border-border px-4 py-3">
                 <div className="text-base font-bold">
