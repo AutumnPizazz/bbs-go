@@ -148,7 +148,7 @@ export default function UserAssignedRoute() {
             key={tItem.key}
             type="button"
             className={cn(
-              "flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+              "flex-1 rounded-md px-1.5 py-1.5 text-xs font-medium transition-colors sm:px-3 sm:text-sm",
               tab === tItem.key
                 ? "bg-background text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
@@ -169,15 +169,15 @@ export default function UserAssignedRoute() {
           {t("assigned.empty")}
         </div>
       ) : (
-        <div className="grid gap-3">
+        <div className="grid min-w-0 gap-3">
           {items.map((item) => (
             <Link
               key={item.id}
               href={`/topic/${item.topicId}`}
-              className="flex items-start justify-between rounded-lg border p-4 transition-colors hover:bg-accent"
+              className="flex flex-col gap-2 rounded-lg border p-4 transition-colors hover:bg-accent sm:flex-row sm:items-start sm:justify-between min-w-0"
             >
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
+                <div className="flex min-w-0 items-center gap-2">
                   <p className="truncate text-sm font-medium">
                     {item.topicTitle || `${t("common.topic")} #${item.topicId}`}
                   </p>
@@ -200,7 +200,7 @@ export default function UserAssignedRoute() {
               <Badge
                 variant="secondary"
                 className={cn(
-                  "ml-3 shrink-0",
+                  "w-fit shrink-0 sm:ml-3",
                   item.status === "active" && "border-amber-200 bg-amber-50 text-amber-700",
                   item.status === "resolved" && "border-emerald-200 bg-emerald-50 text-emerald-700"
                 )}
