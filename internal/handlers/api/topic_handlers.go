@@ -70,6 +70,7 @@ func CategoryNavs(ctx *gin.Context) {
 	allowedIds := services.ContentAccessService.GetAllowedCategoryIds(user)
 	tree := render.BuildCategoryResponseTree(0, services.ContentAccessService.FilterCategoryTree(user, services.CategoryService.GetCategories()))
 	render.PopulateCategoryStats(tree, allowedIds)
+	render.AggregateCategoryStats(tree)
 	ginx.WriteJSON(ctx, tree)
 }
 
@@ -78,6 +79,7 @@ func Categories(ctx *gin.Context) {
 	allowedIds := services.ContentAccessService.GetAllowedCategoryIds(user)
 	tree := render.BuildCategoryResponseTree(0, services.ContentAccessService.FilterCategoryTree(user, services.CategoryService.GetCategories()))
 	render.PopulateCategoryStats(tree, allowedIds)
+	render.AggregateCategoryStats(tree)
 	ginx.WriteJSON(ctx, tree)
 }
 
@@ -98,7 +100,7 @@ func Category(ctx *gin.Context) {
 		ginx.WriteJSON(ctx, ginx.ErrorMessage(locales.Get("common.not_found")))
 		return
 	}
-	result := render.BuildCategoryWithChildren(category)
+	result := render.BuildCategoryWithChildren(category, allowedIds)
 	if result != nil {
 		stats := services.TopicService.GetCategoryStats(categoryId, allowedIds)
 		result.TopicCount = stats.TopicCount

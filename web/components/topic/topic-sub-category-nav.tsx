@@ -59,10 +59,12 @@ export function TopicSubCategoryNav({
   rootCategoryId,
   categories,
   currentCategoryId,
+  thirdLevelCategories,
 }: {
   rootCategoryId: number
   categories?: Category[]
   currentCategoryId: number
+  thirdLevelCategories?: Category[]
 }) {
   const { t } = useI18n()
   const [open, setOpen] = React.useState(false)
@@ -240,6 +242,27 @@ export function TopicSubCategoryNav({
           </DropdownMenu>
         </div>
       </div>
+      {thirdLevelCategories && thirdLevelCategories.length > 0 ? (
+        <div className="mt-2 flex flex-wrap items-center gap-1 border-t border-border pt-2">
+          <span className="mr-1 shrink-0 text-[11px] text-muted-foreground">
+            {t("pages.topics.subCategories")}:
+          </span>
+          {thirdLevelCategories.map((child) => (
+            <Link
+              key={child.id}
+              href={`/topics/category/${child.id}`}
+              className={cn(
+                "inline-flex shrink-0 items-center rounded-md px-2 py-0.5 text-xs font-medium transition-colors",
+                currentCategoryId === child.id
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+              )}
+            >
+              {child.name}
+            </Link>
+          ))}
+        </div>
+      ) : null}
     </div>
   )
 }

@@ -25,15 +25,23 @@ func BuildCategory(category *models.Category) *resp.CategoryResponse {
 	}
 }
 
-func BuildCategoryWithChildren(category *models.Category) *resp.CategoryResponse {
+func BuildCategoryWithChildren(category *models.Category, allowedIds []int64) *resp.CategoryResponse {
 	r := BuildCategory(category)
 	if r == nil {
 		return nil
 	}
-	if category.ParentId == 0 {
-		children := services.CategoryService.GetChildren(category.Id)
-		if len(children) > 0 {
-			r.Children = BuildCategoryResponses(children)
+	// Always populate direct children for any level (not just root).
+	// This enables third-level (and deeper) category navigation in the frontend.
+	children := services.CategoryService.GetChildren(category.Id)
+	if len(children) > 0 {
+		r.Children = BuildCategoryResponses(children)
+		// Populate stats for child categories so the frontend can show count badges.
+		for i := range r.Children {
+			stats := services.TopicService.GetCategoryStats(r.Children[i].Id, allowedIds)
+			r.Children[i].TopicCount = stats.TopicCount
+			r.Children[i].QaCount = stats.QaCount
+			r.Children[i].SolvedCount = stats.SolvedCount
+			r.Children[i].UnsolvedCount = stats.UnsolvedCount
 		}
 	}
 	return r
@@ -79,6 +87,23 @@ func PopulateCategoryStats(tree []resp.CategoryResponse, allowedIds []int64) {
 		tree[i].UnsolvedCount = stats.UnsolvedCount
 		if len(tree[i].Children) > 0 {
 			PopulateCategoryStats(tree[i].Children, allowedIds)
+		}
+	}
+}
+
+// AggregateCategoryStats bottom-up aggregates children's stats into each parent,
+// so parent nodes reflect totals including all descendants (recursive).
+// Call after PopulateCategoryStats has filled per-node stats.
+func AggregateCategoryStats(tree []resp.CategoryResponse) {
+	for i := range tree {
+		if len(tree[i].Children) > 0 {
+			AggregateCategoryStats(tree[i].Children)
+			for _, child := range tree[i].Children {
+				tree[i].TopicCount += child.TopicCount
+				tree[i].QaCount += child.QaCount
+				tree[i].SolvedCount += child.SolvedCount
+				tree[i].UnsolvedCount += child.UnsolvedCount
+			}
 		}
 	}
 }

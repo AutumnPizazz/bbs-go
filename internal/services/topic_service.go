@@ -614,6 +614,9 @@ func (s *topicService) AcceptAnswer(topicId, commentId, userId int64, isAdmin bo
 
 	search.UpdateTopicIndex(s.Get(topic.Id))
 
+	// Auto-resolve all active claims when question is marked solved.
+	TopicAssignmentService.Resolve(topic.Id)
+
 	event.Send(event.QaAnswerAcceptedEvent{
 		UserId:     comment.UserId,
 		TopicId:    topic.Id,
@@ -656,6 +659,12 @@ func (s *topicService) ForceSetQaStatus(topicId int64, qaStatus constants.QaStat
 	}
 	if qaStatus == constants.QaStatusSolved {
 		columns["solved_at"] = dates.NowTimestamp()
+		if err := s.Updates(topic.Id, columns); err != nil {
+			return err
+		}
+		// Auto-resolve all active claims when question is marked solved.
+		TopicAssignmentService.Resolve(topic.Id)
+		return nil
 	} else {
 		columns["solved_at"] = 0
 		columns["accepted_comment_id"] = 0

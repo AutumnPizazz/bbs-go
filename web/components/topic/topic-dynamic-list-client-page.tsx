@@ -132,6 +132,11 @@ export function NodeTopicClientPage({
     categoryId > 0 && currentRootNode?.children?.length
       ? currentRootNode.children
       : []
+  // Third-level children of the currently selected (second-level) node
+  const thirdLevelNodes =
+    categoryId > 0 && currentNode?.children?.length && currentNode.id !== rootCategoryId
+      ? currentNode.children
+      : []
   const hasCurrentNode = categoryId > 0 && Boolean(currentNode)
   const sortValue = searchParams.get("sort") || ""
   const normalSort = sortOptions.includes(sortValue) ? sortValue : "latestPublish"
@@ -219,6 +224,7 @@ export function NodeTopicClientPage({
               rootCategoryId={rootCategoryId}
               categories={subNodes}
               currentCategoryId={categoryId}
+              thirdLevelCategories={thirdLevelNodes}
             />
             {currentFilters.length > 0 ? (
               <div className="flex justify-between border-b border-border px-4 py-3">
