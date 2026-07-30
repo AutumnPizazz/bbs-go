@@ -21,6 +21,8 @@ import { LayoutChrome } from "@/components/layout/layout-chrome"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { CopyCodeEnhance } from "@/components/markdown/copy-code-enhance"
+import { MarkdownEnhance } from "@/components/markdown/markdown-enhance"
 import { apiFetch } from "@/lib/api/client"
 import type { SiteConfig, UserSummary } from "@/lib/api/types"
 import { I18nProvider } from "@/lib/i18n/provider"
@@ -236,6 +238,8 @@ export default function Root() {
           <TooltipProvider>
             <RuntimeScriptInjections />
             <GoogleOneTapGate />
+            <CopyCodeEnhance />
+            <MarkdownEnhance observe />
             <LayoutChrome>
               <Outlet />
             </LayoutChrome>

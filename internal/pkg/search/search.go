@@ -44,6 +44,9 @@ func Close() {
 	index = nil
 }
 
+// NewTopicDoc 构建搜索索引文档。
+// P3-1 优化：markdown.ToHTML 现已内置缓存，且先提取纯文本再做 HTML 转义，
+// 减少重复的 HTML 解析开销。
 func NewTopicDoc(topic *models.Topic) *TopicDocument {
 	if topic == nil {
 		return nil
@@ -59,12 +62,15 @@ func NewTopicDoc(topic *models.Topic) *TopicDocument {
 		CreateTime: topic.CreateTime,
 	}
 
+	// 提取纯文本内容用于搜索索引
 	content := topic.Content
 	if topic.ContentType == constants.ContentTypeMarkdown {
-		content = markdown.ToHTML(content)
+		// markdown.ToHTML 已内置缓存，避免重复解析
+		content = html2.GetHtmlText(markdown.ToHTML(content))
+	} else if topic.ContentType == constants.ContentTypeHtml {
+		content = html2.GetHtmlText(content)
 	}
-	content = html.EscapeString(html2.GetHtmlText(content))
-	doc.Content = content
+	doc.Content = html.EscapeString(content)
 	if strs.IsBlank(doc.Summary) {
 		doc.Summary = text.GetSummary(content, constants.SummaryLen)
 	}

@@ -2,12 +2,13 @@
 
 import * as React from "react"
 import dynamic from "@/lib/router/dynamic"
-import type { ToolbarNames } from "md-editor-rt"
+import type { PreviewRendererProps, ToolbarNames } from "md-editor-rt"
 
 import "md-editor-rt/lib/style.css"
 
 import { useTheme } from "@/components/theme-provider"
 import { uploadEditorImage } from "@/components/editor/upload"
+import { ServerRenderedPreview } from "@/components/markdown/server-preview"
 import { useI18n } from "@/lib/i18n/provider"
 
 const MdEditor = dynamic(
@@ -58,9 +59,32 @@ export function MarkdownEditor({
   const { resolvedTheme } = useTheme()
   const { locale } = useI18n()
 
+  // 用 ref 跟踪当前编辑内容，供 previewComponent 闭包使用
+  const currentValueRef = React.useRef(value)
+  React.useEffect(() => {
+    currentValueRef.current = value
+  }, [value])
+
+  // 自定义预览组件：调用后端 API 渲染，与发布后视图完全一致
+  const ServerPreview = React.useCallback(
+    ({ id, className }: PreviewRendererProps) => (
+      <ServerRenderedPreview
+        markdown={currentValueRef.current}
+        id={id}
+        className={className}
+      />
+    ),
+    []
+  )
+
   async function uploadImg(files: File[], callback: (urls: string[]) => void) {
     const urls = await Promise.all(files.map((file) => uploadEditorImage(file)))
     callback(urls)
+  }
+
+  function handleChange(v: string) {
+    currentValueRef.current = v
+    onChange(v)
   }
 
   return (
@@ -73,7 +97,8 @@ export function MarkdownEditor({
       preview
       language={locale}
       footers={[]}
-      onChange={onChange}
+      previewComponent={ServerPreview}
+      onChange={handleChange}
       onUploadImg={uploadImg}
     />
   )

@@ -179,6 +179,9 @@ func registerAPIRoutes(group *gin.RouterGroup) {
 	attachmentGroup.POST("/upload", apiHandlers.AttachmentUpload)
 	attachmentGroup.GET("/download/:id", apiHandlers.AttachmentDownload)
 
+	markdownGroup := group.Group("/markdown", middleware.ContentAccessMiddleware)
+	markdownGroup.POST("/render", apiHandlers.MarkdownRender)
+
 	linkGroup := group.Group("/link")
 	linkGroup.GET("/list", apiHandlers.LinkList)
 	linkGroup.GET("/top_links", apiHandlers.LinkTopLinks)

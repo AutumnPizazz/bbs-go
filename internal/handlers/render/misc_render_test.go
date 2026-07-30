@@ -49,7 +49,11 @@ func TestHandleTopicHtmlContentReturnsUpdatedContent(t *testing.T) {
 	if len(toc) != 1 || toc[0].Id != "topic-heading-title" {
 		t.Fatalf("unexpected toc: %#v", toc)
 	}
-	if !strings.Contains(content, `<h2 id="topic-heading-title">Title</h2>`) {
+	// P1-2: 标题现在包含锚点链接 <a class="heading-anchor">
+	if !strings.Contains(content, `<h2 id="topic-heading-title">Title<a`) {
 		t.Fatalf("heading id was not written to content: %s", content)
+	}
+	if !strings.Contains(content, `class="heading-anchor"`) {
+		t.Fatalf("heading anchor was not injected: %s", content)
 	}
 }

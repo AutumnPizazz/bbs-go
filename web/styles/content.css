@@ -89,7 +89,7 @@
     margin: 1rem 0;
     overflow-x: auto;
     border-radius: 6px;
-    background: var(--muted);
+    background: var(--muted) !important;
     padding: 1rem;
     font-size: 14px;
     line-height: 1.7;
@@ -301,76 +301,51 @@
     background: rgba(16, 185, 129, 0.1);
   }
 
-  /* ---- 代码块语法高亮（lowlight/highlight.js）---- */
-  .bbs-content pre code .hljs-keyword,
-  .bbs-content pre code .hljs-selector-tag,
-  .bbs-content pre code .hljs-title,
-  .bbs-content pre code .hljs-section,
-  .bbs-content pre code .hljs-doctag,
-  .bbs-content pre code .hljs-name,
-  .bbs-content pre code .hljs-strong {
-    font-weight: bold;
+  /* ---- 代码块：Chroma 内联高亮已由后端注入，此处仅保留布局样式 ---- */
+  .bbs-content pre code .highlight-line {
+    display: block;
   }
 
-  .bbs-content pre code .hljs-comment {
-    color: #6a737d;
-    font-style: italic;
+  /* ---- GFM 任务列表 checkbox ---- */
+  .bbs-content input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+    margin: 0 0.5rem 0 0;
+    vertical-align: middle;
+    accent-color: var(--primary);
+    cursor: default;
+    pointer-events: none;
   }
 
-  .bbs-content pre code .hljs-keyword {
-    color: #d73a49;
+  .bbs-content li:has(input[type="checkbox"]) {
+    list-style: none;
+    margin-left: -0.25rem;
   }
 
-  .bbs-content pre code .hljs-string {
-    color: #032f62;
+  /* ---- 标题锚点链接 ---- */
+  .bbs-content .heading-anchor {
+    display: inline-block;
+    margin-left: 0.35em;
+    color: var(--muted-foreground);
+    font-size: 0.85em;
+    font-weight: 400;
+    text-decoration: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
   }
 
-  .bbs-content pre code .hljs-number,
-  .bbs-content pre code .hljs-literal {
-    color: #005cc5;
+  .bbs-content h1:hover .heading-anchor,
+  .bbs-content h2:hover .heading-anchor,
+  .bbs-content h3:hover .heading-anchor,
+  .bbs-content h4:hover .heading-anchor,
+  .bbs-content h5:hover .heading-anchor,
+  .bbs-content h6:hover .heading-anchor,
+  .bbs-content .heading-anchor:focus {
+    opacity: 1;
   }
 
-  .bbs-content pre code .hljs-function {
-    color: #6f42c1;
-  }
-
-  .bbs-content pre code .hljs-attr,
-  .bbs-content pre code .hljs-attribute {
-    color: #005cc5;
-  }
-
-  .bbs-content pre code .hljs-built_in {
-    color: #e36209;
-  }
-
-  .dark .bbs-content pre code .hljs-comment {
-    color: #8b949e;
-  }
-
-  .dark .bbs-content pre code .hljs-keyword {
-    color: #ff7b72;
-  }
-
-  .dark .bbs-content pre code .hljs-string {
-    color: #a5d6ff;
-  }
-
-  .dark .bbs-content pre code .hljs-number,
-  .dark .bbs-content pre code .hljs-literal {
-    color: #79c0ff;
-  }
-
-  .dark .bbs-content pre code .hljs-function {
-    color: #d2a8ff;
-  }
-
-  .dark .bbs-content pre code .hljs-attr,
-  .dark .bbs-content pre code .hljs-attribute {
-    color: #79c0ff;
-  }
-
-  .dark .bbs-content pre code .hljs-built_in {
-    color: #ffa657;
+  .bbs-content .heading-anchor:hover {
+    color: var(--primary);
   }
 
   /* ---- @提及 ---- */

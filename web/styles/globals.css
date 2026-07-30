@@ -3,9 +3,11 @@
 @import "shadcn/tailwind.css";
 
 @import "go-captcha-react/dist/go-captcha-react.cjs.development.css";
+@import "katex/dist/katex.min.css";
 @import "./variables.css";
 @import "./common.css";
 @import "./content.css";
+@import "./code-block.css";
 @import "./topic.css";
 @import "./editor.css";
 @import "./user.css";
