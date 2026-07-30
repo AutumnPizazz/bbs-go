@@ -59,13 +59,11 @@ export function MarkdownEditor({
   const { resolvedTheme } = useTheme()
   const { locale } = useI18n()
 
-  // 用 ref 跟踪当前编辑内容，供 previewComponent 闭包使用
   const currentValueRef = React.useRef(value)
   React.useEffect(() => {
     currentValueRef.current = value
   }, [value])
 
-  // 自定义预览组件：调用后端 API 渲染，与发布后视图完全一致
   const ServerPreview = React.useCallback(
     ({ id, className }: PreviewRendererProps) => (
       <ServerRenderedPreview
@@ -82,11 +80,6 @@ export function MarkdownEditor({
     callback(urls)
   }
 
-  function handleChange(v: string) {
-    currentValueRef.current = v
-    onChange(v)
-  }
-
   return (
     <MdEditor
       modelValue={value}
@@ -98,7 +91,7 @@ export function MarkdownEditor({
       language={locale}
       footers={[]}
       previewComponent={ServerPreview}
-      onChange={handleChange}
+      onChange={onChange}
       onUploadImg={uploadImg}
     />
   )
