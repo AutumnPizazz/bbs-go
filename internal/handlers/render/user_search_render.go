@@ -1,9 +1,17 @@
 package render
 
 import (
+	"regexp"
+
 	"bbs-go/internal/models/resp"
 	"bbs-go/internal/pkg/search"
 )
+
+var htmlTagRe = regexp.MustCompile(`<[^>]*>`)
+
+func stripHtml(s string) string {
+	return htmlTagRe.ReplaceAllString(s, "")
+}
 
 func BuildSearchUsers(docs []search.UserDocument) []resp.SearchUserResponse {
 	var items []resp.SearchUserResponse
@@ -15,17 +23,20 @@ func BuildSearchUsers(docs []search.UserDocument) []resp.SearchUserResponse {
 
 func BuildSearchUser(doc search.UserDocument) resp.SearchUserResponse {
 	user := BuildUserInfoDefaultIfNull(doc.Id)
-	if doc.Nickname != "" {
-		user.Nickname = doc.Nickname
+	// Bleve fragments may contain <mark> tags; strip them.
+	nickname := stripHtml(doc.Nickname)
+	desc := stripHtml(doc.Description)
+	if nickname != "" {
+		user.Nickname = nickname
 	}
-	if doc.Description != "" {
-		user.Description = doc.Description
+	if desc != "" {
+		user.Description = desc
 	}
 	return resp.SearchUserResponse{
 		User:        user,
-		Nickname:    doc.Nickname,
-		Username:    doc.Username,
-		Description: doc.Description,
+		Nickname:    nickname,
+		Username:    stripHtml(doc.Username),
+		Description: desc,
 		CreateTime:  doc.CreateTime,
 	}
 }

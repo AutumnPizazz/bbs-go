@@ -287,11 +287,16 @@ func typeQuery(entityType string) blevequery.Query {
 }
 
 func keywordQuery(keyword string, fields []string) blevequery.Query {
-	queries := make([]blevequery.Query, 0, len(fields))
+	queries := make([]blevequery.Query, 0, len(fields)*2)
 	for _, field := range fields {
+		// Full-text match (works for Chinese after tokenization)
 		query := bleve.NewMatchQuery(keyword)
 		query.SetField(field)
 		queries = append(queries, query)
+		// Prefix match (works for English / un-tokenized text)
+		prefix := bleve.NewPrefixQuery(keyword)
+		prefix.SetField(field)
+		queries = append(queries, prefix)
 	}
 	return bleve.NewDisjunctionQuery(queries...)
 }

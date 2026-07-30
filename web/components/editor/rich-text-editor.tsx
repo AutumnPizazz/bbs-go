@@ -73,8 +73,8 @@ import {
 } from "lucide-react"
 
 import { uploadEditorImage } from "@/components/editor/upload"
-import { searchUsers } from "@/lib/api/users"
-import type { SearchUser } from "@/lib/api/types"
+import { apiFetch } from "@/lib/api/client"
+import type { PageData, SearchUser } from "@/lib/api/types"
 import { useI18n } from "@/lib/i18n/provider"
 import { useToastActions } from "@/lib/toast"
 import { cn } from "@/lib/utils"
@@ -952,6 +952,12 @@ type MentionListProps = {
   query: string
 }
 
+function stripHtml(html: string) {
+  const el = document.createElement("div")
+  el.innerHTML = html
+  return el.textContent || ""
+}
+
 function MentionList({ items, command, query }: MentionListProps) {
   const [selectedIndex, setSelectedIndex] = React.useState(0)
   const itemRefs = React.useRef<Array<HTMLDivElement | null>>([])
@@ -967,7 +973,7 @@ function MentionList({ items, command, query }: MentionListProps) {
   if (!items.length) {
     return (
       <div className="mention-list-popup">
-        <div className="mention-no-results">未找到匹配用户</div>
+        <div className="mention-no-results">{query ? `未找到匹配 "${query}" 的用户` : "输入关键词搜索用户"}</div>
       </div>
     )
   }
@@ -990,8 +996,8 @@ function MentionList({ items, command, query }: MentionListProps) {
             height={24}
           />
           <div className="mention-info">
-            <span className="mention-nickname">{item.nickname || item.user?.nickname || item.username || ""}</span>
-            {item.username ? <span className="mention-username">@{item.username}</span> : null}
+            <span className="mention-nickname">{stripHtml(item.nickname || item.user?.nickname || item.username || "")}</span>
+            {item.username ? <span className="mention-username">@{stripHtml(item.username)}</span> : null}
           </div>
         </div>
       ))}
@@ -1003,6 +1009,19 @@ function createMentionSuggestion() {
   return Mention.configure({
     HTMLAttributes: {
       class: "inline-mention",
+      "data-type": "mention",
+    },
+    renderHTML({ node }) {
+      const label = node.attrs.label || node.attrs.id || ""
+      return [
+        "span",
+        {
+          class: "inline-mention",
+          "data-type": "mention",
+          "data-id": node.attrs.id,
+        },
+        `@${label}`,
+      ]
     },
     suggestion: {
       char: "@",
@@ -1010,13 +1029,16 @@ function createMentionSuggestion() {
       items: async ({ query }: { query: string }) => {
         if (!query || query.length < 1) return []
         try {
-          const result = await searchUsers({ keyword: query })
-          const users = (result?.results || []) as SearchUser[]
-          return users.slice(0, 8).map((u) => ({
+          const result = await apiFetch<PageData<SearchUser>>("/api/search/user", {
+            params: { keyword: query },
+          })
+          console.log("[mention] query:", query, "→ results:", result?.results?.length || 0)
+          return ((result?.results || []) as SearchUser[]).slice(0, 8).map((u) => ({
             ...u,
             id: u.user?.id || "",
           })) as MentionItem[]
-        } catch {
+        } catch (e) {
+          console.error("[mention] search failed", e)
           return []
         }
       },
@@ -1030,7 +1052,7 @@ function createMentionSuggestion() {
               props: {
                 items: props.items,
                 command: (item: MentionItem) => {
-                  props.command({ id: item.id, label: `@${item.nickname || item.user?.nickname || item.username || ""}` })
+                  props.command({ id: item.id, label: stripHtml(item.nickname || item.user?.nickname || item.username || "") })
                 },
                 query: props.query,
               },
@@ -1044,7 +1066,7 @@ function createMentionSuggestion() {
             component.updateProps({
               items: props.items,
               command: (item: MentionItem) => {
-                props.command({ id: item.id, label: `@${item.nickname || item.user?.nickname || item.username || ""}` })
+                props.command({ id: item.id, label: stripHtml(item.nickname || item.user?.nickname || item.username || "") })
               },
               query: props.query,
             })
