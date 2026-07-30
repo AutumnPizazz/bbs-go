@@ -2,8 +2,9 @@
 
 import { MarkdownEditor } from "@/components/editor/markdown-editor"
 import { RichTextEditor } from "@/components/editor/rich-text-editor"
+import { HtmlEditor } from "@/components/editor/html-editor"
 
-export type ContentEditorType = "html" | "markdown"
+export type ContentEditorType = "html" | "html-source" | "markdown"
 
 export function ContentEditor({
   contentType,
@@ -21,6 +22,17 @@ export function ContentEditor({
   if (contentType === "markdown") {
     return (
       <MarkdownEditor
+        value={value}
+        placeholder={placeholder}
+        height={height}
+        onChange={onChange}
+      />
+    )
+  }
+
+  if (contentType === "html-source") {
+    return (
+      <HtmlEditor
         value={value}
         placeholder={placeholder}
         height={height}

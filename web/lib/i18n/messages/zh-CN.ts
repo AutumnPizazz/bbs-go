@@ -1185,8 +1185,18 @@ const zhCN = {
       label: "编辑器",
       switchLabel: "切换编辑模式",
       visual: "可视化编辑",
+      htmlSource: "HTML 源码",
       markdown: "Markdown",
       switchConfirm: "切换到{mode}会清空当前内容，是否继续？",
+    },
+    htmlEditor: {
+      toolbar: {
+        edit: "仅编辑",
+        split: "分屏预览",
+        preview: "仅预览",
+        fullscreen: "全屏",
+        exitFullscreen: "退出全屏",
+      },
     },
     textEditor: {
       placeholder: "请输入您要发表的内容",

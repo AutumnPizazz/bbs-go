@@ -46,7 +46,7 @@ type TopicCreateFormState = {
   categoryId: number
   title: string
   tags: string[]
-  contentType: "html" | "markdown"
+  contentType: "html" | "html-source" | "markdown"
   content: string
   hideContent: string
   vote: TopicVoteForm | null
@@ -521,14 +521,11 @@ export function TopicCreateForm({
   }
 
   function switchEditor(nextContentType: EditorMode) {
-    const currentContentType: EditorMode =
-      form.contentType === "markdown" ? "markdown" : "html"
-    if (nextContentType === currentContentType) {
-      return
-    }
+    const current = form.contentType
+    if (nextContentType === current) return
     if (form.content.trim()) {
       setConfirmState({
-        description: getEditorSwitchConfirmMessage(currentContentType, t),
+        description: getEditorSwitchConfirmMessage(current, t),
         confirmText: t("common.confirm"),
         onConfirm: () => {
           updateForm({
@@ -572,6 +569,8 @@ export function TopicCreateForm({
         method: "POST",
         body: {
           ...form,
+          contentType:
+            form.contentType === "html-source" ? "html" : form.contentType,
           categoryId: effectiveCategoryId,
           attachmentIds: attachmentList.map((item) => item.id),
           vote: form.vote
@@ -686,7 +685,7 @@ export function TopicCreateForm({
                 {t("component.editorMode.label")}
               </span>
               <Tabs
-                value={form.contentType === "markdown" ? "markdown" : "html"}
+                value={form.contentType}
                 onValueChange={(value) => switchEditor(value as EditorMode)}
               >
                 <TabsList className="h-7 p-0.5 group-data-horizontal/tabs:h-7">
@@ -723,7 +722,9 @@ export function TopicCreateForm({
 
         <div className="field">
           <ContentEditor
-            contentType={form.contentType === "markdown" ? "markdown" : "html"}
+            contentType={
+              form.contentType as "html" | "html-source" | "markdown"
+            }
             value={form.content}
             placeholder={t("pages.topic.create.contentPlaceholder")}
             height="400px"

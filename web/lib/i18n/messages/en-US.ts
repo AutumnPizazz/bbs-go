@@ -1197,9 +1197,19 @@ const enUS = {
       label: "Editor",
       switchLabel: "Switch editor mode",
       visual: "Visual",
+      htmlSource: "HTML Source",
       markdown: "Markdown",
       switchConfirm:
         "Switching to {mode} will clear the current content. Continue?",
+    },
+    htmlEditor: {
+      toolbar: {
+        edit: "Edit",
+        split: "Split",
+        preview: "Preview",
+        fullscreen: "Fullscreen",
+        exitFullscreen: "Exit fullscreen",
+      },
     },
     textEditor: {
       placeholder: "Write your content",

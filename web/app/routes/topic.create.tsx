@@ -40,8 +40,10 @@ export default function TopicCreateRoute() {
   )
   const contentType =
     searchParams.get("contentType") === "markdown"
-      ? searchParams.get("contentType")!
-      : "html"
+      ? "markdown"
+      : searchParams.get("contentType") === "html-source"
+        ? "html-source"
+        : "html"
   const categoryId = Number(searchParams.get("categoryId") || 0)
   const requestedType = Number(searchParams.get("type") || 0)
   const type = requestedType === 2 ? 2 : 0
@@ -75,7 +77,7 @@ export default function TopicCreateRoute() {
       <div className="container">
         <TopicCreateForm
           key={`${type}:${contentType}:${categoryId}`}
-          contentType={contentType as "html" | "markdown"}
+          contentType={contentType as "html" | "html-source" | "markdown"}
           currentUser={currentUser}
           config={config}
           categoryId={categoryId}
