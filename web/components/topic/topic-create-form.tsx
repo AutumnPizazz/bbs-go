@@ -478,7 +478,7 @@ export function TopicCreateForm({
 }) {
   const router = useRouter()
   const { t } = useI18n()
-  const { catchError, msgWarning } = useToastActions()
+  const { catchError, msgWarning, msgSuccess } = useToastActions()
   const editorModeOptions = React.useMemo(() => getEditorModeOptions(t), [t])
   const captchaRef = React.useRef<CaptchaChallengeHandle>(null)
   const lastSubmitAtRef = React.useRef(0)
@@ -499,6 +499,78 @@ export function TopicCreateForm({
       contentType,
     })
   )
+
+  // ---- Draft save ----
+  const draftKey = type === 2 ? "bbsgo.draft.qa" : "bbsgo.draft.topic"
+  const draftPromptShownRef = React.useRef(false)
+  const draftConfirmCalledRef = React.useRef(false)
+
+  // Check for saved draft on mount
+  React.useEffect(() => {
+    if (draftPromptShownRef.current) return
+    try {
+      const raw = window.localStorage.getItem(draftKey)
+      if (!raw) return
+      const draft = JSON.parse(raw) as Partial<TopicCreateFormState>
+      const hasContent =
+        (draft.title && draft.title.trim()) ||
+        (draft.content && draft.content.trim() !== "<p></p>" && draft.content.trim())
+      if (!hasContent) return
+      draftPromptShownRef.current = true
+      setConfirmState({
+        description:
+          type === 2
+            ? t("pages.topic.create.draft.restorePromptQa")
+            : t("pages.topic.create.draft.restorePrompt"),
+        confirmText: t("pages.topic.create.draft.restoreConfirm"),
+        onConfirm: () => {
+          draftConfirmCalledRef.current = true
+          setForm((current) => ({
+            ...current,
+            title: draft.title ?? current.title,
+            content: draft.content ?? current.content,
+            tags: draft.tags ?? current.tags,
+            contentType: draft.contentType ?? current.contentType,
+            categoryId: draft.categoryId ?? current.categoryId,
+          }))
+          window.localStorage.removeItem(draftKey)
+          setConfirmState(null)
+        },
+      })
+    } catch (_e) {
+      // Corrupted draft, ignore
+    }
+  }, [draftKey, type])
+
+  // Draft is saved manually via a button in the footer.
+
+  const saveDraft = React.useCallback(() => {
+    try {
+      window.localStorage.setItem(
+        draftKey,
+        JSON.stringify({
+          title: form.title,
+          content: form.content,
+          tags: form.tags,
+          contentType: form.contentType,
+          categoryId: form.categoryId,
+        })
+      )
+      return true
+    } catch {
+      return false
+    }
+  }, [draftKey, form.title, form.content, form.tags, form.contentType, form.categoryId])
+
+  // When draft restore dialog is dismissed without confirming, discard draft
+  React.useEffect(() => {
+    if (confirmState !== null) return
+    if (draftPromptShownRef.current && !draftConfirmCalledRef.current) {
+      window.localStorage.removeItem(draftKey)
+    }
+    draftPromptShownRef.current = false
+    draftConfirmCalledRef.current = false
+  }, [confirmState, draftKey])
 
   const availableNodes = categories
   const effectiveCategoryId = hasCategory(availableNodes, form.categoryId)
@@ -588,6 +660,8 @@ export function TopicCreateForm({
         },
       })
       router.push(`/topic/${data.id}`)
+      // Clear draft on successful publish
+      window.localStorage.removeItem(draftKey)
     } catch (error) {
       catchError(error)
       setPublishing(false)
@@ -825,6 +899,23 @@ export function TopicCreateForm({
         ) : null}
 
         <div className="form-footer">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={publishing || attachmentUploading}
+            onClick={() => {
+              const ok = saveDraft()
+              if (ok) {
+                msgSuccess(
+                  type === 2
+                    ? t("pages.topic.create.draft.savedQa")
+                    : t("pages.topic.create.draft.saved")
+                )
+              }
+            }}
+          >
+            {t("pages.topic.create.draft.saveBtn")}
+          </Button>
           <Button
             type="button"
             disabled={

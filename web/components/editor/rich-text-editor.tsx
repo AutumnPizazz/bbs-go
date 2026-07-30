@@ -25,8 +25,10 @@ import { Highlight } from "@tiptap/extension-highlight"
 import { FontSize } from "@tiptap/extension-font-size"
 import { Superscript } from "@tiptap/extension-superscript"
 import { Subscript } from "@tiptap/extension-subscript"
+import { Mention } from "@tiptap/extension-mention"
 import { CodeBlockLowlight } from "@tiptap/extension-code-block-lowlight"
 import { common, createLowlight } from "lowlight"
+import { PluginKey } from "@tiptap/pm/state"
 import {
   AlignCenter,
   AlignLeft,
@@ -57,6 +59,7 @@ import {
   Plus,
   Quote,
   Redo2,
+  Smile,
   Strikethrough,
   Subscript as SubscriptIcon,
   Superscript as SuperscriptIcon,
@@ -68,6 +71,8 @@ import {
 } from "lucide-react"
 
 import { uploadEditorImage } from "@/components/editor/upload"
+import { searchUsers } from "@/lib/api/users"
+import type { SearchUser } from "@/lib/api/types"
 import { useI18n } from "@/lib/i18n/provider"
 import { useToastActions } from "@/lib/toast"
 import { cn } from "@/lib/utils"
@@ -137,6 +142,60 @@ const FONT_SIZES = [
   { label: "24px", value: "24px" },
   { label: "28px", value: "28px" },
   { label: "32px", value: "32px" },
+]
+
+const EMOJI_LIST = [
+  { emoji: "😀", keywords: ["smile", "happy", "grin"] },
+  { emoji: "😂", keywords: ["joy", "laugh", "tear"] },
+  { emoji: "🤣", keywords: ["rofl", "rolling"] },
+  { emoji: "😍", keywords: ["heart", "eyes", "love"] },
+  { emoji: "😎", keywords: ["cool", "sunglasses"] },
+  { emoji: "🥳", keywords: ["party", "celebrate"] },
+  { emoji: "😢", keywords: ["cry", "sad", "tear"] },
+  { emoji: "😡", keywords: ["angry", "mad", "pout"] },
+  { emoji: "👍", keywords: ["thumbsup", "like", "+1"] },
+  { emoji: "👎", keywords: ["thumbsdown", "dislike"] },
+  { emoji: "👏", keywords: ["clap", "applause"] },
+  { emoji: "🙏", keywords: ["pray", "thanks", "please"] },
+  { emoji: "💪", keywords: ["strong", "muscle"] },
+  { emoji: "🔥", keywords: ["fire", "hot", "lit"] },
+  { emoji: "💯", keywords: ["100", "perfect", "hundred"] },
+  { emoji: "🎉", keywords: ["party", "celebrate", "tada"] },
+  { emoji: "🎊", keywords: ["confetti", "celebrate"] },
+  { emoji: "❤️", keywords: ["heart", "love"] },
+  { emoji: "💔", keywords: ["heartbreak", "broken"] },
+  { emoji: "⭐", keywords: ["star", "favorite"] },
+  { emoji: "✅", keywords: ["check", "done", "ok"] },
+  { emoji: "❌", keywords: ["cross", "wrong", "no"] },
+  { emoji: "❓", keywords: ["question", "what"] },
+  { emoji: "❗", keywords: ["exclamation", "warn"] },
+  { emoji: "💡", keywords: ["idea", "tip", "lightbulb"] },
+  { emoji: "📌", keywords: ["pin", "pushpin"] },
+  { emoji: "📎", keywords: ["paperclip", "attach"] },
+  { emoji: "🔗", keywords: ["link", "chain"] },
+  { emoji: "🚀", keywords: ["rocket", "launch"] },
+  { emoji: "🐛", keywords: ["bug", "insect"] },
+  { emoji: "🧠", keywords: ["brain", "mind"] },
+  { emoji: "🤖", keywords: ["robot", "ai"] },
+  { emoji: "✨", keywords: ["sparkles", "magic", "shine"] },
+  { emoji: "💻", keywords: ["computer", "laptop"] },
+  { emoji: "📱", keywords: ["phone", "mobile"] },
+  { emoji: "🖥️", keywords: ["desktop", "monitor"] },
+  { emoji: "⌨️", keywords: ["keyboard"] },
+  { emoji: "🐧", keywords: ["penguin", "linux"] },
+  { emoji: "☕", keywords: ["coffee", "java"] },
+  { emoji: "🍺", keywords: ["beer", "drink"] },
+  { emoji: "🎯", keywords: ["target", "goal"] },
+  { emoji: "🏆", keywords: ["trophy", "win"] },
+  { emoji: "🔒", keywords: ["lock", "secure"] },
+  { emoji: "🔑", keywords: ["key", "password"] },
+  { emoji: "📝", keywords: ["memo", "write", "note"] },
+  { emoji: "✏️", keywords: ["pencil", "edit"] },
+  { emoji: "🗑️", keywords: ["trash", "delete"] },
+  { emoji: "📦", keywords: ["package", "box"] },
+  { emoji: "🧩", keywords: ["puzzle", "piece"] },
+  { emoji: "🔍", keywords: ["search", "magnify"] },
+  { emoji: "🌐", keywords: ["web", "globe", "internet"] },
 ]
 
 type Translate = (key: string) => string
@@ -878,6 +937,209 @@ const SlashCommandMenu = React.forwardRef<SlashCommandMenuHandle, SlashCommandMe
   )
 })
 
+// ---- MentionList component ----
+type MentionItem = SearchUser & { id: string }
+
+type MentionListProps = {
+  items: MentionItem[]
+  command: (item: MentionItem) => void
+  query: string
+}
+
+function MentionList({ items, command, query }: MentionListProps) {
+  const [selectedIndex, setSelectedIndex] = React.useState(0)
+  const itemRefs = React.useRef<Array<HTMLDivElement | null>>([])
+
+  React.useEffect(() => {
+    setSelectedIndex(0)
+  }, [items, query])
+
+  React.useEffect(() => {
+    itemRefs.current[selectedIndex]?.scrollIntoView({ block: "nearest" })
+  }, [selectedIndex])
+
+  if (!items.length) {
+    return (
+      <div className="mention-list-popup">
+        <div className="mention-no-results">未找到匹配用户</div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mention-list-popup">
+      {items.map((item, index) => (
+        <div
+          key={item.id}
+          ref={(el) => { itemRefs.current[index] = el }}
+          className={`mention-item ${index === selectedIndex ? "is-selected" : ""}`}
+          onMouseEnter={() => setSelectedIndex(index)}
+          onClick={() => command(item)}
+        >
+          <img
+            src={item.user?.avatar || item.user?.smallAvatar || "/default-avatar.png"}
+            alt=""
+            className="mention-avatar"
+            width={24}
+            height={24}
+          />
+          <div className="mention-info">
+            <span className="mention-nickname">{item.nickname || item.user?.nickname || item.username || ""}</span>
+            {item.username ? <span className="mention-username">@{item.username}</span> : null}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function createMentionSuggestion() {
+  return Mention.configure({
+    HTMLAttributes: {
+      class: "inline-mention",
+    },
+    suggestion: {
+      char: "@",
+      pluginKey: new PluginKey("mention"),
+      items: async ({ query }: { query: string }) => {
+        if (!query || query.length < 1) return []
+        try {
+          const result = await searchUsers({ keyword: query })
+          const users = (result?.results || []) as SearchUser[]
+          return users.slice(0, 8).map((u) => ({
+            ...u,
+            id: u.user?.id || "",
+          })) as MentionItem[]
+        } catch {
+          return []
+        }
+      },
+      render: () => {
+        let component: ReactRenderer<unknown, MentionListProps> | null = null
+
+        return {
+          onStart: (props: SuggestionProps<MentionItem>) => {
+            component = new ReactRenderer(MentionList, {
+              editor: props.editor,
+              props: {
+                items: props.items,
+                command: (item: MentionItem) => {
+                  props.command({ id: item.id, label: `@${item.nickname || item.user?.nickname || item.username || ""}` })
+                },
+                query: props.query,
+              },
+            })
+            const portalTarget = document.fullscreenElement || document.body
+            portalTarget.appendChild(component.element)
+            updateMentionPosition(component.element, props.clientRect?.() || null)
+          },
+          onUpdate: (props: SuggestionProps<MentionItem>) => {
+            if (!component) return
+            component.updateProps({
+              items: props.items,
+              command: (item: MentionItem) => {
+                props.command({ id: item.id, label: `@${item.nickname || item.user?.nickname || item.username || ""}` })
+              },
+              query: props.query,
+            })
+            updateMentionPosition(component.element, props.clientRect?.() || null)
+          },
+          onKeyDown: (props: SuggestionKeyDownProps) => {
+            if (props.event.key === "Escape") {
+              component?.destroy()
+              component?.element.remove()
+              component = null
+              return true
+            }
+            return false
+          },
+          onExit: () => {
+            component?.destroy()
+            component?.element.remove()
+            component = null
+          },
+        }
+      },
+    },
+  })
+}
+
+function updateMentionPosition(element: HTMLElement, clientRect: (() => DOMRect | null) | DOMRect | null) {
+  const rect = typeof clientRect === "function" ? clientRect() : clientRect
+  if (!rect) return
+  const offset = 6
+  let top = rect.bottom + offset
+  let left = rect.left
+  if (top + 200 > window.innerHeight) {
+    top = rect.top - 200 - offset
+  }
+  if (left + 240 > window.innerWidth) {
+    left = window.innerWidth - 240 - 8
+  }
+  if (left < 8) left = 8
+  if (top < 8) top = 8
+  element.style.position = "fixed"
+  element.style.zIndex = "9999"
+  element.style.top = `${top}px`
+  element.style.left = `${left}px`
+}
+
+// ---- EmojiPicker component ----
+function EmojiPicker({
+  onSelect,
+  onClose,
+  position,
+}: {
+  onSelect: (emoji: string) => void
+  onClose: () => void
+  position: { top: number; left: number }
+}) {
+  const [search, setSearch] = React.useState("")
+  const filtered = React.useMemo(() => {
+    if (!search.trim()) return EMOJI_LIST
+    const q = search.toLowerCase()
+    return EMOJI_LIST.filter(
+      (e) =>
+        e.emoji.includes(q) ||
+        e.keywords.some((k) => k.includes(q))
+    )
+  }, [search])
+
+  return (
+    <div
+      className="emoji-picker-popup"
+      style={{ top: position.top, left: position.left }}
+    >
+      <div className="emoji-search">
+        <input
+          type="text"
+          placeholder="搜索 Emoji…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          autoFocus
+        />
+      </div>
+      <div className="emoji-grid">
+        {filtered.map((e) => (
+          <button
+            key={e.emoji}
+            type="button"
+            className="emoji-item"
+            title={e.keywords[0]}
+            onMouseDown={(ev) => ev.preventDefault()}
+            onClick={() => {
+              onSelect(e.emoji)
+              onClose()
+            }}
+          >
+            {e.emoji}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function createSlashSuggestion(labels: RichTextEditorLabels, locale: string) {
   return Extension.create({
     name: "slash-commands",
@@ -1145,6 +1407,9 @@ export function RichTextEditor({
   const [linkOpen, setLinkOpen] = React.useState(false)
   const [linkText, setLinkText] = React.useState("")
   const [linkUrl, setLinkUrl] = React.useState("")
+  const [emojiOpen, setEmojiOpen] = React.useState(false)
+  const [emojiPosition, setEmojiPosition] = React.useState({ top: 0, left: 0 })
+  const emojiButtonRef = React.useRef<HTMLDivElement>(null)
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -1194,6 +1459,7 @@ export function RichTextEditor({
       Superscript,
       Subscript,
       Callout,
+      createMentionSuggestion(),
       createSlashSuggestion(labels, locale),
       Placeholder.configure({
         placeholder: labels.placeholder,
@@ -1264,6 +1530,48 @@ export function RichTextEditor({
     document.addEventListener("fullscreenchange", onFullscreenChange)
     return () => document.removeEventListener("fullscreenchange", onFullscreenChange)
   }, [])
+
+  React.useEffect(() => {
+    if (!emojiOpen) return
+    const button = emojiButtonRef.current
+    if (!button) return
+    function updatePos() {
+      const rect = button?.getBoundingClientRect()
+      if (!rect) return
+      setEmojiPosition({
+        top: Math.min(rect.bottom + 6, window.innerHeight - 330),
+        left: Math.min(Math.max(rect.left, 8), window.innerWidth - 288),
+      })
+    }
+    updatePos()
+    window.addEventListener("resize", updatePos)
+    window.addEventListener("scroll", updatePos, true)
+    return () => {
+      window.removeEventListener("resize", updatePos)
+      window.removeEventListener("scroll", updatePos, true)
+    }
+  }, [emojiOpen])
+
+  React.useEffect(() => {
+    if (!emojiOpen) return
+    function onPointerDown(e: PointerEvent) {
+      const target = e.target as globalThis.Node | null
+      if (!target) return
+      if (emojiButtonRef.current?.contains(target)) return
+      const popup = document.querySelector(".emoji-picker-popup")
+      if (popup?.contains(target)) return
+      setEmojiOpen(false)
+    }
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setEmojiOpen(false)
+    }
+    document.addEventListener("pointerdown", onPointerDown, true)
+    document.addEventListener("keydown", onKeyDown, true)
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown, true)
+      document.removeEventListener("keydown", onKeyDown, true)
+    }
+  }, [emojiOpen])
 
   function toggleFullscreen() {
     const el = containerRef.current
@@ -1440,6 +1748,24 @@ export function RichTextEditor({
           >
             <Highlighter size={16} />
           </ToolbarButton>
+          <div ref={emojiButtonRef} className="emoji-picker-wrapper">
+            <ToolbarButton
+              title="Emoji"
+              active={emojiOpen}
+              onClick={() => setEmojiOpen((v) => !v)}
+            >
+              <Smile size={16} />
+            </ToolbarButton>
+            {emojiOpen ? (
+              <EmojiPicker
+                position={emojiPosition}
+                onSelect={(emoji) => {
+                  editor?.chain().focus().insertContent(emoji).run()
+                }}
+                onClose={() => setEmojiOpen(false)}
+              />
+            ) : null}
+          </div>
           <ToolbarButton
             title={toolbar.clearFormat}
             onClick={() => editor?.chain().focus().clearNodes().unsetAllMarks().run()}

@@ -1578,6 +1578,16 @@ const enUS = {
         categoryRequiredSubmit: "Select a writable category first.",
         topicFeatureDisabled: "Discussions are not enabled",
         qaFeatureDisabled: "Q&A module is not enabled",
+        draft: {
+          saveBtn: "Save draft",
+          saved: "Draft saved",
+          savedQa: "Question draft saved",
+          restorePrompt:
+            "An unsaved post draft was found. Continue editing?",
+          restorePromptQa:
+            "An unsaved question draft was found. Continue editing?",
+          restoreConfirm: "Restore draft",
+        },
         attachment: {
           label: "Attachments (optional)",
           limitHint: "Up to {maxCount} attachments, max {maxSizeMB} MB each",
