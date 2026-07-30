@@ -12,7 +12,7 @@ import { useAppConfig } from "@/components/app/app-provider"
 import { UserAvatar } from "@/components/common/avatar"
 import { TopicLikeButton } from "@/components/topic/topic-like-button"
 import { TopicVoteCard } from "@/components/topic/topic-vote-card"
-import type { Topic } from "@/lib/api/types"
+import type { Tag, Topic } from "@/lib/api/types"
 import { prettyDate } from "@/lib/format"
 import type { TFunction } from "@/lib/i18n"
 
@@ -118,6 +118,15 @@ export function TopicListItem({
                   {compactTitle}
                 </Link>
               </div>
+              {topic.tags && topic.tags.length > 0 ? (
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {topic.tags.map((tag: Tag) => (
+                    <span key={tag.id} className="inline-flex items-center rounded-sm bg-primary/10 px-1.5 py-0.5 text-[11px] leading-none text-primary">
+                      {tag.name}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
               <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-xs leading-4 text-muted-foreground">
                 {topic.category ? (
                   <>
@@ -234,6 +243,20 @@ export function TopicListItem({
 
       {topic.vote ? (
         <TopicVoteCard className="mt-2 mb-2" vote={topic.vote} />
+      ) : null}
+
+      {topic.tags && topic.tags.length > 0 ? (
+        <div className="mt-2 flex flex-wrap gap-1">
+          {topic.tags.map((tag: Tag) => (
+            <Link
+              key={tag.id}
+              href={`/topics/tag/${tag.id}`}
+              className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
+            >
+              {tag.name}
+            </Link>
+          ))}
+        </div>
       ) : null}
 
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2">

@@ -27,7 +27,7 @@ export function TagInput({
   const [selectIndex, setSelectIndex] = React.useState(-1)
   const inputRef = React.useRef<HTMLInputElement>(null)
   const closeRecommendTimerRef = React.useRef<number | null>(null)
-  const maxTagCount = 3
+  const maxTagCount = 20
   const maxWordCount = 15
   const showAutocompleteTags = autocompleteTags.length > 0
   const showRecommendedOptions = !showAutocompleteTags && showRecommendTags && !!recommendTags?.length
