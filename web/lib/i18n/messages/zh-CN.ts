@@ -1206,6 +1206,8 @@ const zhCN = {
     richTextEditor: {
       placeholder: "输入 / 插入内容",
       toolbar: {
+        undo: "撤销",
+        redo: "重做",
         bold: "粗体",
         underline: "下划线",
         italic: "斜体",
@@ -1229,6 +1231,17 @@ const zhCN = {
         horizontalRule: "分割线",
         table: "插入表格",
         highlight: "高亮标记",
+        fontSize: "字体大小",
+        superscript: "上标",
+        subscript: "下标",
+        clearFormat: "清除格式",
+        addRowBefore: "上方插入行",
+        addRowAfter: "下方插入行",
+        addColBefore: "左侧插入列",
+        addColAfter: "右侧插入列",
+        deleteRow: "删除行",
+        deleteCol: "删除列",
+        deleteTable: "删除表格",
         fullscreen: "全屏",
         exitFullscreen: "退出全屏",
         uploading: "上传中...",
@@ -1284,6 +1297,22 @@ const zhCN = {
         horizontalRule: {
           title: "分割线",
           description: "插入水平分割线",
+        },
+        calloutInfo: {
+          title: "信息面板",
+          description: "插入信息提示框",
+        },
+        calloutWarning: {
+          title: "警告面板",
+          description: "插入警告提示框",
+        },
+        calloutTip: {
+          title: "提示面板",
+          description: "插入提示框",
+        },
+        calloutSuccess: {
+          title: "成功面板",
+          description: "插入成功提示框",
         },
       },
     },

@@ -22,14 +22,22 @@ import { TableRow } from "@tiptap/extension-table-row"
 import { TableCell } from "@tiptap/extension-table-cell"
 import { TableHeader } from "@tiptap/extension-table-header"
 import { Highlight } from "@tiptap/extension-highlight"
+import { FontSize } from "@tiptap/extension-font-size"
+import { Superscript } from "@tiptap/extension-superscript"
+import { Subscript } from "@tiptap/extension-subscript"
+import { CodeBlockLowlight } from "@tiptap/extension-code-block-lowlight"
+import { common, createLowlight } from "lowlight"
 import {
   AlignCenter,
   AlignLeft,
   AlignRight,
+  ArrowLeft,
+  ArrowRight,
   Bold,
   Check,
   Code,
   Code2,
+  Eraser,
   Heading1,
   Heading2,
   Heading3,
@@ -46,10 +54,17 @@ import {
   Paintbrush,
   Palette,
   Pilcrow,
+  Plus,
   Quote,
+  Redo2,
   Strikethrough,
+  Subscript as SubscriptIcon,
+  Superscript as SuperscriptIcon,
   Table as TableIcon,
+  Table2,
+  Trash2,
   Underline as UnderlineIcon,
+  Undo2,
 } from "lucide-react"
 
 import { uploadEditorImage } from "@/components/editor/upload"
@@ -111,11 +126,26 @@ const BACKGROUND_COLOR_PALETTE = [
   "#F5FFFA",
 ]
 
+const lowlight = createLowlight(common)
+
+const FONT_SIZES = [
+  { label: "12px", value: "12px" },
+  { label: "14px", value: "14px" },
+  { label: "16px", value: "16px" },
+  { label: "18px", value: "18px" },
+  { label: "20px", value: "20px" },
+  { label: "24px", value: "24px" },
+  { label: "28px", value: "28px" },
+  { label: "32px", value: "32px" },
+]
+
 type Translate = (key: string) => string
 
 type RichTextEditorLabels = {
   placeholder: string
   toolbar: {
+    undo: string
+    redo: string
     bold: string
     underline: string
     italic: string
@@ -139,6 +169,17 @@ type RichTextEditorLabels = {
     horizontalRule: string
     table: string
     highlight: string
+    fontSize: string
+    superscript: string
+    subscript: string
+    clearFormat: string
+    addRowBefore: string
+    addRowAfter: string
+    addColBefore: string
+    addColAfter: string
+    deleteRow: string
+    deleteCol: string
+    deleteTable: string
     fullscreen: string
     exitFullscreen: string
     uploading: string
@@ -166,6 +207,10 @@ type RichTextEditorLabels = {
     quote: { title: string; description: string }
     codeBlock: { title: string; description: string }
     horizontalRule: { title: string; description: string }
+    calloutInfo: { title: string; description: string }
+    calloutWarning: { title: string; description: string }
+    calloutTip: { title: string; description: string }
+    calloutSuccess: { title: string; description: string }
   }
 }
 
@@ -175,6 +220,8 @@ function createEditorLabels(t: Translate): RichTextEditorLabels {
   return {
     placeholder: t(key("placeholder")),
     toolbar: {
+      undo: t(key("toolbar.undo")),
+      redo: t(key("toolbar.redo")),
       bold: t(key("toolbar.bold")),
       underline: t(key("toolbar.underline")),
       italic: t(key("toolbar.italic")),
@@ -198,6 +245,17 @@ function createEditorLabels(t: Translate): RichTextEditorLabels {
       horizontalRule: t(key("toolbar.horizontalRule")),
       table: t(key("toolbar.table")),
       highlight: t(key("toolbar.highlight")),
+      fontSize: t(key("toolbar.fontSize")),
+      superscript: t(key("toolbar.superscript")),
+      subscript: t(key("toolbar.subscript")),
+      clearFormat: t(key("toolbar.clearFormat")),
+      addRowBefore: t(key("toolbar.addRowBefore")),
+      addRowAfter: t(key("toolbar.addRowAfter")),
+      addColBefore: t(key("toolbar.addColBefore")),
+      addColAfter: t(key("toolbar.addColAfter")),
+      deleteRow: t(key("toolbar.deleteRow")),
+      deleteCol: t(key("toolbar.deleteCol")),
+      deleteTable: t(key("toolbar.deleteTable")),
       fullscreen: t(key("toolbar.fullscreen")),
       exitFullscreen: t(key("toolbar.exitFullscreen")),
       uploading: t(key("toolbar.uploading")),
@@ -254,6 +312,22 @@ function createEditorLabels(t: Translate): RichTextEditorLabels {
       horizontalRule: {
         title: t(key("slash.horizontalRule.title")),
         description: t(key("slash.horizontalRule.description")),
+      },
+      calloutInfo: {
+        title: t(key("slash.calloutInfo.title")),
+        description: t(key("slash.calloutInfo.description")),
+      },
+      calloutWarning: {
+        title: t(key("slash.calloutWarning.title")),
+        description: t(key("slash.calloutWarning.description")),
+      },
+      calloutTip: {
+        title: t(key("slash.calloutTip.title")),
+        description: t(key("slash.calloutTip.description")),
+      },
+      calloutSuccess: {
+        title: t(key("slash.calloutSuccess.title")),
+        description: t(key("slash.calloutSuccess.description")),
       },
     },
   }
@@ -432,6 +506,106 @@ const ResizableImage = Node.create({
   },
 })
 
+const CALLOUT_CONFIG = {
+  info: {
+    icon: "ℹ️",
+    class: "callout-info",
+    zhLabel: "信息",
+    enLabel: "Info",
+  },
+  warning: {
+    icon: "⚠️",
+    class: "callout-warning",
+    zhLabel: "警告",
+    enLabel: "Warning",
+  },
+  tip: {
+    icon: "💡",
+    class: "callout-tip",
+    zhLabel: "提示",
+    enLabel: "Tip",
+  },
+  success: {
+    icon: "✅",
+    class: "callout-success",
+    zhLabel: "成功",
+    enLabel: "Success",
+  },
+} as const
+
+type CalloutType = keyof typeof CALLOUT_CONFIG
+
+declare module "@tiptap/core" {
+  interface Commands<ReturnType> {
+    callout: {
+      setCallout: (options: { type?: CalloutType }) => ReturnType
+    }
+  }
+}
+
+const Callout = Node.create({
+  name: "callout",
+  group: "block",
+  content: "block+",
+  defining: true,
+
+  addAttributes() {
+    return {
+      calloutType: {
+        default: "info",
+        parseHTML: (element: HTMLElement) => {
+          for (const key of Object.keys(CALLOUT_CONFIG)) {
+            if (element.classList.contains(CALLOUT_CONFIG[key as CalloutType].class)) {
+              return key
+            }
+          }
+          return "info"
+        },
+      },
+    }
+  },
+
+  parseHTML() {
+    return [
+      {
+        tag: "div.callout",
+        getAttrs: (element: string | HTMLElement) => {
+          if (typeof element === "string") return { calloutType: "info" }
+          for (const key of Object.keys(CALLOUT_CONFIG)) {
+            if (element.classList.contains(CALLOUT_CONFIG[key as CalloutType].class)) {
+              return { calloutType: key }
+            }
+          }
+          return { calloutType: "info" }
+        },
+      },
+    ]
+  },
+
+  renderHTML({ HTMLAttributes, node }: { HTMLAttributes: Record<string, unknown>; node: { attrs: Record<string, unknown> } }) {
+    const calloutType = (node.attrs.calloutType as CalloutType) || "info"
+    const config = CALLOUT_CONFIG[calloutType] || CALLOUT_CONFIG.info
+    return [
+      "div",
+      mergeAttributes(HTMLAttributes, {
+        class: `callout ${config.class}`,
+        "data-type": calloutType,
+      }),
+      ["div", { class: "callout-icon" }, config.icon],
+      ["div", { class: "callout-content" }, 0],
+    ]
+  },
+
+  addCommands() {
+    return {
+      setCallout:
+        (options?: { type?: CalloutType }) =>
+        ({ commands }: CommandProps) =>
+          commands.wrapIn(this.name, { calloutType: options?.type || "info" }),
+    }
+  },
+})
+
 type SlashCommandItem = {
   title: string
   description: string
@@ -546,6 +720,34 @@ function slashItems(labels: RichTextEditorLabels, locale: string): SlashCommandI
       aliases: aliases.horizontalRule,
       icon: <MinusSquare size={18} />,
       command: ({ editor, range }) => editor.chain().focus().deleteRange(range).setHorizontalRule().run(),
+    },
+    {
+      title: labels.slash.calloutInfo.title,
+      description: labels.slash.calloutInfo.description,
+      aliases: zh ? ["info", "callout", "信息", "callout-info"] : ["info", "callout", "callout-info"],
+      icon: <span style={{ fontSize: "18px" }}>ℹ️</span>,
+      command: ({ editor, range }) => editor.chain().focus().deleteRange(range).setCallout({ type: "info" }).run(),
+    },
+    {
+      title: labels.slash.calloutWarning.title,
+      description: labels.slash.calloutWarning.description,
+      aliases: zh ? ["warning", "warn", "警告", "callout-warning"] : ["warning", "warn", "callout-warning"],
+      icon: <span style={{ fontSize: "18px" }}>⚠️</span>,
+      command: ({ editor, range }) => editor.chain().focus().deleteRange(range).setCallout({ type: "warning" }).run(),
+    },
+    {
+      title: labels.slash.calloutTip.title,
+      description: labels.slash.calloutTip.description,
+      aliases: zh ? ["tip", "hint", "提示", "callout-tip"] : ["tip", "hint", "callout-tip"],
+      icon: <span style={{ fontSize: "18px" }}>💡</span>,
+      command: ({ editor, range }) => editor.chain().focus().deleteRange(range).setCallout({ type: "tip" }).run(),
+    },
+    {
+      title: labels.slash.calloutSuccess.title,
+      description: labels.slash.calloutSuccess.description,
+      aliases: zh ? ["success", "ok", "成功", "callout-success"] : ["success", "ok", "callout-success"],
+      icon: <span style={{ fontSize: "18px" }}>✅</span>,
+      command: ({ editor, range }) => editor.chain().focus().deleteRange(range).setCallout({ type: "success" }).run(),
     },
   ]
 }
@@ -950,6 +1152,11 @@ export function RichTextEditor({
       StarterKit.configure({
         link: false,
         horizontalRule: false,
+        codeBlock: false,
+      }),
+      CodeBlockLowlight.configure({
+        lowlight,
+        defaultLanguage: null,
       }),
       Link.configure({
         openOnClick: false,
@@ -983,6 +1190,10 @@ export function RichTextEditor({
       Highlight.configure({
         multicolor: true,
       }),
+      FontSize,
+      Superscript,
+      Subscript,
+      Callout,
       createSlashSuggestion(labels, locale),
       Placeholder.configure({
         placeholder: labels.placeholder,
@@ -1096,6 +1307,13 @@ export function RichTextEditor({
     <div ref={containerRef} className="m-editor-container" style={{ height }}>
       <div className="editor-toolbar">
         <div className="editor-toolbar-btns editor-toolbar-left">
+          <ToolbarButton title={toolbar.undo} onClick={() => editor?.chain().focus().undo().run()}>
+            <Undo2 size={16} />
+          </ToolbarButton>
+          <ToolbarButton title={toolbar.redo} onClick={() => editor?.chain().focus().redo().run()}>
+            <Redo2 size={16} />
+          </ToolbarButton>
+          <ToolbarDivider />
           <ToolbarButton title={toolbar.bold} active={editor?.isActive("bold")} onClick={() => editor?.chain().focus().toggleBold().run()}>
             <Bold size={16} />
           </ToolbarButton>
@@ -1109,12 +1327,38 @@ export function RichTextEditor({
             <Strikethrough size={16} />
           </ToolbarButton>
           <ToolbarDivider />
+          <ToolbarButton title={toolbar.superscript} active={editor?.isActive("superscript")} onClick={() => editor?.chain().focus().toggleSuperscript().run()}>
+            <SuperscriptIcon size={16} />
+          </ToolbarButton>
+          <ToolbarButton title={toolbar.subscript} active={editor?.isActive("subscript")} onClick={() => editor?.chain().focus().toggleSubscript().run()}>
+            <SubscriptIcon size={16} />
+          </ToolbarButton>
+          <ToolbarDivider />
           <ToolbarButton title={toolbar.heading1} active={editor?.isActive("heading", { level: 1 })} onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()}>
             <Heading1 size={16} />
           </ToolbarButton>
           <ToolbarButton title={toolbar.heading2} active={editor?.isActive("heading", { level: 2 })} onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}>
             <Heading2 size={16} />
           </ToolbarButton>
+          <select
+            className="m-editor-font-size-select"
+            title={toolbar.fontSize}
+            value={editor?.getAttributes("textStyle").fontSize || ""}
+            onChange={(event) => {
+              const value = event.target.value
+              if (value) {
+                editor?.chain().focus().setFontSize(value).run()
+              } else {
+                editor?.chain().focus().unsetFontSize().run()
+              }
+            }}
+          >
+            <option value="">{toolbar.fontSize}</option>
+            {FONT_SIZES.map((s) => (
+              <option key={s.value} value={s.value}>{s.label}</option>
+            ))}
+          </select>
+          <ToolbarDivider />
           <ToolbarButton title={toolbar.quote} active={editor?.isActive("blockquote")} onClick={() => editor?.chain().focus().toggleBlockquote().run()}>
             <Quote size={16} />
           </ToolbarButton>
@@ -1153,6 +1397,31 @@ export function RichTextEditor({
           </ToolbarButton>
           <ToolbarDivider />
           <ToolbarButton
+            title="信息 Callout"
+            onClick={() => editor?.chain().focus().setCallout({ type: "info" }).run()}
+          >
+            ℹ️
+          </ToolbarButton>
+          <ToolbarButton
+            title="警告 Callout"
+            onClick={() => editor?.chain().focus().setCallout({ type: "warning" }).run()}
+          >
+            ⚠️
+          </ToolbarButton>
+          <ToolbarButton
+            title="提示 Callout"
+            onClick={() => editor?.chain().focus().setCallout({ type: "tip" }).run()}
+          >
+            💡
+          </ToolbarButton>
+          <ToolbarButton
+            title="成功 Callout"
+            onClick={() => editor?.chain().focus().setCallout({ type: "success" }).run()}
+          >
+            ✅
+          </ToolbarButton>
+          <ToolbarDivider />
+          <ToolbarButton
             title={toolbar.table}
             onClick={() =>
               editor
@@ -1171,6 +1440,41 @@ export function RichTextEditor({
           >
             <Highlighter size={16} />
           </ToolbarButton>
+          <ToolbarButton
+            title={toolbar.clearFormat}
+            onClick={() => editor?.chain().focus().clearNodes().unsetAllMarks().run()}
+          >
+            <Eraser size={16} />
+          </ToolbarButton>
+          <ToolbarDivider />
+          {/* ---- Table contextual actions ---- */}
+          {editor?.isActive("table") ? (
+            <>
+              <ToolbarButton title={toolbar.addRowBefore} onClick={() => editor?.chain().focus().addRowBefore().run()}>
+                <Plus size={14} className="table-action-icon" /><ArrowLeft size={14} />
+              </ToolbarButton>
+              <ToolbarButton title={toolbar.addRowAfter} onClick={() => editor?.chain().focus().addRowAfter().run()}>
+                <Plus size={14} className="table-action-icon" /><ArrowRight size={14} />
+              </ToolbarButton>
+              <ToolbarButton title={toolbar.addColBefore} onClick={() => editor?.chain().focus().addColumnBefore().run()}>
+                <ArrowLeft size={14} /><Plus size={14} className="table-action-icon" />
+              </ToolbarButton>
+              <ToolbarButton title={toolbar.addColAfter} onClick={() => editor?.chain().focus().addColumnAfter().run()}>
+                <ArrowRight size={14} /><Plus size={14} className="table-action-icon" />
+              </ToolbarButton>
+              <ToolbarDivider />
+              <ToolbarButton title={toolbar.deleteRow} onClick={() => editor?.chain().focus().deleteRow().run()}>
+                <Trash2 size={14} /><span className="table-action-label">↕</span>
+              </ToolbarButton>
+              <ToolbarButton title={toolbar.deleteCol} onClick={() => editor?.chain().focus().deleteColumn().run()}>
+                <Trash2 size={14} /><span className="table-action-label">↔</span>
+              </ToolbarButton>
+              <ToolbarButton title={toolbar.deleteTable} onClick={() => editor?.chain().focus().deleteTable().run()}>
+                <Trash2 size={14} /><Table2 size={14} />
+              </ToolbarButton>
+              <ToolbarDivider />
+            </>
+          ) : null}
           <ToolbarDivider />
           <div className="link-button">
             <ToolbarButton title={toolbar.link} active={editor?.isActive("link")} onClick={openLinkDialog}>

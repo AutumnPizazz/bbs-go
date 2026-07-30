@@ -1219,6 +1219,8 @@ const enUS = {
     richTextEditor: {
       placeholder: "Type / to insert content",
       toolbar: {
+        undo: "Undo",
+        redo: "Redo",
         bold: "Bold",
         underline: "Underline",
         italic: "Italic",
@@ -1242,6 +1244,17 @@ const enUS = {
         horizontalRule: "Divider",
         table: "Insert table",
         highlight: "Highlight",
+        fontSize: "Font size",
+        superscript: "Superscript",
+        subscript: "Subscript",
+        clearFormat: "Clear formatting",
+        addRowBefore: "Add row before",
+        addRowAfter: "Add row after",
+        addColBefore: "Add column before",
+        addColAfter: "Add column after",
+        deleteRow: "Delete row",
+        deleteCol: "Delete column",
+        deleteTable: "Delete table",
         fullscreen: "Fullscreen",
         exitFullscreen: "Exit fullscreen",
         uploading: "Uploading...",
@@ -1297,6 +1310,22 @@ const enUS = {
         horizontalRule: {
           title: "Divider",
           description: "Insert a horizontal divider",
+        },
+        calloutInfo: {
+          title: "Info callout",
+          description: "Insert an information callout",
+        },
+        calloutWarning: {
+          title: "Warning callout",
+          description: "Insert a warning callout",
+        },
+        calloutTip: {
+          title: "Tip callout",
+          description: "Insert a tip callout",
+        },
+        calloutSuccess: {
+          title: "Success callout",
+          description: "Insert a success callout",
         },
       },
     },
