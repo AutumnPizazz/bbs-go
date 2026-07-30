@@ -20,10 +20,33 @@
     scroll-margin-top: 5rem;
   }
 
-  .bbs-content h1,
+  .bbs-content h1 {
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 0.3em;
+    font-size: 1.75em;
+  }
+
   .bbs-content h2 {
     border-bottom: 1px solid var(--border);
     padding-bottom: 0.3em;
+    font-size: 1.375em;
+  }
+
+  .bbs-content h3 {
+    font-size: 1.125em;
+  }
+
+  .bbs-content h4 {
+    font-size: 1em;
+  }
+
+  .bbs-content h5 {
+    font-size: 0.875em;
+  }
+
+  .bbs-content h6 {
+    font-size: 0.75em;
+    color: var(--muted-foreground);
   }
 
   .bbs-content p {

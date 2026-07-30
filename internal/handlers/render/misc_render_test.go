@@ -22,9 +22,11 @@ func TestHandleTopicHtmlContentBuildsTocAndHeadingIds(t *testing.T) {
 	content, toc := handleTopicHtmlContent(htmlContent)
 
 	expected := []resp.TopicTocItem{
+		{Id: "topic-heading-page-title", Title: "Page title", Level: 1},
 		{Id: "topic-heading-intro", Title: "Intro", Level: 2},
 		{Id: "topic-heading-intro-2", Title: "Intro", Level: 3},
 		{Id: "topic-heading-中文-小节", Title: "中文 小节", Level: 4},
+		{Id: "topic-heading-ignored", Title: "Ignored", Level: 5},
 		{Id: "section", Title: "!!!", Level: 2},
 	}
 	if !reflect.DeepEqual(toc, expected) {
@@ -36,8 +38,8 @@ func TestHandleTopicHtmlContentBuildsTocAndHeadingIds(t *testing.T) {
 			t.Fatalf("content does not contain id %q: %s", item.Id, content)
 		}
 	}
-	if strings.Contains(content, `id="Page title"`) || strings.Contains(content, `id="Ignored"`) {
-		t.Fatalf("content should not assign ids to h1/h5: %s", content)
+	if strings.Contains(content, `id="`+`Page title`+`"`) || strings.Contains(content, `id="`+`Ignored`+`"`) {
+		t.Fatalf("content should use slugged ids, not raw titles: %s", content)
 	}
 }
 

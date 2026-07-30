@@ -634,6 +634,7 @@ const Callout = Node.create({
     return [
       {
         tag: "div.callout",
+        contentElement: (element: HTMLElement) => element.querySelector(".callout-content") as HTMLElement || element,
         getAttrs: (element: string | HTMLElement) => {
           if (typeof element === "string") return { calloutType: "info" }
           for (const key of Object.keys(CALLOUT_CONFIG)) {

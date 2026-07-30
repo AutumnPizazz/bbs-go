@@ -14,13 +14,10 @@ export type TocItem = {
 }
 
 function indentClass(level?: number) {
-  if (level === 3) {
-    return "pl-5"
-  }
-  if (level && level >= 4) {
-    return "pl-8"
-  }
-  return "pl-3"
+  if (!level || level === 1) return ""
+  if (level === 2) return "pl-3"
+  if (level === 3) return "pl-6"
+  return "pl-9"
 }
 
 function getHashId() {

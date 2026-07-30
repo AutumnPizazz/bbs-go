@@ -123,7 +123,7 @@ func handleHtmlContentWithToc(htmlContent string, buildToc bool) (string, []resp
 func buildTopicToc(doc *goquery.Document) []resp.TopicTocItem {
 	var toc []resp.TopicTocItem
 	usedIds := make(map[string]int)
-	doc.Find("h2,h3,h4").Each(func(_ int, selection *goquery.Selection) {
+	doc.Find("h1,h2,h3,h4,h5,h6").Each(func(_ int, selection *goquery.Selection) {
 		title := strings.TrimSpace(selection.Text())
 		if strs.IsBlank(title) {
 			return
@@ -143,12 +143,18 @@ func buildTopicToc(doc *goquery.Document) []resp.TopicTocItem {
 
 func headingLevel(selection *goquery.Selection) int {
 	switch goquery.NodeName(selection) {
+	case "h1":
+		return 1
 	case "h2":
 		return 2
 	case "h3":
 		return 3
 	case "h4":
 		return 4
+	case "h5":
+		return 5
+	case "h6":
+		return 6
 	default:
 		return 0
 	}
