@@ -501,76 +501,95 @@ export function TopicCreateForm({
   )
 
   // ---- Draft save ----
-  const draftKey = type === 2 ? "bbsgo.draft.qa" : "bbsgo.draft.topic"
-  const draftPromptShownRef = React.useRef(false)
-  const draftConfirmCalledRef = React.useRef(false)
+  const draftsKey = type === 2 ? "bbsgo.drafts.qa" : "bbsgo.drafts.topic"
 
-  // Check for saved draft on mount
-  React.useEffect(() => {
-    if (draftPromptShownRef.current) return
+  type DraftEntry = {
+    id: string
+    title: string
+    content: string
+    tags: string[]
+    contentType: string
+    categoryId: number
+    savedAt: number
+  }
+
+  const [drafts, setDrafts] = React.useState<DraftEntry[]>(() => {
     try {
-      const raw = window.localStorage.getItem(draftKey)
-      if (!raw) return
-      const draft = JSON.parse(raw) as Partial<TopicCreateFormState>
-      const hasContent =
-        (draft.title && draft.title.trim()) ||
-        (draft.content && draft.content.trim() !== "<p></p>" && draft.content.trim())
-      if (!hasContent) return
-      draftPromptShownRef.current = true
-      setConfirmState({
-        description:
-          type === 2
-            ? t("pages.topic.create.draft.restorePromptQa")
-            : t("pages.topic.create.draft.restorePrompt"),
-        confirmText: t("pages.topic.create.draft.restoreConfirm"),
-        onConfirm: () => {
-          draftConfirmCalledRef.current = true
-          setForm((current) => ({
-            ...current,
-            title: draft.title ?? current.title,
-            content: draft.content ?? current.content,
-            tags: draft.tags ?? current.tags,
-            contentType: draft.contentType ?? current.contentType,
-            categoryId: draft.categoryId ?? current.categoryId,
-          }))
-          window.localStorage.removeItem(draftKey)
-          setConfirmState(null)
-        },
-      })
-    } catch (_e) {
-      // Corrupted draft, ignore
+      const raw = window.localStorage.getItem(draftsKey)
+      return raw ? (JSON.parse(raw) as DraftEntry[]) : []
+    } catch {
+      return []
     }
-  }, [draftKey, type])
+  })
+  const [draftListOpen, setDraftListOpen] = React.useState(false)
+  const draftListRef = React.useRef<HTMLDivElement>(null)
 
-  // Draft is saved manually via a button in the footer.
+  const persistDrafts = React.useCallback(
+    (next: DraftEntry[]) => {
+      setDrafts(next)
+      try {
+        window.localStorage.setItem(draftsKey, JSON.stringify(next))
+      } catch {
+        // localStorage full
+      }
+    },
+    [draftsKey]
+  )
 
   const saveDraft = React.useCallback(() => {
-    try {
-      window.localStorage.setItem(
-        draftKey,
-        JSON.stringify({
-          title: form.title,
-          content: form.content,
-          tags: form.tags,
-          contentType: form.contentType,
-          categoryId: form.categoryId,
-        })
-      )
-      return true
-    } catch {
-      return false
+    const title = form.title.trim()
+    const content = form.content
+    if (!title && (!content || content === "<p></p>")) return false
+    const entry: DraftEntry = {
+      id: String(Date.now()),
+      title: title || "(无标题)",
+      content,
+      tags: form.tags,
+      contentType: form.contentType,
+      categoryId: form.categoryId,
+      savedAt: Date.now(),
     }
-  }, [draftKey, form.title, form.content, form.tags, form.contentType, form.categoryId])
+    // Overwrite draft with same title if it exists
+    const filtered = drafts.filter((d) => d.title !== entry.title)
+    persistDrafts([entry, ...filtered])
+    return true
+  }, [form.title, form.content, form.tags, form.contentType, form.categoryId, drafts, persistDrafts])
 
-  // When draft restore dialog is dismissed without confirming, discard draft
+  function loadDraft(entry: DraftEntry) {
+    setForm((current) => ({
+      ...current,
+      title: entry.title === "(无标题)" ? "" : entry.title,
+      content: entry.content,
+      tags: entry.tags,
+      contentType: (entry.contentType as TopicCreateFormState["contentType"]) || current.contentType,
+      categoryId: entry.categoryId || current.categoryId,
+    }))
+    setDraftListOpen(false)
+  }
+
+  function deleteDraft(id: string) {
+    persistDrafts(drafts.filter((d) => d.id !== id))
+  }
+
+  // Close draft list on outside click
   React.useEffect(() => {
-    if (confirmState !== null) return
-    if (draftPromptShownRef.current && !draftConfirmCalledRef.current) {
-      window.localStorage.removeItem(draftKey)
+    if (!draftListOpen) return
+    function onPointerDown(e: PointerEvent) {
+      const target = e.target as globalThis.Node | null
+      if (!target) return
+      if (draftListRef.current?.contains(target)) return
+      setDraftListOpen(false)
     }
-    draftPromptShownRef.current = false
-    draftConfirmCalledRef.current = false
-  }, [confirmState, draftKey])
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setDraftListOpen(false)
+    }
+    document.addEventListener("pointerdown", onPointerDown, true)
+    document.addEventListener("keydown", onKeyDown, true)
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown, true)
+      document.removeEventListener("keydown", onKeyDown, true)
+    }
+  }, [draftListOpen])
 
   const availableNodes = categories
   const effectiveCategoryId = hasCategory(availableNodes, form.categoryId)
@@ -660,8 +679,8 @@ export function TopicCreateForm({
         },
       })
       router.push(`/topic/${data.id}`)
-      // Clear draft on successful publish
-      window.localStorage.removeItem(draftKey)
+      // Clear all drafts on successful publish
+      window.localStorage.removeItem(draftsKey)
     } catch (error) {
       catchError(error)
       setPublishing(false)
@@ -899,6 +918,49 @@ export function TopicCreateForm({
         ) : null}
 
         <div className="form-footer">
+          {/* ---- Draft list dropdown ---- */}
+          <div ref={draftListRef} className="draft-list-wrapper">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={drafts.length === 0}
+              onClick={() => setDraftListOpen((v) => !v)}
+            >
+              {t("pages.topic.create.draft.listBtn")} ({drafts.length})
+            </Button>
+            {draftListOpen && drafts.length > 0 ? (
+              <div className="draft-list-popup">
+                {drafts.map((d) => (
+                  <div key={d.id} className="draft-list-item">
+                    <button
+                      type="button"
+                      className="draft-list-load"
+                      onClick={() => loadDraft(d)}
+                    >
+                      <span className="draft-list-title">
+                        {d.title || "(无标题)"}
+                      </span>
+                      <span className="draft-list-meta">
+                        {findCategory(categories, d.categoryId)?.name || ""}
+                        {d.categoryId ? " · " : ""}
+                        {formatDate(d.savedAt)}
+                      </span>
+                    </button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      className="draft-list-delete"
+                      aria-label={t("pages.topic.create.draft.delete")}
+                      onClick={() => deleteDraft(d.id)}
+                    >
+                      <Trash2 size={14} />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
           <Button
             type="button"
             variant="outline"

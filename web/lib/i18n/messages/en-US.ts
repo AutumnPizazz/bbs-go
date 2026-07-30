@@ -1580,13 +1580,10 @@ const enUS = {
         qaFeatureDisabled: "Q&A module is not enabled",
         draft: {
           saveBtn: "Save draft",
+          listBtn: "Drafts",
+          delete: "Delete draft",
           saved: "Draft saved",
           savedQa: "Question draft saved",
-          restorePrompt:
-            "An unsaved post draft was found. Continue editing?",
-          restorePromptQa:
-            "An unsaved question draft was found. Continue editing?",
-          restoreConfirm: "Restore draft",
         },
         attachment: {
           label: "Attachments (optional)",

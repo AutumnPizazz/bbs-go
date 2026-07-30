@@ -1563,11 +1563,10 @@ const zhCN = {
         qaFeatureDisabled: "提问模块未开启",
         draft: {
           saveBtn: "保存草稿",
+          listBtn: "草稿列表",
+          delete: "删除草稿",
           saved: "帖子草稿已保存",
           savedQa: "提问草稿已保存",
-          restorePrompt: "检测到未发布的帖子草稿，是否恢复继续编辑？",
-          restorePromptQa: "检测到未发布的提问草稿，是否恢复继续编辑？",
-          restoreConfirm: "恢复草稿",
         },
         attachment: {
           label: "附件（可选）",
