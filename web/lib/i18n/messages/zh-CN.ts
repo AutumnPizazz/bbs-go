@@ -1244,6 +1244,8 @@ const zhCN = {
         deleteTable: "删除表格",
         fullscreen: "全屏",
         exitFullscreen: "退出全屏",
+        scrollForward: "向右滚动查看更多",
+        scrollBack: "向左滚动",
         uploading: "上传中...",
       },
       linkDialog: {

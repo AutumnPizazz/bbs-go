@@ -150,6 +150,16 @@
     border-bottom: 1px solid var(--editor-border);
     background: var(--editor-toolbar-bg);
     padding: 0.25rem 0.5rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .editor-toolbar::-webkit-scrollbar {
+    height: 3px;
+  }
+
+  .editor-toolbar::-webkit-scrollbar-thumb {
+    border-radius: 2px;
+    background: var(--editor-scrollbar-thumb);
   }
 
   .editor-toolbar-btns {
@@ -167,6 +177,49 @@
 
   .editor-toolbar-left::-webkit-scrollbar {
     display: none;
+  }
+
+  /* overflow gradient hint */
+  .editor-toolbar-left.has-overflow-right::after {
+    content: "";
+    position: sticky;
+    right: 0;
+    z-index: 1;
+    width: 32px;
+    flex-shrink: 0;
+    background: linear-gradient(
+      to right,
+      transparent,
+      var(--editor-toolbar-bg)
+    );
+    pointer-events: none;
+  }
+
+  /* scroll arrow button */
+  .m-editor-toolbar-scroll-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    border: 1px solid var(--editor-border);
+    border-radius: 4px;
+    background: var(--editor-bg);
+    color: var(--editor-text);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .m-editor-toolbar-scroll-btn:hover {
+    background: var(--editor-hover);
+  }
+
+  @media (max-width: 640px) {
+    .m-editor-toolbar-scroll-btn {
+      width: 32px;
+      height: 32px;
+    }
   }
 
   .editor-toolbar-right {
@@ -187,6 +240,22 @@
     color: var(--editor-text);
     cursor: pointer;
     transition: all 0.2s ease;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 640px) {
+    .m-editor-toolbar-button {
+      width: 32px;
+      height: 32px;
+    }
+
+    .m-editor-toolbar-divider {
+      height: 22px;
+    }
+
+    .m-editor-font-size-select {
+      height: 32px;
+    }
   }
 
   .m-editor-toolbar-button:hover,

@@ -37,6 +37,8 @@ import {
   ArrowRight,
   Bold,
   Check,
+  ChevronLeft,
+  ChevronRight,
   Code,
   Code2,
   Eraser,
@@ -241,6 +243,8 @@ type RichTextEditorLabels = {
     deleteTable: string
     fullscreen: string
     exitFullscreen: string
+    scrollForward: string
+    scrollBack: string
     uploading: string
   }
   linkDialog: {
@@ -317,6 +321,8 @@ function createEditorLabels(t: Translate): RichTextEditorLabels {
       deleteTable: t(key("toolbar.deleteTable")),
       fullscreen: t(key("toolbar.fullscreen")),
       exitFullscreen: t(key("toolbar.exitFullscreen")),
+      scrollForward: t(key("toolbar.scrollForward")),
+      scrollBack: t(key("toolbar.scrollBack")),
       uploading: t(key("toolbar.uploading")),
     },
     linkDialog: {
@@ -1610,11 +1616,45 @@ export function RichTextEditor({
   const activeTextColor = (editor?.getAttributes("textStyle").color as string | undefined) || ""
   const activeBackgroundColor = (editor?.getAttributes("textStyle").backgroundColor as string | undefined) || ""
   const toolbar = labels.toolbar
+  const toolbarScrollRef = React.useRef<HTMLDivElement>(null)
+  const [toolbarOverflow, setToolbarOverflow] = React.useState(false)
+  const [toolbarScrolledEnd, setToolbarScrolledEnd] = React.useState(false)
+
+  function checkToolbarOverflow() {
+    const el = toolbarScrollRef.current
+    if (!el) return
+    const overflow = el.scrollWidth > el.clientWidth + 1
+    const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 2
+    setToolbarOverflow(overflow)
+    setToolbarScrolledEnd(atEnd || !overflow)
+  }
+
+  React.useEffect(() => {
+    checkToolbarOverflow()
+    const el = toolbarScrollRef.current
+    if (!el) return
+    const onScroll = () => checkToolbarOverflow()
+    el.addEventListener("scroll", onScroll, { passive: true })
+    window.addEventListener("resize", checkToolbarOverflow)
+    return () => {
+      el.removeEventListener("scroll", onScroll)
+      window.removeEventListener("resize", checkToolbarOverflow)
+    }
+  }, [editor])
+
+  function scrollToolbar(direction: "left" | "right") {
+    const el = toolbarScrollRef.current
+    if (!el) return
+    el.scrollBy({ left: direction === "right" ? 200 : -200, behavior: "smooth" })
+  }
 
   return (
     <div ref={containerRef} className="m-editor-container" style={{ height }}>
       <div className="editor-toolbar">
-        <div className="editor-toolbar-btns editor-toolbar-left">
+        <div
+          ref={toolbarScrollRef}
+          className={`editor-toolbar-btns editor-toolbar-left${toolbarOverflow && !toolbarScrolledEnd ? " has-overflow-right" : ""}`}
+        >
           <ToolbarButton title={toolbar.undo} onClick={() => editor?.chain().focus().undo().run()}>
             <Undo2 size={16} />
           </ToolbarButton>
@@ -1850,6 +1890,28 @@ export function RichTextEditor({
             }}
           />
         </div>
+        {toolbarOverflow ? (
+          <button
+            type="button"
+            className="m-editor-toolbar-scroll-btn"
+            aria-label={
+              toolbarScrolledEnd
+                ? toolbar.scrollBack
+                : toolbar.scrollForward
+            }
+            onClick={() =>
+              toolbarScrolledEnd
+                ? scrollToolbar("left")
+                : scrollToolbar("right")
+            }
+          >
+            {toolbarScrolledEnd ? (
+              <ChevronLeft size={16} />
+            ) : (
+              <ChevronRight size={16} />
+            )}
+          </button>
+        ) : null}
         <div className="editor-toolbar-btns editor-toolbar-right">
           <ToolbarButton title={isFullscreen ? toolbar.exitFullscreen : toolbar.fullscreen} active={isFullscreen} onClick={toggleFullscreen}>
             {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}

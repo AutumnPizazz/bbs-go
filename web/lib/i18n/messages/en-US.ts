@@ -1257,6 +1257,8 @@ const enUS = {
         deleteTable: "Delete table",
         fullscreen: "Fullscreen",
         exitFullscreen: "Exit fullscreen",
+        scrollForward: "Scroll right for more",
+        scrollBack: "Scroll left",
         uploading: "Uploading...",
       },
       linkDialog: {

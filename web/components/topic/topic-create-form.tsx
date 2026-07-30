@@ -522,6 +522,7 @@ export function TopicCreateForm({
     }
   })
   const [draftListOpen, setDraftListOpen] = React.useState(false)
+  const [draftListUp, setDraftListUp] = React.useState(true)
   const draftListRef = React.useRef<HTMLDivElement>(null)
 
   const persistDrafts = React.useCallback(
@@ -924,12 +925,24 @@ export function TopicCreateForm({
               type="button"
               variant="outline"
               disabled={drafts.length === 0}
-              onClick={() => setDraftListOpen((v) => !v)}
+              onClick={() => {
+                const rect = draftListRef.current?.getBoundingClientRect()
+                // Pop upward if there's room; otherwise drop down
+                setDraftListUp(rect ? rect.top > 280 : true)
+                setDraftListOpen((v) => !v)
+              }}
             >
               {t("pages.topic.create.draft.listBtn")} ({drafts.length})
             </Button>
             {draftListOpen && drafts.length > 0 ? (
-              <div className="draft-list-popup">
+              <div
+                className="draft-list-popup"
+                style={
+                  draftListUp
+                    ? { bottom: "100%", marginBottom: 6, marginTop: 0 }
+                    : { top: "100%", marginTop: 6, marginBottom: 0 }
+                }
+              >
                 {drafts.map((d) => (
                   <div key={d.id} className="draft-list-item">
                     <button
