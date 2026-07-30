@@ -89,15 +89,17 @@ export function ServerRenderedPreview({
   return (
     <div
       id={id}
-      className={className}
       style={{
         opacity: loading && !html ? 0.6 : 1,
         transition: "opacity 0.15s ease",
+        height: "100%",
+        overflow: "auto",
       }}
     >
       {html ? (
         <div
           className="bbs-content"
+          style={{ padding: "10px 20px" }}
           dangerouslySetInnerHTML={{ __html: html }}
         />
       ) : loading ? (

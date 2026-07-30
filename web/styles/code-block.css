@@ -9,7 +9,6 @@
     border-radius: 8px;
     overflow: hidden;
     background: var(--muted);
-    /* 轻微阴影，层次感 */
     box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
   }
 
@@ -62,7 +61,6 @@
     scale: 0.97;
   }
 
-  /* 复制成功反馈 */
   .bbs-content .code-block-copy-btn.copied {
     border-color: #10b981;
     color: #10b981;
@@ -73,7 +71,7 @@
     background: rgba(16, 185, 129, 0.12);
   }
 
-  /* ---- 内部 <pre> 重置（不再需要自己的 margin / border） ---- */
+  /* ---- 内部 <pre> 重置 ---- */
   .bbs-content .code-block-wrapper pre {
     margin: 0;
     border: none;
@@ -82,12 +80,11 @@
     box-shadow: none;
   }
 
-  /* 代码行保持 display:flex 以支持内联高亮 span 的布局 */
   .bbs-content .code-block-wrapper pre code {
     display: block;
     padding: 14px 16px;
     background: transparent !important;
-    color: var(--foreground);
+    color: var(--highlight-fg);
     font-size: 14px;
     line-height: 1.65;
     tab-size: 4;
@@ -95,196 +92,183 @@
   }
 
   /* ---- 行内代码（非代码块）不受影响 ---- */
+}
 
-  /* ============================================================
-     Chroma 语法高亮主题 —— 自适应 light / dark
-     类名前缀 .highlight- 对应 Lute/Chroma 的输出
-     ============================================================ */
+/* ============================================================
+   Chroma 语法高亮主题 —— 必须放在 @layer 外部
+   因为 md-editor-rt 的样式不使用 @layer，无层样式会覆盖有层样式
+   ============================================================ */
 
-  /* ---- 背景与基础 ---- */
-  .bbs-content .highlight-chroma {
-    color: var(--highlight-fg);
-  }
+/* ---- Light 模式 CSS 变量 ---- */
+.bbs-content {
+  --highlight-fg: #24292f;
+  --highlight-comment: #6a737d;
+  --highlight-keyword: #cf222e;
+  --highlight-string: #0a3069;
+  --highlight-number: #0550ae;
+  --highlight-func: #8250df;
+  --highlight-type: #0550ae;
+  --highlight-builtin: #0550ae;
+  --highlight-variable: #953800;
+}
 
-  .bbs-content .highlight-line {
-    display: flex;
-  }
+/* ---- Dark 模式 CSS 变量 ---- */
+.dark .bbs-content {
+  --highlight-fg: #e6edf3;
+  --highlight-comment: #8b949e;
+  --highlight-keyword: #ff7b72;
+  --highlight-string: #a5d6ff;
+  --highlight-number: #79c0ff;
+  --highlight-func: #d2a8ff;
+  --highlight-type: #79c0ff;
+  --highlight-builtin: #ffa657;
+  --highlight-variable: #ffa657;
+}
 
-  /* ---- 注释 ---- */
-  .bbs-content .highlight-c,
-  .bbs-content .highlight-c1,
-  .bbs-content .highlight-cm,
-  .bbs-content .highlight-cs,
-  .bbs-content .highlight-ch,
-  .bbs-content .highlight-cp,
-  .bbs-content .highlight-cpf {
-    color: var(--highlight-comment);
-    font-style: italic;
-  }
+/* ---- 注释 ---- */
+.bbs-content .highlight-c,
+.bbs-content .highlight-c1,
+.bbs-content .highlight-cm,
+.bbs-content .highlight-cs,
+.bbs-content .highlight-ch,
+.bbs-content .highlight-cp,
+.bbs-content .highlight-cpf {
+  color: var(--highlight-comment);
+  font-style: italic;
+}
 
-  /* ---- 关键字 ---- */
-  .bbs-content .highlight-k,
-  .bbs-content .highlight-kc,
-  .bbs-content .highlight-kd,
-  .bbs-content .highlight-kn,
-  .bbs-content .highlight-kp,
-  .bbs-content .highlight-kr,
-  .bbs-content .highlight-kt {
-    color: var(--highlight-keyword);
-    font-weight: 600;
-  }
+/* ---- 关键字 ---- */
+.bbs-content .highlight-k,
+.bbs-content .highlight-kc,
+.bbs-content .highlight-kd,
+.bbs-content .highlight-kn,
+.bbs-content .highlight-kp,
+.bbs-content .highlight-kr,
+.bbs-content .highlight-kt {
+  color: var(--highlight-keyword);
+  font-weight: 600;
+}
 
-  /* ---- 字符串 ---- */
-  .bbs-content .highlight-s,
-  .bbs-content .highlight-sa,
-  .bbs-content .highlight-sb,
-  .bbs-content .highlight-sc,
-  .bbs-content .highlight-dl,
-  .bbs-content .highlight-sd,
-  .bbs-content .highlight-s2,
-  .bbs-content .highlight-se,
-  .bbs-content .highlight-sh,
-  .bbs-content .highlight-si,
-  .bbs-content .highlight-sx,
-  .bbs-content .highlight-sr,
-  .bbs-content .highlight-s1,
-  .bbs-content .highlight-ss {
-    color: var(--highlight-string);
-  }
+/* ---- 字符串 ---- */
+.bbs-content .highlight-s,
+.bbs-content .highlight-sa,
+.bbs-content .highlight-sb,
+.bbs-content .highlight-sc,
+.bbs-content .highlight-dl,
+.bbs-content .highlight-sd,
+.bbs-content .highlight-s2,
+.bbs-content .highlight-se,
+.bbs-content .highlight-sh,
+.bbs-content .highlight-si,
+.bbs-content .highlight-sx,
+.bbs-content .highlight-sr,
+.bbs-content .highlight-s1,
+.bbs-content .highlight-ss {
+  color: var(--highlight-string);
+}
 
-  /* ---- 数字 ---- */
-  .bbs-content .highlight-m,
-  .bbs-content .highlight-mb,
-  .bbs-content .highlight-mf,
-  .bbs-content .highlight-mh,
-  .bbs-content .highlight-mi,
-  .bbs-content .highlight-il,
-  .bbs-content .highlight-mo {
-    color: var(--highlight-number);
-  }
+/* ---- 数字 ---- */
+.bbs-content .highlight-m,
+.bbs-content .highlight-mb,
+.bbs-content .highlight-mf,
+.bbs-content .highlight-mh,
+.bbs-content .highlight-mi,
+.bbs-content .highlight-il,
+.bbs-content .highlight-mo {
+  color: var(--highlight-number);
+}
 
-  /* ---- 函数与方法名 ---- */
-  .bbs-content .highlight-nf,
-  .bbs-content .highlight-fm {
-    color: var(--highlight-func);
-    font-weight: 600;
-  }
+/* ---- 函数与方法名 ---- */
+.bbs-content .highlight-nf,
+.bbs-content .highlight-fm {
+  color: var(--highlight-func);
+  font-weight: 600;
+}
 
-  /* ---- 类名 / 类型 ---- */
-  .bbs-content .highlight-nc,
-  .bbs-content .highlight-nt,
-  .bbs-content .highlight-nn {
-    color: var(--highlight-type);
-    font-weight: 600;
-  }
+/* ---- 类名 / 类型 ---- */
+.bbs-content .highlight-nc,
+.bbs-content .highlight-nt,
+.bbs-content .highlight-nn {
+  color: var(--highlight-type);
+  font-weight: 600;
+}
 
-  /* ---- 内置常量 / 内建函数 ---- */
-  .bbs-content .highlight-nb,
-  .bbs-content .highlight-bp {
-    color: var(--highlight-builtin);
-  }
+/* ---- 内置常量 / 内建函数 ---- */
+.bbs-content .highlight-nb,
+.bbs-content .highlight-bp {
+  color: var(--highlight-builtin);
+}
 
-  /* ---- 变量 / 属性 ---- */
-  .bbs-content .highlight-na,
-  .bbs-content .highlight-nv,
-  .bbs-content .highlight-vc,
-  .bbs-content .highlight-vg,
-  .bbs-content .highlight-vi,
-  .bbs-content .highlight-py {
-    color: var(--highlight-variable);
-  }
+/* ---- 变量 / 属性 ---- */
+.bbs-content .highlight-na,
+.bbs-content .highlight-nv,
+.bbs-content .highlight-vc,
+.bbs-content .highlight-vg,
+.bbs-content .highlight-vi,
+.bbs-content .highlight-py {
+  color: var(--highlight-variable);
+}
 
-  /* ---- 其他 Name ---- */
-  .bbs-content .highlight-n,
-  .bbs-content .highlight-nx,
-  .bbs-content .highlight-ni,
-  .bbs-content .highlight-ne,
-  .bbs-content .highlight-nl,
-  .bbs-content .highlight-no,
-  .bbs-content .highlight-nd {
-    color: var(--highlight-fg);
-  }
+/* ---- 其他 Name ---- */
+.bbs-content .highlight-n,
+.bbs-content .highlight-nx,
+.bbs-content .highlight-ni,
+.bbs-content .highlight-ne,
+.bbs-content .highlight-nl,
+.bbs-content .highlight-no,
+.bbs-content .highlight-nd {
+  color: var(--highlight-fg);
+}
 
-  /* ---- 运算符 ---- */
-  .bbs-content .highlight-o,
-  .bbs-content .highlight-ow {
-    color: var(--highlight-keyword);
-  }
+/* ---- 运算符 ---- */
+.bbs-content .highlight-o,
+.bbs-content .highlight-ow {
+  color: var(--highlight-keyword);
+}
 
-  /* ---- 标点 ---- */
-  .bbs-content .highlight-p,
-  .bbs-content .highlight-pi {
-    color: var(--highlight-fg);
-  }
+/* ---- 标点 ---- */
+.bbs-content .highlight-p,
+.bbs-content .highlight-pi {
+  color: var(--highlight-fg);
+}
 
-  /* ---- 删除 / 插入 / 强调 ---- */
-  .bbs-content .highlight-gd {
-    color: var(--destructive);
-    background: color-mix(in srgb, var(--destructive) 15%, transparent);
-  }
+/* ---- 删除 / 插入 / 强调 ---- */
+.bbs-content .highlight-gd {
+  color: var(--destructive);
+  background: color-mix(in srgb, var(--destructive) 15%, transparent);
+}
 
-  .bbs-content .highlight-gi {
-    color: #10b981;
-    background: color-mix(in srgb, #10b981 15%, transparent);
-  }
+.bbs-content .highlight-gi {
+  color: #10b981;
+  background: color-mix(in srgb, #10b981 15%, transparent);
+}
 
-  .bbs-content .highlight-ge {
-    font-style: italic;
-  }
+.bbs-content .highlight-ge {
+  font-style: italic;
+}
 
-  .bbs-content .highlight-gs {
-    font-weight: 600;
-  }
+.bbs-content .highlight-gs {
+  font-weight: 600;
+}
 
-  .bbs-content .highlight-gr,
-  .bbs-content .highlight-gt {
-    color: var(--destructive);
-  }
+.bbs-content .highlight-gr,
+.bbs-content .highlight-gt {
+  color: var(--destructive);
+}
 
-  .bbs-content .highlight-gh {
-    color: var(--primary);
-    font-weight: 600;
-  }
+.bbs-content .highlight-gh {
+  color: var(--primary);
+  font-weight: 600;
+}
 
-  .bbs-content .highlight-gu {
-    color: var(--muted-foreground);
-  }
+.bbs-content .highlight-gu {
+  color: var(--muted-foreground);
+}
 
-  /* ---- 行号（如需开启） ---- */
-  .bbs-content .highlight-ln,
-  .bbs-content .highlight-lnt {
-    color: var(--muted-foreground);
-    user-select: none;
-    margin-right: 1em;
-  }
-
-  /* ============================================================
-     CSS 变量定义：Light 模式
-     ============================================================ */
-  .bbs-content {
-    --highlight-fg: #24292f;
-    --highlight-comment: #6a737d;
-    --highlight-keyword: #cf222e;
-    --highlight-string: #0a3069;
-    --highlight-number: #0550ae;
-    --highlight-func: #8250df;
-    --highlight-type: #0550ae;
-    --highlight-builtin: #0550ae;
-    --highlight-variable: #953800;
-  }
-
-  /* ============================================================
-     CSS 变量定义：Dark 模式
-     ============================================================ */
-  .dark .bbs-content {
-    --highlight-fg: #e6edf3;
-    --highlight-comment: #8b949e;
-    --highlight-keyword: #ff7b72;
-    --highlight-string: #a5d6ff;
-    --highlight-number: #79c0ff;
-    --highlight-func: #d2a8ff;
-    --highlight-type: #79c0ff;
-    --highlight-builtin: #ffa657;
-    --highlight-variable: #ffa657;
-  }
+/* ---- 行号 ---- */
+.bbs-content .highlight-ln,
+.bbs-content .highlight-lnt {
+  color: var(--muted-foreground);
+  user-select: none;
+  margin-right: 1em;
 }
