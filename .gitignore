@@ -57,3 +57,4 @@ dist/
 /docker-data
 /secret
 /cmd/sshexec
+/.pi-subagents
