@@ -5,8 +5,6 @@ import (
 	"bbs-go/internal/models/constants"
 	"bbs-go/internal/repositories"
 
-	"bbs-go/internal/pkg/params"
-
 	"github.com/mlogclub/simple/sqls"
 	"gorm.io/gorm"
 )
@@ -14,42 +12,11 @@ import (
 var RoleService = newRoleService()
 
 func newRoleService() *roleService {
-	return &roleService{}
+	return &roleService{BaseService: newBaseService[models.Role, crudRepository[models.Role]](repositories.RoleRepository)}
 }
 
 type roleService struct {
-}
-
-func (s *roleService) Get(id int64) *models.Role {
-	return repositories.RoleRepository.Get(sqls.DB(), id)
-}
-
-func (s *roleService) Take(where ...interface{}) *models.Role {
-	return repositories.RoleRepository.Take(sqls.DB(), where...)
-}
-
-func (s *roleService) Find(cnd *sqls.Cnd) []models.Role {
-	return repositories.RoleRepository.Find(sqls.DB(), cnd)
-}
-
-func (s *roleService) FindOne(cnd *sqls.Cnd) *models.Role {
-	return repositories.RoleRepository.FindOne(sqls.DB(), cnd)
-}
-
-func (s *roleService) FindPageByParams(params *params.QueryParams) (list []models.Role, paging *sqls.Paging) {
-	return repositories.RoleRepository.FindPageByParams(sqls.DB(), params)
-}
-
-func (s *roleService) FindPageByCnd(cnd *sqls.Cnd) (list []models.Role, paging *sqls.Paging) {
-	return repositories.RoleRepository.FindPageByCnd(sqls.DB(), cnd)
-}
-
-func (s *roleService) Count(cnd *sqls.Cnd) int64 {
-	return repositories.RoleRepository.Count(sqls.DB(), cnd)
-}
-
-func (s *roleService) Create(t *models.Role) error {
-	return repositories.RoleRepository.Create(sqls.DB(), t)
+	BaseService[models.Role, crudRepository[models.Role]]
 }
 
 func (s *roleService) Update(t *models.Role) error {

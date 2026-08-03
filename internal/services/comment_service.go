@@ -14,8 +14,6 @@ import (
 	"net/http"
 	"strings"
 
-	"bbs-go/internal/pkg/params"
-
 	"github.com/mlogclub/simple/common/dates"
 	"github.com/mlogclub/simple/common/jsons"
 	"github.com/mlogclub/simple/common/strs"
@@ -31,54 +29,11 @@ import (
 var CommentService = newCommentService()
 
 func newCommentService() *commentService {
-	return &commentService{}
+	return &commentService{BaseService: newBaseService[models.Comment, crudRepository[models.Comment]](repositories.CommentRepository)}
 }
 
 type commentService struct {
-}
-
-func (s *commentService) Get(id int64) *models.Comment {
-	return repositories.CommentRepository.Get(sqls.DB(), id)
-}
-
-func (s *commentService) Take(where ...interface{}) *models.Comment {
-	return repositories.CommentRepository.Take(sqls.DB(), where...)
-}
-
-func (s *commentService) Find(cnd *sqls.Cnd) []models.Comment {
-	return repositories.CommentRepository.Find(sqls.DB(), cnd)
-}
-
-func (s *commentService) FindOne(cnd *sqls.Cnd) *models.Comment {
-	return repositories.CommentRepository.FindOne(sqls.DB(), cnd)
-}
-
-func (s *commentService) FindPageByParams(params *params.QueryParams) (list []models.Comment, paging *sqls.Paging) {
-	return repositories.CommentRepository.FindPageByParams(sqls.DB(), params)
-}
-
-func (s *commentService) FindPageByCnd(cnd *sqls.Cnd) (list []models.Comment, paging *sqls.Paging) {
-	return repositories.CommentRepository.FindPageByCnd(sqls.DB(), cnd)
-}
-
-func (s *commentService) Count(cnd *sqls.Cnd) int64 {
-	return repositories.CommentRepository.Count(sqls.DB(), cnd)
-}
-
-func (s *commentService) Create(t *models.Comment) error {
-	return repositories.CommentRepository.Create(sqls.DB(), t)
-}
-
-func (s *commentService) Update(t *models.Comment) error {
-	return repositories.CommentRepository.Update(sqls.DB(), t)
-}
-
-func (s *commentService) Updates(id int64, columns map[string]interface{}) error {
-	return repositories.CommentRepository.Updates(sqls.DB(), id, columns)
-}
-
-func (s *commentService) UpdateColumn(id int64, name string, value interface{}) error {
-	return repositories.CommentRepository.UpdateColumn(sqls.DB(), id, name, value)
+	BaseService[models.Comment, crudRepository[models.Comment]]
 }
 
 func (s *commentService) Delete(id int64) error {

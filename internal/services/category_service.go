@@ -9,8 +9,6 @@ import (
 	"bbs-go/internal/models/dto"
 	"bbs-go/internal/pkg/locales"
 
-	"bbs-go/internal/pkg/params"
-
 	"github.com/mlogclub/simple/sqls"
 
 	"bbs-go/internal/repositories"
@@ -21,34 +19,11 @@ import (
 var CategoryService = newCategoryService()
 
 func newCategoryService() *categoryService {
-	return &categoryService{}
+	return &categoryService{BaseService: newBaseService[models.Category, crudRepository[models.Category]](repositories.CategoryRepository)}
 }
 
 type categoryService struct {
-}
-
-func (s *categoryService) Get(id int64) *models.Category {
-	return repositories.CategoryRepository.Get(sqls.DB(), id)
-}
-
-func (s *categoryService) Take(where ...interface{}) *models.Category {
-	return repositories.CategoryRepository.Take(sqls.DB(), where...)
-}
-
-func (s *categoryService) Find(cnd *sqls.Cnd) []models.Category {
-	return repositories.CategoryRepository.Find(sqls.DB(), cnd)
-}
-
-func (s *categoryService) FindOne(cnd *sqls.Cnd) *models.Category {
-	return repositories.CategoryRepository.FindOne(sqls.DB(), cnd)
-}
-
-func (s *categoryService) FindPageByParams(params *params.QueryParams) (list []models.Category, paging *sqls.Paging) {
-	return repositories.CategoryRepository.FindPageByParams(sqls.DB(), params)
-}
-
-func (s *categoryService) FindPageByCnd(cnd *sqls.Cnd) (list []models.Category, paging *sqls.Paging) {
-	return repositories.CategoryRepository.FindPageByCnd(sqls.DB(), cnd)
+	BaseService[models.Category, crudRepository[models.Category]]
 }
 
 func (s *categoryService) Create(t *models.Category) error {

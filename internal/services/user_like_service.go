@@ -5,8 +5,6 @@ import (
 	"bbs-go/internal/pkg/event"
 	"errors"
 
-	"bbs-go/internal/pkg/params"
-
 	"github.com/mlogclub/simple/common/dates"
 	"github.com/mlogclub/simple/sqls"
 	"gorm.io/gorm"
@@ -18,50 +16,11 @@ import (
 var UserLikeService = newUserLikeService()
 
 func newUserLikeService() *userLikeService {
-	return &userLikeService{}
+	return &userLikeService{BaseService: newBaseService[models.UserLike, crudRepository[models.UserLike]](repositories.UserLikeRepository)}
 }
 
 type userLikeService struct {
-}
-
-func (s *userLikeService) Get(id int64) *models.UserLike {
-	return repositories.UserLikeRepository.Get(sqls.DB(), id)
-}
-
-func (s *userLikeService) Take(where ...interface{}) *models.UserLike {
-	return repositories.UserLikeRepository.Take(sqls.DB(), where...)
-}
-
-func (s *userLikeService) Find(cnd *sqls.Cnd) []models.UserLike {
-	return repositories.UserLikeRepository.Find(sqls.DB(), cnd)
-}
-
-func (s *userLikeService) FindOne(cnd *sqls.Cnd) *models.UserLike {
-	return repositories.UserLikeRepository.FindOne(sqls.DB(), cnd)
-}
-
-func (s *userLikeService) FindPageByParams(params *params.QueryParams) (list []models.UserLike, paging *sqls.Paging) {
-	return repositories.UserLikeRepository.FindPageByParams(sqls.DB(), params)
-}
-
-func (s *userLikeService) FindPageByCnd(cnd *sqls.Cnd) (list []models.UserLike, paging *sqls.Paging) {
-	return repositories.UserLikeRepository.FindPageByCnd(sqls.DB(), cnd)
-}
-
-func (s *userLikeService) Create(t *models.UserLike) error {
-	return repositories.UserLikeRepository.Create(sqls.DB(), t)
-}
-
-func (s *userLikeService) Update(t *models.UserLike) error {
-	return repositories.UserLikeRepository.Update(sqls.DB(), t)
-}
-
-func (s *userLikeService) Updates(id int64, columns map[string]interface{}) error {
-	return repositories.UserLikeRepository.Updates(sqls.DB(), id, columns)
-}
-
-func (s *userLikeService) UpdateColumn(id int64, name string, value interface{}) error {
-	return repositories.UserLikeRepository.UpdateColumn(sqls.DB(), id, name, value)
+	BaseService[models.UserLike, crudRepository[models.UserLike]]
 }
 
 func (s *userLikeService) Delete(id int64) {

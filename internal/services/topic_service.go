@@ -11,8 +11,6 @@ import (
 	"math"
 	"net/http"
 
-	"bbs-go/internal/pkg/params"
-
 	"github.com/mlogclub/simple/common/dates"
 	"github.com/mlogclub/simple/common/strs"
 	"github.com/mlogclub/simple/sqls"
@@ -27,37 +25,11 @@ import (
 var TopicService = newTopicService()
 
 func newTopicService() *topicService {
-	return &topicService{}
+	return &topicService{BaseService: newBaseService[models.Topic, crudRepository[models.Topic]](repositories.TopicRepository)}
 }
 
-type topicService struct{}
-
-func (s *topicService) Get(id int64) *models.Topic {
-	return repositories.TopicRepository.Get(sqls.DB(), id)
-}
-
-func (s *topicService) Take(where ...interface{}) *models.Topic {
-	return repositories.TopicRepository.Take(sqls.DB(), where...)
-}
-
-func (s *topicService) Find(cnd *sqls.Cnd) []models.Topic {
-	return repositories.TopicRepository.Find(sqls.DB(), cnd)
-}
-
-func (s *topicService) FindOne(cnd *sqls.Cnd) *models.Topic {
-	return repositories.TopicRepository.FindOne(sqls.DB(), cnd)
-}
-
-func (s *topicService) FindPageByParams(params *params.QueryParams) (list []models.Topic, paging *sqls.Paging) {
-	return repositories.TopicRepository.FindPageByParams(sqls.DB(), params)
-}
-
-func (s *topicService) FindPageByCnd(cnd *sqls.Cnd) (list []models.Topic, paging *sqls.Paging) {
-	return repositories.TopicRepository.FindPageByCnd(sqls.DB(), cnd)
-}
-
-func (s *topicService) Count(cnd *sqls.Cnd) int64 {
-	return repositories.TopicRepository.Count(sqls.DB(), cnd)
+type topicService struct {
+	BaseService[models.Topic, crudRepository[models.Topic]]
 }
 
 func (s *topicService) Updates(id int64, columns map[string]interface{}) error {

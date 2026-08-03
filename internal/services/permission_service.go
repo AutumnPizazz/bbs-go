@@ -18,22 +18,15 @@ import (
 var PermissionService = newPermissionService()
 
 func newPermissionService() *permissionService {
-	return &permissionService{}
+	return &permissionService{BaseService: newBaseService[models.Permission, crudRepository[models.Permission]](repositories.PermissionRepository)}
 }
 
 type permissionService struct {
-}
-
-func (s *permissionService) Get(id int64) *models.Permission {
-	return repositories.PermissionRepository.Get(sqls.DB(), id)
+	BaseService[models.Permission, crudRepository[models.Permission]]
 }
 
 func (s *permissionService) GetByCode(code string) *models.Permission {
 	return repositories.PermissionRepository.FindOne(sqls.DB(), sqls.NewCnd().Eq("code", code))
-}
-
-func (s *permissionService) Find(cnd *sqls.Cnd) []models.Permission {
-	return repositories.PermissionRepository.Find(sqls.DB(), cnd)
 }
 
 func (s *permissionService) SyncDefinitions() error {

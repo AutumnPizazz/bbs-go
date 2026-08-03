@@ -12,14 +12,11 @@ import (
 var RolePermissionService = newRolePermissionService()
 
 func newRolePermissionService() *rolePermissionService {
-	return &rolePermissionService{}
+	return &rolePermissionService{BaseService: newBaseService[models.RolePermission, crudRepository[models.RolePermission]](repositories.RolePermissionRepository)}
 }
 
 type rolePermissionService struct {
-}
-
-func (s *rolePermissionService) Find(cnd *sqls.Cnd) []models.RolePermission {
-	return repositories.RolePermissionRepository.Find(sqls.DB(), cnd)
+	BaseService[models.RolePermission, crudRepository[models.RolePermission]]
 }
 
 func (s *rolePermissionService) GetRolePermissionIds(roleId int64) (permissionIds []int64) {

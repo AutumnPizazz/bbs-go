@@ -8,7 +8,9 @@ import (
 
 var UserCategoryAccessRepository = newUserCategoryAccessRepository()
 
-type userCategoryAccessRepository struct{}
+type userCategoryAccessRepository struct {
+	BaseRepository[models.UserCategoryAccess]
+}
 
 func newUserCategoryAccessRepository() *userCategoryAccessRepository {
 	return &userCategoryAccessRepository{}
@@ -22,8 +24,4 @@ func (r *userCategoryAccessRepository) FindByUserId(db *gorm.DB, userId int64) [
 
 func (r *userCategoryAccessRepository) DeleteByUserId(db *gorm.DB, userId int64) error {
 	return db.Where("user_id = ?", userId).Delete(&models.UserCategoryAccess{}).Error
-}
-
-func (r *userCategoryAccessRepository) Create(db *gorm.DB, access *models.UserCategoryAccess) error {
-	return db.Create(access).Error
 }

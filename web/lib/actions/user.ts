@@ -1,11 +1,12 @@
 import { apiFetch, toFormData } from "@/lib/api/client"
+import { ApiError } from "@/lib/api/client"
+
 import type {
   Favorite,
   PageData,
   UserMessage,
   UserSummary,
 } from "@/lib/api/types"
-import { ApiError } from "@/lib/api/client"
 
 export interface UserActionState {
   ok: boolean
@@ -25,30 +26,6 @@ function errorMessage(error: unknown, fallback: string) {
 function formString(formData: FormData, key: string) {
   const value = formData.get(key)
   return typeof value === "string" ? value : ""
-}
-
-export async function loadFavorites(cursor?: string) {
-  return apiFetch<PageData<Favorite>>("/api/user/favorites", {
-    params: { cursor },
-  })
-}
-
-export async function loadMessages(cursor?: string) {
-  return apiFetch<PageData<UserMessage>>("/api/user/messages", {
-    params: { cursor },
-  })
-}
-
-export async function loadFans(userId: string, cursor?: string) {
-  return apiFetch<PageData<UserSummary>>("/api/fans/fans", {
-    params: { userId, cursor },
-  })
-}
-
-export async function loadFollowed(userId: string, cursor?: string) {
-  return apiFetch<PageData<UserSummary>>("/api/fans/followed", {
-    params: { userId, cursor },
-  })
 }
 
 export async function saveProfileAction(

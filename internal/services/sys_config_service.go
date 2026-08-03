@@ -11,7 +11,6 @@ import (
 	"log/slog"
 	"strings"
 
-	"bbs-go/internal/pkg/params"
 	"bbs-go/internal/pkg/secureconfig"
 
 	"github.com/mlogclub/simple/common/dates"
@@ -64,34 +63,11 @@ var sensitiveConfigPaths = map[string]struct{}{
 }
 
 func newSysConfigService() *sysConfigService {
-	return &sysConfigService{}
+	return &sysConfigService{BaseService: newBaseService[models.SysConfig, crudRepository[models.SysConfig]](repositories.SysConfigRepository)}
 }
 
 type sysConfigService struct {
-}
-
-func (s *sysConfigService) Get(id int64) *models.SysConfig {
-	return repositories.SysConfigRepository.Get(sqls.DB(), id)
-}
-
-func (s *sysConfigService) Take(where ...interface{}) *models.SysConfig {
-	return repositories.SysConfigRepository.Take(sqls.DB(), where...)
-}
-
-func (s *sysConfigService) Find(cnd *sqls.Cnd) []models.SysConfig {
-	return repositories.SysConfigRepository.Find(sqls.DB(), cnd)
-}
-
-func (s *sysConfigService) FindOne(cnd *sqls.Cnd) *models.SysConfig {
-	return repositories.SysConfigRepository.FindOne(sqls.DB(), cnd)
-}
-
-func (s *sysConfigService) FindPageByParams(params *params.QueryParams) (list []models.SysConfig, paging *sqls.Paging) {
-	return repositories.SysConfigRepository.FindPageByParams(sqls.DB(), params)
-}
-
-func (s *sysConfigService) FindPageByCnd(cnd *sqls.Cnd) (list []models.SysConfig, paging *sqls.Paging) {
-	return repositories.SysConfigRepository.FindPageByCnd(sqls.DB(), cnd)
+	BaseService[models.SysConfig, crudRepository[models.SysConfig]]
 }
 
 func (s *sysConfigService) GetAll() []models.SysConfig {

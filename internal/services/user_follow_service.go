@@ -7,8 +7,6 @@ import (
 	"bbs-go/internal/pkg/event"
 	"bbs-go/internal/repositories"
 
-	"bbs-go/internal/pkg/params"
-
 	"github.com/emirpasic/gods/sets/hashset"
 	"github.com/mlogclub/simple/common/dates"
 	"github.com/mlogclub/simple/sqls"
@@ -18,54 +16,11 @@ import (
 var UserFollowService = newUserFollowService()
 
 func newUserFollowService() *userFollowService {
-	return &userFollowService{}
+	return &userFollowService{BaseService: newBaseService[models.UserFollow, crudRepository[models.UserFollow]](repositories.UserFollowRepository)}
 }
 
 type userFollowService struct {
-}
-
-func (s *userFollowService) Get(id int64) *models.UserFollow {
-	return repositories.UserFollowRepository.Get(sqls.DB(), id)
-}
-
-func (s *userFollowService) Take(where ...interface{}) *models.UserFollow {
-	return repositories.UserFollowRepository.Take(sqls.DB(), where...)
-}
-
-func (s *userFollowService) Find(cnd *sqls.Cnd) []models.UserFollow {
-	return repositories.UserFollowRepository.Find(sqls.DB(), cnd)
-}
-
-func (s *userFollowService) FindOne(cnd *sqls.Cnd) *models.UserFollow {
-	return repositories.UserFollowRepository.FindOne(sqls.DB(), cnd)
-}
-
-func (s *userFollowService) FindPageByParams(params *params.QueryParams) (list []models.UserFollow, paging *sqls.Paging) {
-	return repositories.UserFollowRepository.FindPageByParams(sqls.DB(), params)
-}
-
-func (s *userFollowService) FindPageByCnd(cnd *sqls.Cnd) (list []models.UserFollow, paging *sqls.Paging) {
-	return repositories.UserFollowRepository.FindPageByCnd(sqls.DB(), cnd)
-}
-
-func (s *userFollowService) Count(cnd *sqls.Cnd) int64 {
-	return repositories.UserFollowRepository.Count(sqls.DB(), cnd)
-}
-
-func (s *userFollowService) Create(t *models.UserFollow) error {
-	return repositories.UserFollowRepository.Create(sqls.DB(), t)
-}
-
-func (s *userFollowService) Update(t *models.UserFollow) error {
-	return repositories.UserFollowRepository.Update(sqls.DB(), t)
-}
-
-func (s *userFollowService) Updates(id int64, columns map[string]interface{}) error {
-	return repositories.UserFollowRepository.Updates(sqls.DB(), id, columns)
-}
-
-func (s *userFollowService) UpdateColumn(id int64, name string, value interface{}) error {
-	return repositories.UserFollowRepository.UpdateColumn(sqls.DB(), id, name, value)
+	BaseService[models.UserFollow, crudRepository[models.UserFollow]]
 }
 
 func (s *userFollowService) Delete(id int64) {

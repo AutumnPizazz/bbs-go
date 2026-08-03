@@ -314,7 +314,7 @@ export default function DashboardHealthRoute() {
         <div className="flex items-center gap-2">
           <ActivityIcon className="size-4 text-muted-foreground" />
           <h2 className="font-medium">{t("dashboard.pages.health.components")}</h2>
-          <span className="ml-auto text-sm text-muted-foreground">{health?.status || t("common.loading")}</span>
+          <span className="ml-auto text-sm text-muted-foreground">{health?.status || t("dashboard.loading")}</span>
         </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {Object.entries(health?.components || {}).map(([name, component]) => (

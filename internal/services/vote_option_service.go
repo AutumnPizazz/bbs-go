@@ -4,62 +4,17 @@ import (
 	"bbs-go/internal/models"
 	"bbs-go/internal/repositories"
 
-	"bbs-go/internal/pkg/params"
-
 	"github.com/mlogclub/simple/sqls"
 )
 
 var VoteOptionService = newVoteOptionService()
 
 func newVoteOptionService() *voteOptionService {
-	return &voteOptionService{}
+	return &voteOptionService{BaseService: newBaseService[models.VoteOption, crudRepository[models.VoteOption]](repositories.VoteOptionRepository)}
 }
 
 type voteOptionService struct {
-}
-
-func (s *voteOptionService) Get(id int64) *models.VoteOption {
-	return repositories.VoteOptionRepository.Get(sqls.DB(), id)
-}
-
-func (s *voteOptionService) Take(where ...interface{}) *models.VoteOption {
-	return repositories.VoteOptionRepository.Take(sqls.DB(), where...)
-}
-
-func (s *voteOptionService) Find(cnd *sqls.Cnd) []models.VoteOption {
-	return repositories.VoteOptionRepository.Find(sqls.DB(), cnd)
-}
-
-func (s *voteOptionService) FindOne(cnd *sqls.Cnd) *models.VoteOption {
-	return repositories.VoteOptionRepository.FindOne(sqls.DB(), cnd)
-}
-
-func (s *voteOptionService) FindPageByParams(params *params.QueryParams) (list []models.VoteOption, paging *sqls.Paging) {
-	return repositories.VoteOptionRepository.FindPageByParams(sqls.DB(), params)
-}
-
-func (s *voteOptionService) FindPageByCnd(cnd *sqls.Cnd) (list []models.VoteOption, paging *sqls.Paging) {
-	return repositories.VoteOptionRepository.FindPageByCnd(sqls.DB(), cnd)
-}
-
-func (s *voteOptionService) Count(cnd *sqls.Cnd) int64 {
-	return repositories.VoteOptionRepository.Count(sqls.DB(), cnd)
-}
-
-func (s *voteOptionService) Create(t *models.VoteOption) error {
-	return repositories.VoteOptionRepository.Create(sqls.DB(), t)
-}
-
-func (s *voteOptionService) Update(t *models.VoteOption) error {
-	return repositories.VoteOptionRepository.Update(sqls.DB(), t)
-}
-
-func (s *voteOptionService) Updates(id int64, columns map[string]interface{}) error {
-	return repositories.VoteOptionRepository.Updates(sqls.DB(), id, columns)
-}
-
-func (s *voteOptionService) UpdateColumn(id int64, name string, value interface{}) error {
-	return repositories.VoteOptionRepository.UpdateColumn(sqls.DB(), id, name, value)
+	BaseService[models.VoteOption, crudRepository[models.VoteOption]]
 }
 
 func (s *voteOptionService) Delete(id int64) {

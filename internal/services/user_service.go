@@ -12,8 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"bbs-go/internal/pkg/params"
-
 	"github.com/mlogclub/simple/common/dates"
 	"github.com/mlogclub/simple/common/passwd"
 	"github.com/mlogclub/simple/common/strs"
@@ -30,34 +28,11 @@ import (
 var UserService = newUserService()
 
 func newUserService() *userService {
-	return &userService{}
+	return &userService{BaseService: newBaseService[models.User, crudRepository[models.User]](repositories.UserRepository)}
 }
 
 type userService struct {
-}
-
-func (s *userService) Get(id int64) *models.User {
-	return repositories.UserRepository.Get(sqls.DB(), id)
-}
-
-func (s *userService) Take(where ...interface{}) *models.User {
-	return repositories.UserRepository.Take(sqls.DB(), where...)
-}
-
-func (s *userService) Find(cnd *sqls.Cnd) []models.User {
-	return repositories.UserRepository.Find(sqls.DB(), cnd)
-}
-
-func (s *userService) FindOne(cnd *sqls.Cnd) *models.User {
-	return repositories.UserRepository.FindOne(sqls.DB(), cnd)
-}
-
-func (s *userService) FindPageByParams(params *params.QueryParams) (list []models.User, paging *sqls.Paging) {
-	return repositories.UserRepository.FindPageByParams(sqls.DB(), params)
-}
-
-func (s *userService) FindPageByCnd(cnd *sqls.Cnd) (list []models.User, paging *sqls.Paging) {
-	return repositories.UserRepository.FindPageByCnd(sqls.DB(), cnd)
+	BaseService[models.User, crudRepository[models.User]]
 }
 
 func (s *userService) Create(t *models.User) error {

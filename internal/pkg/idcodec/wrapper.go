@@ -37,18 +37,6 @@ func Decode(s string) int64 {
 	if Instance == nil {
 		panic(ErrNotInitialized)
 	}
-	// ret, err := Instance.Decode(s)
-	// if err != nil {
-	// 	panic(err)
-	// }
 	ret, _ := Instance.Decode(s)
 	return ret
-}
-
-// IsValid uses the global codec instance.
-func IsValid(s string) bool {
-	if Instance == nil {
-		return false
-	}
-	return Instance.IsValid(s)
 }

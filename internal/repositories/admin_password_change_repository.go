@@ -13,7 +13,9 @@ func newAdminPasswordChangeRepository() *adminPasswordChangeRepository {
 	return &adminPasswordChangeRepository{}
 }
 
-type adminPasswordChangeRepository struct{}
+type adminPasswordChangeRepository struct {
+	BaseRepository[models.AdminPasswordChange]
+}
 
 func (r *adminPasswordChangeRepository) GetByUserId(db *gorm.DB, userId int64) *models.AdminPasswordChange {
 	return r.get(db, userId, false)
@@ -35,14 +37,7 @@ func (r *adminPasswordChangeRepository) get(db *gorm.DB, userId int64, forUpdate
 	return ret
 }
 
-func (r *adminPasswordChangeRepository) Create(db *gorm.DB, change *models.AdminPasswordChange) error {
-	return db.Create(change).Error
-}
-
-func (r *adminPasswordChangeRepository) Update(db *gorm.DB, change *models.AdminPasswordChange) error {
-	return db.Save(change).Error
-}
-
+// Delete 按 userId 删除（区别于 BaseRepository.Delete 按主键删除）
 func (r *adminPasswordChangeRepository) Delete(db *gorm.DB, userId int64) error {
 	return db.Where("user_id = ?", userId).Delete(&models.AdminPasswordChange{}).Error
 }

@@ -172,18 +172,3 @@ func (c *Codec) Decode(s string) (int64, error) {
 
 	return int64(id), nil
 }
-
-// MustDecode panic on error
-func (c *Codec) MustDecode(s string) int64 {
-	id, err := c.Decode(s)
-	if err != nil {
-		panic(err)
-	}
-	return id
-}
-
-// IsValid checks if string is valid
-func (c *Codec) IsValid(s string) bool {
-	_, err := c.Decode(s)
-	return err == nil
-}

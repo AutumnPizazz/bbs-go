@@ -6,8 +6,6 @@ import (
 	"bbs-go/internal/pkg/locales"
 	"errors"
 
-	"bbs-go/internal/pkg/params"
-
 	"github.com/mlogclub/simple/common/dates"
 	"github.com/mlogclub/simple/sqls"
 
@@ -18,50 +16,11 @@ import (
 var FavoriteService = newFavoriteService()
 
 func newFavoriteService() *favoriteService {
-	return &favoriteService{}
+	return &favoriteService{BaseService: newBaseService[models.Favorite, crudRepository[models.Favorite]](repositories.FavoriteRepository)}
 }
 
 type favoriteService struct {
-}
-
-func (s *favoriteService) Get(id int64) *models.Favorite {
-	return repositories.FavoriteRepository.Get(sqls.DB(), id)
-}
-
-func (s *favoriteService) Take(where ...interface{}) *models.Favorite {
-	return repositories.FavoriteRepository.Take(sqls.DB(), where...)
-}
-
-func (s *favoriteService) Find(cnd *sqls.Cnd) []models.Favorite {
-	return repositories.FavoriteRepository.Find(sqls.DB(), cnd)
-}
-
-func (s *favoriteService) FindOne(cnd *sqls.Cnd) *models.Favorite {
-	return repositories.FavoriteRepository.FindOne(sqls.DB(), cnd)
-}
-
-func (s *favoriteService) FindPageByParams(params *params.QueryParams) (list []models.Favorite, paging *sqls.Paging) {
-	return repositories.FavoriteRepository.FindPageByParams(sqls.DB(), params)
-}
-
-func (s *favoriteService) FindPageByCnd(cnd *sqls.Cnd) (list []models.Favorite, paging *sqls.Paging) {
-	return repositories.FavoriteRepository.FindPageByCnd(sqls.DB(), cnd)
-}
-
-func (s *favoriteService) Create(t *models.Favorite) error {
-	return repositories.FavoriteRepository.Create(sqls.DB(), t)
-}
-
-func (s *favoriteService) Update(t *models.Favorite) error {
-	return repositories.FavoriteRepository.Update(sqls.DB(), t)
-}
-
-func (s *favoriteService) Updates(id int64, columns map[string]interface{}) error {
-	return repositories.FavoriteRepository.Updates(sqls.DB(), id, columns)
-}
-
-func (s *favoriteService) UpdateColumn(id int64, name string, value interface{}) error {
-	return repositories.FavoriteRepository.UpdateColumn(sqls.DB(), id, name, value)
+	BaseService[models.Favorite, crudRepository[models.Favorite]]
 }
 
 func (s *favoriteService) Delete(id int64) {

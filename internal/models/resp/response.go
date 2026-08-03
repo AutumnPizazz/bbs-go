@@ -222,34 +222,6 @@ type ImageInfo struct {
 	Preview string `json:"preview"`
 }
 
-type TreeNode struct {
-	Id       int64      `json:"id"`
-	Key      int64      `json:"key"`
-	Title    string     `json:"title"`
-	Children []TreeNode `json:"children"`
-}
-
-type MenuResponse struct {
-	Id         int64  `json:"id"`
-	ParentId   *int64 `json:"parentId"`
-	Type       string `json:"type"`
-	Name       string `json:"name"`
-	Title      string `json:"title"`
-	Icon       string `json:"icon"`
-	Path       string `json:"path"`
-	Component  string `json:"component"`
-	SortNo     int    `json:"sortNo"`
-	Status     int    `json:"status"`
-	CreateTime int64  `json:"createTime"`
-	UpdateTime int64  `json:"updateTime"`
-}
-
-type MenuTreeResponse struct {
-	MenuResponse
-	Level    int                `json:"level"`
-	Children []MenuTreeResponse `json:"children"`
-}
-
 type DictResponse struct {
 	Id         int64  `json:"id"`
 	TypeId     int64  `json:"typeId"`

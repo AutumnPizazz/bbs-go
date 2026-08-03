@@ -1,10 +1,11 @@
 "use client"
 
 import * as React from "react"
-import { RotateCcwIcon, SearchIcon, Trash2Icon } from "lucide-react"
+import { RotateCcwIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { DashboardPagination } from "@/components/dashboard/pagination-controls"
 import { useCurrentUser } from "@/components/app/app-provider"
 import { ErrorPage } from "@/components/common/error-page"
 import {
@@ -33,7 +34,7 @@ export default function DashboardTrashRoute() {
   const currentUser = useCurrentUser()
   const [tab, setTab] = React.useState("topics")
   const [records, setRecords] = React.useState<TrashRecord[]>([])
-  const [paging, setPaging] = React.useState<{ page: number; total: number; totalPages: number } | null>(null)
+  const [paging, setPaging] = React.useState<{ total: number; totalPages: number } | null>(null)
   const [loading, setLoading] = React.useState(false)
   const [page, setPage] = React.useState(1)
   const [confirmState, setConfirmState] = React.useState<ConfirmDialogState>(null)
@@ -67,7 +68,6 @@ export default function DashboardTrashRoute() {
       setRecords((result?.results as TrashRecord[]) || [])
       if (result?.page) {
         setPaging({
-          page: result.page.page || 1,
           total: result.page.total || 0,
           totalPages: Math.ceil((result.page.total || 0) / 20),
         })
@@ -165,11 +165,11 @@ export default function DashboardTrashRoute() {
                 <thead className="border-b bg-muted/30 text-left text-xs text-muted-foreground">
                   <tr>
                     <th className="px-3 py-2">
-                      {tab === "attachments" ? t("dashboard.pages.health.backup.file") : t("dashboard.common.name")}
+                      {tab === "attachments" ? t("dashboard.pages.health.backup.file") : t("dashboard.fields.name")}
                     </th>
-                    <th className="px-3 py-2">{t("dashboard.common.user")}</th>
-                    <th className="px-3 py-2">{t("dashboard.common.createdAt")}</th>
-                    <th className="px-3 py-2 text-right">{t("dashboard.common.actions")}</th>
+                    <th className="px-3 py-2">{t("dashboard.fields.user")}</th>
+                    <th className="px-3 py-2">{t("dashboard.fields.createTime")}</th>
+                    <th className="px-3 py-2 text-right">{t("dashboard.actions.title")}</th>
                   </tr>
                 </thead>
                 <tbody>{records.map(renderRecord)}</tbody>
@@ -179,19 +179,14 @@ export default function DashboardTrashRoute() {
         </div>
 
         {paging && paging.totalPages > 1 ? (
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">
-              {t("dashboard.pagination.count", { current: (paging.page - 1) * 20 + 1, total: paging.total })}
-            </span>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-                {t("dashboard.pagination.prev")}
-              </Button>
-              <Button variant="outline" size="sm" disabled={page >= paging.totalPages} onClick={() => setPage(page + 1)}>
-                {t("dashboard.pagination.next")}
-              </Button>
-            </div>
-          </div>
+          <DashboardPagination
+            page={page}
+            pageCount={paging.totalPages}
+            total={paging.total}
+            limit={20}
+            loading={loading}
+            onPageChange={setPage}
+          />
         ) : null}
       </Tabs>
 

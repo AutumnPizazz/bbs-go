@@ -15,7 +15,6 @@ import (
 	"bbs-go/internal/models/constants"
 	"bbs-go/internal/models/dto"
 	"bbs-go/internal/pkg/locales"
-	"bbs-go/internal/pkg/params"
 	"bbs-go/internal/pkg/respath"
 	"bbs-go/internal/pkg/uploader"
 	"bbs-go/internal/repositories"
@@ -23,7 +22,9 @@ import (
 
 var AttachmentService = new(attachmentService)
 
-type attachmentService struct{}
+type attachmentService struct {
+	BaseService[models.Attachment, crudRepository[models.Attachment]]
+}
 
 func (s *attachmentService) extAllowed(ext string, allowedTypes []string) bool {
 	if len(allowedTypes) == 0 {
@@ -110,11 +111,6 @@ func (s *attachmentService) GetAny(id string) *models.Attachment {
 	return repositories.AttachmentRepository.Get(sqls.DB(), id)
 }
 
-func (s *attachmentService) FindPageByParams(queryParams *params.QueryParams) (list []models.Attachment, paging *sqls.Paging) {
-	return repositories.AttachmentRepository.FindPageByParams(sqls.DB(), queryParams)
-}
-
-// SoftDelete marks an attachment as deleted without touching storage.
 func (s *attachmentService) SoftDelete(id string) error {
 	return repositories.AttachmentRepository.Updates(sqls.DB(), id, map[string]interface{}{
 		"status":      constants.StatusDeleted,

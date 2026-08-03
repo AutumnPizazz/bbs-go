@@ -8,7 +8,6 @@ import (
 	"bbs-go/internal/models/constants"
 	"bbs-go/internal/repositories"
 
-	"bbs-go/internal/pkg/params"
 	"bbs-go/internal/pkg/secureconfig"
 
 	"github.com/mlogclub/simple/sqls"
@@ -18,54 +17,11 @@ import (
 var DictService = newDictService()
 
 func newDictService() *dictService {
-	return &dictService{}
+	return &dictService{BaseService: newBaseService[models.Dict, crudRepository[models.Dict]](repositories.DictRepository)}
 }
 
 type dictService struct {
-}
-
-func (s *dictService) Get(id int64) *models.Dict {
-	return repositories.DictRepository.Get(sqls.DB(), id)
-}
-
-func (s *dictService) Take(where ...interface{}) *models.Dict {
-	return repositories.DictRepository.Take(sqls.DB(), where...)
-}
-
-func (s *dictService) Find(cnd *sqls.Cnd) []models.Dict {
-	return repositories.DictRepository.Find(sqls.DB(), cnd)
-}
-
-func (s *dictService) FindOne(cnd *sqls.Cnd) *models.Dict {
-	return repositories.DictRepository.FindOne(sqls.DB(), cnd)
-}
-
-func (s *dictService) FindPageByParams(params *params.QueryParams) (list []models.Dict, paging *sqls.Paging) {
-	return repositories.DictRepository.FindPageByParams(sqls.DB(), params)
-}
-
-func (s *dictService) FindPageByCnd(cnd *sqls.Cnd) (list []models.Dict, paging *sqls.Paging) {
-	return repositories.DictRepository.FindPageByCnd(sqls.DB(), cnd)
-}
-
-func (s *dictService) Count(cnd *sqls.Cnd) int64 {
-	return repositories.DictRepository.Count(sqls.DB(), cnd)
-}
-
-func (s *dictService) Create(t *models.Dict) error {
-	return repositories.DictRepository.Create(sqls.DB(), t)
-}
-
-func (s *dictService) Update(t *models.Dict) error {
-	return repositories.DictRepository.Update(sqls.DB(), t)
-}
-
-func (s *dictService) Updates(id int64, columns map[string]interface{}) error {
-	return repositories.DictRepository.Updates(sqls.DB(), id, columns)
-}
-
-func (s *dictService) UpdateColumn(id int64, name string, value interface{}) error {
-	return repositories.DictRepository.UpdateColumn(sqls.DB(), id, name, value)
+	BaseService[models.Dict, crudRepository[models.Dict]]
 }
 
 func (s *dictService) Delete(id int64) {

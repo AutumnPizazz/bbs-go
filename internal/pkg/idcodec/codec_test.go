@@ -81,34 +81,6 @@ func TestDecodeWithDifferentCodecKey(t *testing.T) {
 	}
 }
 
-func TestMustDecode(t *testing.T) {
-	codec := NewCodec(0x9e3779b97f4a7c15)
-	encoded := codec.Encode(10001)
-
-	if got := codec.MustDecode(encoded); got != 10001 {
-		t.Fatalf("must decode mismatch, want=%d got=%d", 10001, got)
-	}
-
-	defer func() {
-		if recover() == nil {
-			t.Fatal("expected panic for invalid encoded id")
-		}
-	}()
-	_ = codec.MustDecode("invalid*")
-}
-
-func TestIsValid(t *testing.T) {
-	codec := NewCodec(0x9e3779b97f4a7c15)
-	encoded := codec.Encode(1024)
-
-	if !codec.IsValid(encoded) {
-		t.Fatalf("expected encoded id to be valid, encoded=%s", encoded)
-	}
-	if codec.IsValid("bad*") {
-		t.Fatal("expected invalid encoded id")
-	}
-}
-
 func TestGenerateRandomKey(t *testing.T) {
 	key := GenerateRandomKey()
 
@@ -138,9 +110,6 @@ func TestPackageLevelMethods(t *testing.T) {
 		}()
 		_ = Decode("abc")
 	}()
-	if IsValid("abc") {
-		t.Fatal("expected IsValid to return false when instance is not initialized")
-	}
 	func() {
 		defer func() {
 			if recover() == nil {
@@ -155,9 +124,6 @@ func TestPackageLevelMethods(t *testing.T) {
 	decoded := Decode(encoded)
 	if decoded != 31415926 {
 		t.Fatalf("decode mismatch, want=%d got=%d", 31415926, decoded)
-	}
-	if !IsValid(encoded) {
-		t.Fatal("expected encoded value to be valid")
 	}
 }
 

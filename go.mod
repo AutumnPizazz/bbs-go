@@ -20,7 +20,6 @@ require (
 	github.com/go-resty/resty/v2 v2.15.0
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/goburrow/cache v0.1.4
-	github.com/golang-jwt/jwt/v4 v4.5.1
 	github.com/golang-migrate/migrate/v4 v4.18.2
 	github.com/jackc/pgx/v5 v5.6.0
 	github.com/lionsoul2014/ip2region/binding/golang v0.0.0-20260225151951-9d4b16540918

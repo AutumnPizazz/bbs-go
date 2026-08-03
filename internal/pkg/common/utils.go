@@ -7,6 +7,7 @@ import (
 	"bbs-go/internal/pkg/text"
 )
 
+// GetSummary 根据内容类型截取摘要
 func GetSummary(contentType constants.ContentType, content string) (summary string) {
 	if contentType == constants.ContentTypeMarkdown {
 		summary = markdown.GetSummary(content, constants.SummaryLen)
@@ -16,11 +17,6 @@ func GetSummary(contentType constants.ContentType, content string) (summary stri
 		summary = text.GetSummary(content, constants.SummaryLen)
 	}
 	return
-}
-
-// GetMarkdownSummary 截取markdown摘要
-func GetMarkdownSummary(markdownStr string) string {
-	return markdown.GetSummary(markdownStr, constants.SummaryLen)
 }
 
 func Distinct[T any](input []T, getKey func(T) any) (output []T) {
@@ -33,14 +29,4 @@ func Distinct[T any](input []T, getKey func(T) any) (output []T) {
 		}
 	}
 	return
-}
-
-func StrRight(str string, size int) string {
-	if str == "" || size < 0 {
-		return ""
-	}
-	if len(str) <= size {
-		return str
-	}
-	return str[len(str)-size:]
 }

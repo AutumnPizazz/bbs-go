@@ -1,129 +1,13 @@
 import { serverApiFetch as apiFetch } from "./server"
 
-import { toFormData } from "./client"
-import type {
-  BindInfo,
-  Favorite,
-  PageData,
-  SearchUser,
-  Topic,
-  UserMessage,
-  UserSummary,
-} from "./types"
-
-type SearchUserParams = {
-  keyword: string
-  cursor?: string
-}
+import type { UserMessage, UserSummary } from "./types"
 
 export function getCurrentUser() {
   return apiFetch<UserSummary | null>("/api/user/current")
-}
-
-export function searchUsers(params: SearchUserParams) {
-  return apiFetch<PageData<SearchUser>>("/api/search/user", {
-    params,
-  })
-}
-
-export function getUser(userId: string) {
-  return apiFetch<UserSummary>(`/api/user/${userId}`)
-}
-
-export function getUserTopics(userId: string, cursor?: string) {
-  return apiFetch<PageData<Topic>>("/api/topic/user_topics", {
-    params: { userId, cursor },
-  })
-}
-
-
-export function getUserFavorites(cursor?: string) {
-  return apiFetch<PageData<Favorite>>("/api/user/favorites", {
-    params: { cursor },
-  })
-}
-
-export function getUserMessages(cursor?: string) {
-  return apiFetch<PageData<UserMessage>>("/api/user/messages", {
-    params: { cursor },
-  })
 }
 
 export function getRecentUserMessages() {
   return apiFetch<{ count?: number; messages?: UserMessage[] }>(
     "/api/user/msg_recent"
   )
-}
-
-export function getUserFans(userId: string, cursor?: string) {
-  return apiFetch<PageData<UserSummary>>("/api/fans/fans", {
-    params: { userId, cursor },
-  })
-}
-
-export function getUserFollowed(userId: string, cursor?: string) {
-  return apiFetch<PageData<UserSummary>>("/api/fans/followed", {
-    params: { userId, cursor },
-  })
-}
-
-export function getRecentFans(userId: string) {
-  return apiFetch<PageData<UserSummary>>("/api/fans/recent/fans", {
-    params: { userId },
-  })
-}
-
-export function getRecentFollowed(userId: string) {
-  return apiFetch<PageData<UserSummary>>("/api/fans/recent/follow", {
-    params: { userId },
-  })
-}
-
-export function getBindInfo(provider: "wx" | "google" | "github") {
-  const path =
-    provider === "wx"
-      ? "/api/user/wx_bind_info"
-      : provider === "google"
-        ? "/api/user/google_bind_info"
-        : "/api/user/github_bind_info"
-  return apiFetch<BindInfo>(path)
-}
-
-export async function updateUser(
-  userId: string,
-  body: FormData
-): Promise<void> {
-  await apiFetch<null>(`/api/user/update/${userId}`, {
-    method: "POST",
-    body,
-  })
-}
-
-export async function setUsername(username: string): Promise<void> {
-  await apiFetch<null>("/api/user/set_username", {
-    method: "POST",
-    body: toFormData({ username }),
-  })
-}
-
-export async function toggleFollow(
-  userId: string,
-  followed: boolean
-): Promise<void> {
-  await apiFetch<null>(followed ? "/api/fans/unfollow" : "/api/fans/follow", {
-    method: "POST",
-    body: toFormData({ userId }),
-  })
-}
-
-export async function unbindProvider(
-  provider: "wx" | "google" | "github"
-): Promise<void> {
-  const path =
-    provider === "wx"
-      ? "/api/login/wx_unbind"
-      : provider === "google"
-        ? "/api/login/google_unbind"
-        : "/api/login/github_unbind"
-  await apiFetch<null>(path, { method: "POST" })
 }

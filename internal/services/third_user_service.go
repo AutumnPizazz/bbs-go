@@ -8,7 +8,6 @@ import (
 	"bbs-go/internal/pkg/github"
 	"bbs-go/internal/pkg/google"
 	"bbs-go/internal/pkg/locales"
-	"bbs-go/internal/pkg/params"
 	"bbs-go/internal/pkg/wx"
 	"bbs-go/internal/repositories"
 	"context"
@@ -24,54 +23,11 @@ import (
 var ThirdUserService = newThirdUserService()
 
 func newThirdUserService() *thirdUserService {
-	return &thirdUserService{}
+	return &thirdUserService{BaseService: newBaseService[models.ThirdUser, crudRepository[models.ThirdUser]](repositories.ThirdUserRepository)}
 }
 
 type thirdUserService struct {
-}
-
-func (s *thirdUserService) Get(id int64) *models.ThirdUser {
-	return repositories.ThirdUserRepository.Get(sqls.DB(), id)
-}
-
-func (s *thirdUserService) Take(where ...interface{}) *models.ThirdUser {
-	return repositories.ThirdUserRepository.Take(sqls.DB(), where...)
-}
-
-func (s *thirdUserService) Find(cnd *sqls.Cnd) []models.ThirdUser {
-	return repositories.ThirdUserRepository.Find(sqls.DB(), cnd)
-}
-
-func (s *thirdUserService) FindOne(cnd *sqls.Cnd) *models.ThirdUser {
-	return repositories.ThirdUserRepository.FindOne(sqls.DB(), cnd)
-}
-
-func (s *thirdUserService) FindPageByParams(params *params.QueryParams) (list []models.ThirdUser, paging *sqls.Paging) {
-	return repositories.ThirdUserRepository.FindPageByParams(sqls.DB(), params)
-}
-
-func (s *thirdUserService) FindPageByCnd(cnd *sqls.Cnd) (list []models.ThirdUser, paging *sqls.Paging) {
-	return repositories.ThirdUserRepository.FindPageByCnd(sqls.DB(), cnd)
-}
-
-func (s *thirdUserService) Count(cnd *sqls.Cnd) int64 {
-	return repositories.ThirdUserRepository.Count(sqls.DB(), cnd)
-}
-
-func (s *thirdUserService) Create(t *models.ThirdUser) error {
-	return repositories.ThirdUserRepository.Create(sqls.DB(), t)
-}
-
-func (s *thirdUserService) Update(t *models.ThirdUser) error {
-	return repositories.ThirdUserRepository.Update(sqls.DB(), t)
-}
-
-func (s *thirdUserService) Updates(id int64, columns map[string]interface{}) error {
-	return repositories.ThirdUserRepository.Updates(sqls.DB(), id, columns)
-}
-
-func (s *thirdUserService) UpdateColumn(id int64, name string, value interface{}) error {
-	return repositories.ThirdUserRepository.UpdateColumn(sqls.DB(), id, name, value)
+	BaseService[models.ThirdUser, crudRepository[models.ThirdUser]]
 }
 
 func (s *thirdUserService) Delete(id int64) {

@@ -1,17 +1,14 @@
 package params
 
 import (
-	"errors"
 	"fmt"
 	"log/slog"
 	"strconv"
 	"strings"
-	"time"
 
 	"bbs-go/internal/pkg/ginx"
 
 	"github.com/gin-gonic/gin"
-	"github.com/mlogclub/simple/common/dates"
 	"github.com/mlogclub/simple/common/jsons"
 	"github.com/mlogclub/simple/common/strs"
 	"github.com/mlogclub/simple/sqls"
@@ -20,10 +17,6 @@ import (
 
 func paramError(name string) error {
 	return fmt.Errorf("unable to find param value '%s'", name)
-}
-
-func ReadForm(ctx *gin.Context, obj interface{}) error {
-	return ginx.Bind(ctx, obj)
 }
 
 func Get(ctx *gin.Context, name string) (string, bool) {
@@ -59,50 +52,6 @@ func GetInt(c *gin.Context, name string) (int, bool) {
 	return value, true
 }
 
-func GetBool(c *gin.Context, name string) (bool, bool) {
-	str, ok := Get(c, name)
-	if !ok {
-		return false, false
-	}
-	value, err := cast.ToBoolE(str)
-	if err != nil {
-		return false, false
-	}
-	return value, true
-}
-
-func GetFloat32(c *gin.Context, name string) (float32, bool) {
-	str, ok := Get(c, name)
-	if !ok {
-		return 0, false
-	}
-	value, err := cast.ToFloat32E(str)
-	if err != nil {
-		return 0, false
-	}
-	return value, true
-}
-
-func GetFloat64(c *gin.Context, name string) (float64, bool) {
-	str, ok := Get(c, name)
-	if !ok {
-		return 0, false
-	}
-	value, err := cast.ToFloat64E(str)
-	if err != nil {
-		return 0, false
-	}
-	return value, true
-}
-
-func GetTime(ctx *gin.Context, name string) *time.Time {
-	value, _ := Get(ctx, name)
-	if strs.IsBlank(value) {
-		return nil
-	}
-	return parseTime(value)
-}
-
 func GetInt64Arr(c *gin.Context, name string) []int64 {
 	str, ok := Get(c, name)
 	if !ok {
@@ -132,18 +81,6 @@ func StrSplitToInt64Arr(str string) (ret []int64) {
 
 func FormValue(ctx *gin.Context, name string) string {
 	return ginx.FormValue(ctx, name)
-}
-
-func FormValueRequired(ctx *gin.Context, name string) (string, error) {
-	str := FormValue(ctx, name)
-	if len(str) == 0 {
-		return "", errors.New("参数：" + name + "不能为空")
-	}
-	return str, nil
-}
-
-func FormValueDefault(ctx *gin.Context, name, def string) string {
-	return ginx.FormValueDefault(ctx, name, def)
 }
 
 func FormValueInt(ctx *gin.Context, name string) (int, error) {
@@ -208,14 +145,6 @@ func FormValueBoolDefault(ctx *gin.Context, name string, def bool) bool {
 	return value
 }
 
-func FormDate(ctx *gin.Context, name string) *time.Time {
-	value := FormValue(ctx, name)
-	if strs.IsBlank(value) {
-		return nil
-	}
-	return parseTime(value)
-}
-
 func GetPaging(ctx *gin.Context) *sqls.Paging {
 	page := FormValueIntDefault(ctx, "page", 1)
 	limit := FormValueIntDefault(ctx, "limit", 20)
@@ -226,13 +155,4 @@ func GetPaging(ctx *gin.Context) *sqls.Paging {
 		limit = 20
 	}
 	return &sqls.Paging{Page: page, Limit: limit}
-}
-
-func parseTime(value string) *time.Time {
-	for _, layout := range []string{dates.FmtDateTime, dates.FmtDate, dates.FmtDateTimeNoSeconds} {
-		if ret, err := dates.Parse(value, layout); err == nil {
-			return &ret
-		}
-	}
-	return nil
 }

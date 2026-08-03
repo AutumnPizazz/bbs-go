@@ -24,7 +24,7 @@ export function DashboardPagination({
   limit: number
   loading?: boolean
   onPageChange: (page: number) => void
-  onLimitChange: (limit: number) => void
+  onLimitChange?: (limit: number) => void
 }) {
   const { t } = useI18n()
   const [jumpPage, setJumpPage] = React.useState(String(page))
@@ -45,16 +45,18 @@ export function DashboardPagination({
         {t("dashboard.pagination.total", { total })}
       </span>
       <div className="flex flex-wrap items-center gap-2">
-        <DashboardSelect
-          value={limit}
-          options={PAGE_SIZES.map((size) => ({
-            label: String(size),
-            value: size,
-          }))}
-          triggerClassName="h-8 w-24"
-          allowClear={false}
-          onValueChange={(value) => onLimitChange(Number(value || limit))}
-        />
+        {onLimitChange ? (
+          <DashboardSelect
+            value={limit}
+            options={PAGE_SIZES.map((size) => ({
+              label: String(size),
+              value: size,
+            }))}
+            triggerClassName="h-8 w-24"
+            allowClear={false}
+            onValueChange={(value) => onLimitChange(Number(value || limit))}
+          />
+        ) : null}
         <Button
           variant="outline"
           size="sm"

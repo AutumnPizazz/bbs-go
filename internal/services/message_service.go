@@ -6,8 +6,6 @@ import (
 	"bbs-go/internal/repositories"
 	"log/slog"
 
-	"bbs-go/internal/pkg/params"
-
 	"github.com/mlogclub/simple/common/dates"
 	"github.com/mlogclub/simple/common/jsons"
 	"github.com/mlogclub/simple/sqls"
@@ -16,50 +14,11 @@ import (
 var MessageService = newMessageService()
 
 func newMessageService() *messageService {
-	return &messageService{}
+	return &messageService{BaseService: newBaseService[models.Message, crudRepository[models.Message]](repositories.MessageRepository)}
 }
 
 type messageService struct {
-}
-
-func (s *messageService) Get(id int64) *models.Message {
-	return repositories.MessageRepository.Get(sqls.DB(), id)
-}
-
-func (s *messageService) Take(where ...interface{}) *models.Message {
-	return repositories.MessageRepository.Take(sqls.DB(), where...)
-}
-
-func (s *messageService) Find(cnd *sqls.Cnd) []models.Message {
-	return repositories.MessageRepository.Find(sqls.DB(), cnd)
-}
-
-func (s *messageService) FindOne(cnd *sqls.Cnd) *models.Message {
-	return repositories.MessageRepository.FindOne(sqls.DB(), cnd)
-}
-
-func (s *messageService) FindPageByParams(params *params.QueryParams) (list []models.Message, paging *sqls.Paging) {
-	return repositories.MessageRepository.FindPageByParams(sqls.DB(), params)
-}
-
-func (s *messageService) FindPageByCnd(cnd *sqls.Cnd) (list []models.Message, paging *sqls.Paging) {
-	return repositories.MessageRepository.FindPageByCnd(sqls.DB(), cnd)
-}
-
-func (s *messageService) Create(t *models.Message) error {
-	return repositories.MessageRepository.Create(sqls.DB(), t)
-}
-
-func (s *messageService) Update(t *models.Message) error {
-	return repositories.MessageRepository.Update(sqls.DB(), t)
-}
-
-func (s *messageService) Updates(id int64, columns map[string]interface{}) error {
-	return repositories.MessageRepository.Updates(sqls.DB(), id, columns)
-}
-
-func (s *messageService) UpdateColumn(id int64, name string, value interface{}) error {
-	return repositories.MessageRepository.UpdateColumn(sqls.DB(), id, name, value)
+	BaseService[models.Message, crudRepository[models.Message]]
 }
 
 func (s *messageService) Delete(id int64) {

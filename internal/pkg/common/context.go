@@ -45,10 +45,6 @@ func CheckLogin(ctx *gin.Context) (*models.User, error) {
 	return user, nil
 }
 
-func IsLogin(ctx *gin.Context) bool {
-	return GetCurrentUser(ctx) != nil
-}
-
 func GetID(ctx *gin.Context, name string) int64 {
 	idStr, _ := params.Get(ctx, name)
 	return idcodec.Decode(idStr)

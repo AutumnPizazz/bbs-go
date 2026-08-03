@@ -5,8 +5,6 @@ import (
 	"bbs-go/internal/models/resp"
 	"strings"
 
-	"bbs-go/internal/pkg/params"
-
 	"github.com/mlogclub/simple/sqls"
 
 	"bbs-go/internal/cache"
@@ -17,38 +15,11 @@ import (
 var TagService = newTagService()
 
 func newTagService() *tagService {
-	return &tagService{}
+	return &tagService{BaseService: newBaseService[models.Tag, crudRepository[models.Tag]](repositories.TagRepository)}
 }
 
 type tagService struct {
-}
-
-func (s *tagService) Get(id int64) *models.Tag {
-	return repositories.TagRepository.Get(sqls.DB(), id)
-}
-
-func (s *tagService) Take(where ...interface{}) *models.Tag {
-	return repositories.TagRepository.Take(sqls.DB(), where...)
-}
-
-func (s *tagService) Find(cnd *sqls.Cnd) []models.Tag {
-	return repositories.TagRepository.Find(sqls.DB(), cnd)
-}
-
-func (s *tagService) FindOne(cnd *sqls.Cnd) *models.Tag {
-	return repositories.TagRepository.FindOne(sqls.DB(), cnd)
-}
-
-func (s *tagService) FindPageByParams(params *params.QueryParams) (list []models.Tag, paging *sqls.Paging) {
-	return repositories.TagRepository.FindPageByParams(sqls.DB(), params)
-}
-
-func (s *tagService) FindPageByCnd(cnd *sqls.Cnd) (list []models.Tag, paging *sqls.Paging) {
-	return repositories.TagRepository.FindPageByCnd(sqls.DB(), cnd)
-}
-
-func (s *tagService) Create(t *models.Tag) error {
-	return repositories.TagRepository.Create(sqls.DB(), t)
+	BaseService[models.Tag, crudRepository[models.Tag]]
 }
 
 func (s *tagService) Update(t *models.Tag) error {
