@@ -58,3 +58,4 @@ dist/
 /secret
 /cmd/sshexec
 /.pi-subagents
+bbs-go-images.tar
