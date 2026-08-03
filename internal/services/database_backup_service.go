@@ -1384,7 +1384,11 @@ func (s *databaseBackupService) verifyTarGz(path, dbType string) error {
 				return errors.New("SQL dump inside archive is empty")
 			}
 			if dbType == config.DbTypeMySQL {
-				if !utf8.Valid(content) || strings.ContainsRune(string(content), '\x00') {
+				// The window was truncated at the read limit, so a multi-byte
+				// UTF-8 character may be split at the boundary. Tolerate a
+				// trailing incomplete rune to avoid false "invalid text dump"
+				// verdicts on perfectly good archives.
+				if !utf8ValidWindow(content) || strings.ContainsRune(string(content), '\x00') {
 					return errors.New("MySQL backup inside archive is not a valid text dump")
 				}
 				upper := strings.ToUpper(string(content))
@@ -1414,6 +1418,80 @@ func (s *databaseBackupService) verifyTarGz(path, dbType string) error {
 	return nil
 }
 
+// utf8ValidWindow reports whether b is valid UTF-8, tolerating a trailing
+// incomplete multi-byte rune caused by truncating the verification window at
+// a read limit (the 64KB prefix read). Genuinely corrupt bytes anywhere else
+// still make it return false.
+func utf8ValidWindow(b []byte) bool {
+	if utf8.Valid(b) {
+		return true
+	}
+	// Walk runes from the start; the only permitted defect is an incomplete
+	// rune at the very end that could be completed into a valid encoding.
+	for len(b) > 0 {
+		r, size := utf8.DecodeRune(b)
+		if r != utf8.RuneError || size > 1 {
+			b = b[size:]
+			continue
+		}
+		return isExtendableRunePrefix(b)
+	}
+	return true
+}
+
+// isExtendableRunePrefix reports whether b is a non-empty prefix of a valid
+// multi-byte UTF-8 rune encoding: a start byte in the RFC 3629 range with
+// continuation bytes so far respecting the per-start-byte constraints.
+func isExtendableRunePrefix(b []byte) bool {
+	if len(b) == 0 {
+		return false
+	}
+	s := b[0]
+	need := 0
+	switch {
+	case s >= 0xC2 && s <= 0xDF:
+		need = 1
+	case s >= 0xE0 && s <= 0xEF:
+		need = 2
+	case s >= 0xF0 && s <= 0xF4:
+		need = 3
+	default:
+		return false
+	}
+	have := len(b) - 1
+	if have >= need {
+		// Complete length but invalid encoding (overlong or out of range).
+		return false
+	}
+	for _, c := range b[1:] {
+		if c < 0x80 || c > 0xBF {
+			return false
+		}
+	}
+	// Range guards for the first continuation byte (RFC 3629 table 3-7).
+	if have >= 1 {
+		switch s {
+		case 0xE0:
+			if b[1] < 0xA0 {
+				return false
+			}
+		case 0xED:
+			if b[1] > 0x9F {
+				return false
+			}
+		case 0xF0:
+			if b[1] < 0x90 {
+				return false
+			}
+		case 0xF4:
+			if b[1] > 0x8F {
+				return false
+			}
+		}
+	}
+	return true
+}
+
 func verifyMySQLDump(path string) error {
 	file, err := os.Open(path)
 	if err != nil {
@@ -1424,7 +1502,7 @@ func verifyMySQLDump(path string) error {
 	if err != nil {
 		return err
 	}
-	if len(content) == 0 || !utf8.Valid(content) || strings.ContainsRune(string(content), '\x00') {
+	if len(content) == 0 || !utf8ValidWindow(content) || strings.ContainsRune(string(content), '\x00') {
 		return errors.New("MySQL backup is not a valid text dump")
 	}
 	upper := strings.ToUpper(string(content))
