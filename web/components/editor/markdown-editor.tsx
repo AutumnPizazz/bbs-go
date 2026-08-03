@@ -52,20 +52,26 @@ const TOOLBARS = [
 const PREVIEW_BROWSE_PAUSE_MS = 3000
 
 /**
- * 行级锚点滚动跟随，替代 md-editor-rt 内置的 scrollAuto 双向强绑定：
+ * 双向行级锚点滚动同步，替代 md-editor-rt 内置的 scrollAuto 双向强绑定：
  *
  * - 编辑区滚动时，通过 CodeMirror view 计算视口顶部行号，预览滚动到
  *   对应 data-line 锚点块的位置（块内按编辑区偏移比例微调）。图片、
  *   代码块等高度差异大的块也能精确对应，不再依赖两侧总高度比例；
- * - 预览区始终可以自由滚动，永远不会被拉回；用户手动滚动预览后，
- *   编辑区滚动会暂停跟随片刻，避免预览浏览被打断；
+ * - 预览区滚动时反向同步编辑区：找到视口顶部对应的锚点块，换算回
+ *   源码行并滚动 CodeMirror；
+ * - 预览区始终可以自由滚动（不会被强行拉回），用户手动滚动预览后
+ *   编辑区跟随，期间短暂暂停编辑区对预览的驱动，避免回环抖动；
  * - 预览异步渲染完成（MutationObserver）与图片加载完成（捕获阶段
  *   load 事件）后自动重新校准位置；
  * - 预览缺少 data-line 锚点（两侧渲染块数不一致）时退化为比例同步。
  */
 function usePreviewFollowScroll(editorId: string) {
   const rafRef = React.useRef<number | null>(null)
+  const editorRafRef = React.useRef<number | null>(null)
+  // 正向（编辑区→预览）程序化设置预览 scrollTop 的目标值，用于区分用户滚动
   const programmaticTopRef = React.useRef(0)
+  // 反向（预览→编辑区）程序化设置编辑区 scrollTop 的目标值，用于跳过回环
+  const editorProgrammaticTopRef = React.useRef(-1)
   const browseUntilRef = React.useRef(0)
   const boundRef = React.useRef<{
     scroller: HTMLElement
@@ -78,6 +84,15 @@ function usePreviewFollowScroll(editorId: string) {
     if (!bound) return
     if (Date.now() < browseUntilRef.current) return
     const { scroller, preview } = bound
+
+    // 反向同步程序化设置编辑区滚动触发的 scroll 事件，直接跳过避免回环
+    if (
+      editorProgrammaticTopRef.current >= 0 &&
+      Math.abs(scroller.scrollTop - editorProgrammaticTopRef.current) <= 1
+    ) {
+      editorProgrammaticTopRef.current = -1
+      return
+    }
 
     const anchors = [...preview.querySelectorAll<HTMLElement>("[data-line]")]
     const view = EditorView.findFromDOM(scroller)
@@ -92,6 +107,63 @@ function usePreviewFollowScroll(editorId: string) {
     }
     programmaticTopRef.current = top
     preview.scrollTop = top
+  }, [])
+
+  // 反向同步：预览滚动 → 编辑区滚动到对应源码行
+  const syncEditorFromPreview = React.useCallback(() => {
+    const bound = boundRef.current
+    if (!bound) return
+    const { scroller, preview } = bound
+    const anchors = [...preview.querySelectorAll<HTMLElement>("[data-line]")]
+    const view = EditorView.findFromDOM(scroller)
+    if (anchors.length === 0 || !view) return
+
+    // 找预览视口顶部对应的锚点块（内容位置 <= scrollTop 的最后一个块）
+    const previewRect = preview.getBoundingClientRect()
+    let idx = -1
+    for (let i = 0; i < anchors.length; i++) {
+      const elTop =
+        anchors[i].getBoundingClientRect().top -
+        previewRect.top +
+        preview.scrollTop
+      if (elTop <= preview.scrollTop + 2) {
+        idx = i
+      } else {
+        break
+      }
+    }
+    if (idx < 0) idx = 0
+
+    const doc = view.state.doc
+    const startLine = Math.min(Number(anchors[idx].dataset.line), doc.lines - 1)
+    const endLine =
+      idx + 1 < anchors.length
+        ? Math.min(Number(anchors[idx + 1].dataset.line), doc.lines - 1)
+        : doc.lines - 1
+    const startPos = doc.line(startLine + 1).from
+    const endPos = doc.line(Math.min(endLine + 1, doc.lines)).from
+    const startTop = view.lineBlockAt(startPos).top
+    const endTop = view.lineBlockAt(endPos).top
+
+    // 块内偏移比例：预览上锚点块到下一块的区间内
+    const anchorEl = anchors[idx]
+    const anchorTopInPreview =
+      anchorEl.getBoundingClientRect().top - previewRect.top + preview.scrollTop
+    const nextTopInPreview =
+      idx + 1 < anchors.length
+        ? anchors[idx + 1].getBoundingClientRect().top -
+          previewRect.top +
+          preview.scrollTop
+        : preview.scrollHeight
+    const span = Math.max(nextTopInPreview - anchorTopInPreview, 1)
+    const k = (preview.scrollTop - anchorTopInPreview) / span
+
+    let target = startTop + (endTop - startTop) * k
+    const maxTop = Math.max(0, scroller.scrollHeight - scroller.clientHeight)
+    target = Math.min(Math.max(target, 0), maxTop)
+
+    editorProgrammaticTopRef.current = target
+    scroller.scrollTop = target
   }, [])
 
   React.useEffect(() => {
@@ -118,9 +190,17 @@ function usePreviewFollowScroll(editorId: string) {
         sync()
       }
       const onPreviewScroll = () => {
-        // 程序化同步触发的 scroll 事件忽略，其余视为用户自由浏览预览
+        // 程序化同步触发的 scroll 事件忽略，其余视为用户滚动预览：
+        // 暂停正向驱动片刻，并反向同步编辑区
         if (Math.abs(preview.scrollTop - programmaticTopRef.current) > 1) {
           browseUntilRef.current = Date.now() + PREVIEW_BROWSE_PAUSE_MS
+          if (editorRafRef.current !== null) {
+            cancelAnimationFrame(editorRafRef.current)
+          }
+          editorRafRef.current = requestAnimationFrame(() => {
+            editorRafRef.current = null
+            syncEditorFromPreview()
+          })
         }
       }
 
@@ -139,6 +219,10 @@ function usePreviewFollowScroll(editorId: string) {
         if (rafRef.current !== null) {
           cancelAnimationFrame(rafRef.current)
           rafRef.current = null
+        }
+        if (editorRafRef.current !== null) {
+          cancelAnimationFrame(editorRafRef.current)
+          editorRafRef.current = null
         }
       }
     }
@@ -168,7 +252,7 @@ function usePreviewFollowScroll(editorId: string) {
         boundRef.current = null
       }
     }
-  }, [editorId, sync])
+  }, [editorId, sync, syncEditorFromPreview])
 }
 
 /**
